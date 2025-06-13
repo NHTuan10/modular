@@ -1,0 +1,1 @@
+moduleDetailMap.get(moduleName).awaitMainClassLatch.countDown();
