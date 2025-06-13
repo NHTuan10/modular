@@ -15,6 +15,7 @@
     <modules>
         <module>modular-impl</module>
         <module>modular-api</module>
+        <module>modular-spring</module>
     </modules>
 
     <properties>

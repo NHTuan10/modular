@@ -1,14 +1,15 @@
 package io.github.nhtuan10.modular.model;
 
+import io.github.nhtuan10.modular.api.model.ModularContext;
 import io.github.nhtuan10.modular.classloader.ModularClassLoader;
-import io.github.nhtuan10.modular.exception.ModuleLoadException;
+import io.github.nhtuan10.modular.api.exception.ModuleLoadException;
 import lombok.AllArgsConstructor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 @AllArgsConstructor
-public class ModularContext {
+public class ModularContextImpl implements ModularContext {
     private Object moduleLoader;
 
     public <S> List<S> getModularServicesFromSpring(Class<?> clazz) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -19,6 +20,7 @@ public class ModularContext {
         return (List<S>) moduleLoader.getClass().getDeclaredMethod("getModularServices", Class.class, boolean.class).invoke(moduleLoader, clazz, false);
     }
 
+    @Override
     public void notifyModuleReady() {
         ClassLoader classLoader = this.getClass().getClassLoader();
 //        var mcl = ModularClassLoader.class.getClassLoader();

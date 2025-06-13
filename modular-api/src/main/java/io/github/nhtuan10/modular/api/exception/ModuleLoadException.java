@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.exception;
+package io.github.nhtuan10.modular.api.exception;
 
 public class ModuleLoadException extends RuntimeException {
     public ModuleLoadException(String message) {
