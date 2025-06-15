@@ -1,15 +1,14 @@
-package io.github.nhtuan10.modular.model;
+package io.github.nhtuan10.modular.module;
 
-import io.github.nhtuan10.modular.api.model.ModularContext;
-import io.github.nhtuan10.modular.classloader.ModularClassLoader;
-import io.github.nhtuan10.modular.api.exception.ModuleLoadException;
+import io.github.nhtuan10.modular.api.module.ModuleContext;
+import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import lombok.AllArgsConstructor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 @AllArgsConstructor
-public class ModularContextImpl implements ModularContext {
+public class ModuleContextImpl implements ModuleContext {
     private Object moduleLoader;
 
     public <S> List<S> getModularServicesFromSpring(Class<?> clazz) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -30,10 +29,10 @@ public class ModularContextImpl implements ModularContext {
                 String moduleName = classLoader.getClass().getDeclaredMethod("getModuleName").invoke(classLoader).toString();
                 moduleLoader.getClass().getDeclaredMethod("notifyModuleReady", String.class).invoke(moduleLoader, moduleName);
             } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-                throw new ModuleLoadException("Exception during ModularContext#notifyModuleReady", e);
+                throw new ModuleLoadRuntimeException("Exception during ModularContext#notifyModuleReady", e);
             }
         } else {
-            throw new ModuleLoadException("Illegal invocation of ModularContext#notifyModuleReady");
+            throw new ModuleLoadRuntimeException("Illegal invocation of ModularContext#notifyModuleReady");
         }
     }
 }

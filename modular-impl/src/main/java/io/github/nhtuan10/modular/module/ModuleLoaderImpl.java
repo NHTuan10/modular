@@ -1,13 +1,13 @@
-package io.github.nhtuan10.modular.classloader;
+package io.github.nhtuan10.modular.module;
 
 import io.github.nhtuan10.modular.annotation.ModularAnnotationProcessor;
-import io.github.nhtuan10.modular.api.exception.ModuleLoadException;
+import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import io.github.nhtuan10.modular.api.model.ArtifactLocationType;
-import io.github.nhtuan10.modular.api.model.ModularContext;
-import io.github.nhtuan10.modular.model.ModularContextImpl;
+import io.github.nhtuan10.modular.api.module.ModuleContext;
+import io.github.nhtuan10.modular.api.module.ModuleLoader;
+import io.github.nhtuan10.modular.classloader.MavenArtifactsResolver;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
 import io.github.nhtuan10.modular.proxy.ServiceInvocationInterceptor;
-import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
@@ -16,6 +16,7 @@ import net.bytebuddy.matcher.ElementMatchers;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
@@ -40,18 +41,12 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
 //    Executor executor;
 
-    public static enum LoadStatus {
-        LOADING,
-        LOADED,
-        FAILED,
-    }
-
 
     private volatile static ModuleLoader instance;
     private static final Object lock = new Object();
 
     public static ModuleLoader getInstance() {
-        return ModuleLoaderImpl.getInstance(ModuleLoaderImpl.ModuleLoaderConfiguration.builder().build());
+        return ModuleLoaderImpl.getInstance(ModuleLoader.ModuleLoaderConfiguration.builder().build());
     }
 
 
@@ -67,17 +62,10 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return instance;
     }
 
-    @Builder
-    public static class ModuleLoaderConfiguration {
-//        @Builder.Default
-//        @Getter
-//        private final int threadPoolSize = 10;
+    public ModuleLoaderImpl() {
     }
 
-    private ModuleLoaderImpl() {
-    }
-
-    public void loadModule(String name, String locationUri, boolean lazyInit) {
+    public void loadModule(String name, String locationUri, boolean lazyInit) throws MalformedURLException {
         loadModule(name, locationUri, "*", lazyInit);
     }
 
@@ -90,7 +78,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                 loadModuleFromMaven(name, uri, packageToScan, lazyInit);
                 break;
             case FILE:
-                loadModuleFromFile(name, uri, packageToScan);
+                loadModuleFromFile(name, uri, packageToScan, lazyInit);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported artifact location type: " + uri.getScheme());
@@ -106,10 +94,14 @@ public class ModuleLoaderImpl implements ModuleLoader {
         String mvnArtifact = uri.getHost() + uri.getPath().replace("/", ":");
 //        log.info("Loading module from Maven: {}", mvnArtifact);
         List<URL> depUrls = new MavenArtifactsResolver<URL>().resolveMavenDeps(List.of(mvnArtifact), URL.class);
+        loadModuleFromUrls(name, packageToScan, lazyInit, depUrls);
+    }
+
+    private void loadModuleFromUrls(String name, String packageToScan, boolean lazyInit, List<URL> depUrls) {
         ModularClassLoader classLoader = new ModularClassLoader(name, depUrls);
 //        classLoader.setExcludedClassPackages(Set.of(MODULAR_ANNOTATION_PKG));
         ModuleDetail moduleDetail = moduleDetailMap.get(name);
-        moduleDetail.modularClassLoader = classLoader;
+        moduleDetail.setClassLoader(classLoader);
 
         ModularAnnotationProcessor m = new ModularAnnotationProcessor(classLoader);
         try {
@@ -143,12 +135,17 @@ public class ModuleLoaderImpl implements ModuleLoader {
         }
     }
 
-    private void loadModuleFromFile(String name, URI uri, String packageToScan) {
+    private void loadModuleFromFile(String name, URI uri, String packageToScan, boolean lazyInit) {
         // Load module from file
-//        log.debug("Loading module from file");
+        log.debug("Loading module {} from file {} with package", name, uri, packageToScan);
+        try {
+            loadModuleFromUrls(name, packageToScan, lazyInit, List.of(uri.toURL()));
+        } catch (MalformedURLException e) {
+            throw new ModuleLoadRuntimeException("Error loading module %s from file %s with package %s".formatted(name, uri, packageToScan), e);
+        }
     }
 
-    public static ModularContext getContext() {
+    public static ModuleContext getContext() {
         Object moduleLoader = null;
         try {
             moduleLoader = Class.forName(ModuleLoaderImpl.class.getName(), true, ClassLoader.getSystemClassLoader()).getDeclaredMethod("getInstance").invoke(null);
@@ -156,7 +153,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                  ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-        return new ModularContextImpl(moduleLoader);
+        return new ModuleContextImpl(moduleLoader);
     }
 
     public Collection<ModularServiceHolder> getModularServiceHolder(Class<?> key) {
@@ -164,15 +161,15 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     public Collection<ModularServiceHolder> getModularServiceHolder(String module, String key) throws ClassNotFoundException {
-        return loadedModularServices.get(moduleDetailMap.get(module).modularClassLoader.loadClass(key));
+        return loadedModularServices.get(moduleDetailMap.get(module).getClassLoader().loadClass(key));
     }
 
     public Class<?> loadClass(String module, String name) throws ClassNotFoundException {
-        return moduleDetailMap.get(module).modularClassLoader.loadClass(name);
+        return moduleDetailMap.get(module).getClassLoader().loadClass(name);
     }
 
     public ClassLoader getClassLoader(String module) {
-        return moduleDetailMap.get(module).modularClassLoader;
+        return moduleDetailMap.get(module).getClassLoader();
     }
 
 //    public Object getModularServiceByExactClass(Class<?> key){
@@ -269,14 +266,14 @@ public class ModuleLoaderImpl implements ModuleLoader {
                             }
                         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                                  ClassNotFoundException | InterruptedException e) {
-                            throw new RuntimeException(e);
+                            throw new ModuleLoadRuntimeException("Error starting module",e);
                         }
                     } else {
                         moduleDetailCompletableFuture.complete(moduleDetail);
                         log.info("Finish loading module '{}'", moduleName);
                     }
                 } catch (Exception e) {
-                    ModuleLoadException exception = new ModuleLoadException("Failed to load module '" + moduleName, e);
+                    ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException("Failed to load module '" + moduleName, e);
                     moduleDetailCompletableFuture.completeExceptionally(exception);
                     throw e;
                 }
@@ -284,7 +281,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
             t.start();
             return moduleDetailCompletableFuture;
         } else {
-            ModuleLoadException exception = new ModuleLoadException("Module '" + moduleName + "' is already loaded");
+            ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException("Module '" + moduleName + "' is already loaded");
             moduleDetailCompletableFuture.completeExceptionally(exception);
             throw exception;
         }
@@ -376,11 +373,11 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
     public void notifyModuleReady(String moduleName) {
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
-        CountDownLatch readyLatch = moduleDetail.readyLatch;
+        CountDownLatch readyLatch = moduleDetail.getReadyLatch();
         if (readyLatch != null && readyLatch.getCount() > 0) {
             readyLatch.countDown();
         }
-        moduleDetail.loadStatus = LoadStatus.LOADED;
+        moduleDetail.setLoadStatus(LoadStatus.LOADED);
     }
 
 

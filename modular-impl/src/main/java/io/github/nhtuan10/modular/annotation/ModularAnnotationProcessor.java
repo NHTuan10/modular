@@ -3,7 +3,7 @@ package io.github.nhtuan10.modular.annotation;
 import io.github.nhtuan10.modular.api.annotation.ModularConfiguration;
 import io.github.nhtuan10.modular.api.annotation.ModularMethod;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
-import io.github.nhtuan10.modular.classloader.ModularClassLoader;
+import io.github.nhtuan10.modular.module.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.ProxyCreationException;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
 import io.github.classgraph.*;

@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.classloader;
+package io.github.nhtuan10.modular.module;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -6,8 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -15,9 +13,11 @@ import java.util.*;
 import java.util.stream.Stream;
 
 @Slf4j
-public class ModularClassLoaderOld extends ClassLoader {
+public class ModularClassLoader extends URLClassLoader {
     private final static Logger LOGGER =
-            LoggerFactory.getLogger(ModularClassLoaderOld.class.getName());
+            LoggerFactory.getLogger(ModularClassLoader.class.getName());
+
+    public static final String MODULAR_PACKAGE = "io.github.nhtuan10.modular";
 
     @Getter
     private Set<String> excludedClassPackages;
@@ -25,6 +25,7 @@ public class ModularClassLoaderOld extends ClassLoader {
     @Getter
     private List<URL> classPathUrls;
 
+    @Getter
     private String moduleName;
 
     URLClassLoader urlClassLoader;
@@ -33,14 +34,14 @@ public class ModularClassLoaderOld extends ClassLoader {
         this.excludedClassPackages = Collections.unmodifiableSet(excludedClassPackages);
     }
 
-    public ModularClassLoaderOld(String moduleName, List<URL> classPathUrls) {
+    public ModularClassLoader(String moduleName, List<URL> classPathUrls) {
         this(moduleName);
         this.classPathUrls = Stream.concat(classPathUrls.stream(), this.classPathUrls.stream()).toList();
-        ;
+        classPathUrls.forEach(this::addURL);
     }
 
-    public ModularClassLoaderOld(String moduleName) {
-        super();
+    public ModularClassLoader(String moduleName) {
+        super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
 //        super(moduleName, getSystemClassLoader());
         this.moduleName = moduleName;
         this.excludedClassPackages = Collections.unmodifiableSet(getDefaultExcludedPackages());
@@ -89,14 +90,14 @@ public class ModularClassLoaderOld extends ClassLoader {
                         // add logs
                     }
                     if (c == null) {
-                        c = loadClassFromUrls(name);
+                        c = findClass(name);
                     }
                 } catch (ClassNotFoundException | SecurityException e) {
                     // add logs
                 }
 
                 if (c == null) {
-                    // If still not found, then invoke super.loadClass
+                    // If still not found, then invoke System (a.k.a app) class loader
                     c = super.loadClass(name, false);
                 }
             }
@@ -107,12 +108,13 @@ public class ModularClassLoaderOld extends ClassLoader {
         }
     }
 
-    private boolean shouldLoadByPlatformClassLoader(String name) {
+    protected boolean shouldLoadByPlatformClassLoader(String name) {
         return name.startsWith("java") || name.startsWith("jdk") ||
+//                || name.startsWith(MODULAR_PACKAGE)
                 excludedClassPackages.stream().anyMatch(name::startsWith);
     }
 
-    private List<URL> getJavaClassPath() {
+    private static List<URL> getJavaClassPath() {
         String classPath = System.getProperty("java.class.path");
         return Arrays.stream(classPath.split(File.pathSeparator))
                 .map(path -> {
@@ -125,25 +127,26 @@ public class ModularClassLoaderOld extends ClassLoader {
                 .toList();
     }
 
-    private Class<?> loadClassFromUrls(String name) throws ClassNotFoundException {
-
-        String path = name.replace('.', File.separatorChar) + ".class";
-        for (URL classPathUrl : classPathUrls) {
-//            String file = classPathUrl.toString();
-            String formattedUrlStr = classPathUrl.toString();
-            if (formattedUrlStr.endsWith(".jar")) {
-                formattedUrlStr = "jar:%s!/%s".formatted(formattedUrlStr, path);
-            } else {
-                formattedUrlStr = formattedUrlStr.endsWith("/") ? formattedUrlStr + path : formattedUrlStr + "/" + path;
-            }
-            try (InputStream is = new URL(formattedUrlStr).openConnection().getInputStream();) {
-                byte[] b = is.readAllBytes();
-                return defineClass(null, b, 0, b.length);
-            } catch (IOException e) {
-//                log.debug("Error when loading class from {}", formattedUrlStr, e);
-            }
-        }
-        return null;
+//    private Class<?> loadClassFromUrls(String name) throws ClassNotFoundException {
+//
+//        String path = name.replace('.', File.separatorChar) + ".class";
+//        for (URL classPathUrl : classPathUrls) {
+////            String file = classPathUrl.toString();
+//            String formattedUrlStr = classPathUrl.toString();
+//            if (formattedUrlStr.endsWith(".jar")) {
+//                formattedUrlStr = "jar:%s!/%s".formatted(formattedUrlStr, path);
+//            } else {
+//                formattedUrlStr = formattedUrlStr.endsWith("/") ? formattedUrlStr + path : formattedUrlStr + "/" + path;
+//            }
+//            try (InputStream is = new URL(formattedUrlStr).openConnection().getInputStream();) {
+//                byte[] b = is.readAllBytes();
+//                return defineClass(null, b, 0, b.length);
+//            } catch (IOException e) {
+////                log.debug("Error when loading class from {}", formattedUrlStr, e);
+//            }
+//        }
+//        return null;
+//    }
 //        try (URLClassLoader urlClassLoader = new URLClassLoader(this.classPathUrls.toArray(URL[]::new), getParent());
 //             InputStream is = urlClassLoader.getResourceAsStream(path);
 //        ){
@@ -172,5 +175,4 @@ public class ModularClassLoaderOld extends ClassLoader {
 //    public static void main(String[] args) throws ClassNotFoundException {
 //        new CustomClassLoader().loadClass("com.example.vtweb.ModularMain");
 //    }
-    }
 }

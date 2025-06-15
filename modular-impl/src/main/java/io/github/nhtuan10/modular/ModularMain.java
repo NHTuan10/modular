@@ -1,6 +1,6 @@
 //package io.github.nhtuan10.modular;
 //
-//import io.github.nhtuan10.modular.classloader.ModuleLoader;
+//import io.github.nhtuan10.modular.api.module.ModuleLoader;
 //import lombok.extern.slf4j.Slf4j;
 //
 //import java.lang.reflect.InvocationTargetException;
