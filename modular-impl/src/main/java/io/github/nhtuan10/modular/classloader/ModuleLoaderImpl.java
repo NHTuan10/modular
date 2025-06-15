@@ -50,6 +50,10 @@ public class ModuleLoaderImpl implements ModuleLoader {
     private volatile static ModuleLoader instance;
     private static final Object lock = new Object();
 
+    public static ModuleLoader getInstance() {
+        return ModuleLoaderImpl.getInstance(ModuleLoaderImpl.ModuleLoaderConfiguration.builder().build());
+    }
+
 
     public static ModuleLoader getInstance(ModuleLoaderConfiguration configuration) {
         if (instance == null) {
