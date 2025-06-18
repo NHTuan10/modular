@@ -53,6 +53,11 @@ public class ModularClassLoader extends URLClassLoader {
 //        return this;
 //    }
 
+    @Override
+    public String getName() {
+        return this.getClass().getName() + "[" + moduleName + "]";
+    }
+
     public URLClassLoader getUrlClassLoader() {
         return new URLClassLoader(this.classPathUrls.toArray(URL[]::new));
     }

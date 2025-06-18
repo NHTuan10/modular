@@ -3,12 +3,18 @@ package io.github.nhtuan10.modular.api.module;
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import lombok.*;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.regex.Pattern;
 
 public interface ModuleLoader {
+
+    String MODULAR_IMPL_CLASS_CONFIG_FILE = "META-INF/services/io.github.nhtuan10.modular.api.module.ModuleLoader";
+    Pattern classLoaderNamePattern = Pattern.compile("^io.github.nhtuan10.modular.module.ModularClassLoader\\[.+\\]$");
+
     static ModuleLoader getInstance() {
         try {
             Class<?> implementationClass = getImplementationClass();
@@ -19,12 +25,24 @@ public interface ModuleLoader {
     }
 
     static Class<?> getImplementationClass() {
-        ServiceLoader<ModuleLoader> loader = ServiceLoader.load(ModuleLoader.class);
-        if (loader.findFirst().isPresent()) {
-            ModuleLoader moduleLoader = loader.findFirst().get();
-            return moduleLoader.getClass();
-        } else {
-            throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation class");
+//        ServiceLoader<ModuleLoader> loader = ServiceLoader.load(ModuleLoader.class);
+//        if (loader.findFirst().isPresent()) {
+//            ModuleLoader moduleLoader = loader.findFirst().get();
+//            return moduleLoader.getClass();
+//        }
+//        else {
+//            throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation class");
+//        }
+        try (InputStream is = ModuleLoader.class.getClassLoader().getResourceAsStream(MODULAR_IMPL_CLASS_CONFIG_FILE)){
+            if (is != null) {
+                String clazz = new String(is.readAllBytes());
+                return Class.forName(clazz);
+            }
+            else {
+                throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation class");
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation class", e);
         }
     }
 
@@ -55,6 +73,15 @@ public interface ModuleLoader {
     CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, String locationUri, String mainClass, String packageToScan);
 
     boolean unloadModule(String moduleName);
+
+    static boolean isManaged(Object object){
+        return isManaged(object.getClass());
+    }
+
+    static boolean isManaged(Class<?> clazz){
+        String classLoaderName = clazz.getClassLoader().getName();
+        return classLoaderName != null && classLoaderNamePattern.matcher(classLoaderName).matches();
+    }
 
     enum LoadStatus {
         LOADING,

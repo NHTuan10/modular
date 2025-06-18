@@ -8,11 +8,13 @@ import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.modular.classloader.MavenArtifactsResolver;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
 import io.github.nhtuan10.modular.proxy.ServiceInvocationInterceptor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;
+import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -245,6 +247,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     private CompletableFuture<ModuleDetail> startModule(String moduleName, String locationUri, boolean lazyInit, String mainClass, String packageToScan, boolean awaitMainClass) {
+        assert (moduleName != null && StringUtils.isNotBlank(moduleName)) : "Module name cannot be null or empty";
         CompletableFuture<ModuleDetail> moduleDetailCompletableFuture = new CompletableFuture<>();
         if (!moduleDetailMap.containsKey(moduleName)) {
             CountDownLatch await = new CountDownLatch(1);
@@ -258,6 +261,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                     if (mainClass != null) {
                         try {
                             loadClass(moduleName, mainClass).getDeclaredMethod("main", String[].class).invoke(null, (Object) new String[]{});
+                            notifyModuleReady(moduleName);
                             moduleDetailCompletableFuture.complete(moduleDetail);
                             log.info("Finish loading module '{}'", moduleName);
                             if (awaitMainClass) {
@@ -266,9 +270,10 @@ public class ModuleLoaderImpl implements ModuleLoader {
                             }
                         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                                  ClassNotFoundException | InterruptedException e) {
-                            throw new ModuleLoadRuntimeException("Error starting module",e);
+                            throw new ModuleLoadRuntimeException("Error starting module", e);
                         }
                     } else {
+                        notifyModuleReady(moduleName);
                         moduleDetailCompletableFuture.complete(moduleDetail);
                         log.info("Finish loading module '{}'", moduleName);
                     }
@@ -290,13 +295,15 @@ public class ModuleLoaderImpl implements ModuleLoader {
     @Override
     public ModuleDetail startModuleSync(String moduleName, String locationUri, String packageToScan) {
         CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUri, false, null, packageToScan, false);
-        return cf.join();
+//        return cf.join();
+        return awaitModuleReady(moduleName, cf);
     }
 
     @Override
     public ModuleDetail startModuleSyncWithMainClass(String moduleName, String locationUri, String mainClass, String packageToScan) {
         CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUri, false, mainClass, packageToScan, false);
-        return cf.join();
+//        return cf.join();
+        return awaitModuleReady(moduleName, cf);
     }
 
     @Override
@@ -350,16 +357,25 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return false;
     }
 
-//    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, String locationUri, String mainClass) {
+    //    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, String locationUri, String mainClass) {
 //        return startSpringModuleAsyncWithMainClass(moduleName, locationUri, mainClass, "*");
 //    }
+    @SneakyThrows
+    private ModuleDetail awaitModuleReady(String moduleName, CompletableFuture<ModuleDetail> cf) {
+        ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
+        moduleDetail.getReadyLatch().await();
+        return moduleDetail;
+//        return cf.join();
+    }
 
     private ModuleDetail awaitSpringApplicationContextReady(String moduleName, CompletableFuture<ModuleDetail> completableFuture) {
 //        ModuleDetail moduleDetail = completableFuture
 //                .exceptionally(t -> {
 //                    throw new RuntimeException(t);
 //                }).get();
-        return completableFuture.join();
+//        return completableFuture.join();
+        return awaitModuleReady(moduleName, completableFuture);
+
 //        try {
 //            moduleDetail.readyLatch.await();
 //        } catch (InterruptedException e) {
