@@ -6,7 +6,7 @@
 
     <groupId>io.github.nhtuan10</groupId>
     <artifactId>modular</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <packaging>pom</packaging>
     <!--    <packaging>jar</packaging>-->
     <prerequisites>
@@ -16,9 +16,9 @@
         <module>modular-impl</module>
         <module>modular-api</module>
         <module>modular-spring</module>
-        <module>modular-sample-core</module>
-        <module>modular-sample-plugin</module>
-        <module>modular-sample-api</module>
+<!--        <module>modular-sample-core</module>-->
+<!--        <module>modular-sample-plugin</module>-->
+<!--        <module>modular-sample-api</module>-->
     </modules>
 
     <properties>
@@ -78,4 +78,17 @@
         <!--                </dependency>-->
 
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.8.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
