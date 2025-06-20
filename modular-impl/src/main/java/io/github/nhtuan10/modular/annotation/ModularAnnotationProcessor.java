@@ -9,6 +9,7 @@ import io.github.nhtuan10.modular.model.ModularServiceHolder;
 import io.github.classgraph.*;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -27,7 +28,7 @@ public class ModularAnnotationProcessor {
 
     public ModularAnnotationProcessor(ModularClassLoader modularClassLoader) {
         this.modularClassLoader = modularClassLoader;
-        this.container = new ConcurrentHashMap<Class<?>, Collection<ModularServiceHolder>>();
+        this.container = new ConcurrentHashMap<>();
     }
 
     public Map<Class<?>, Collection<ModularServiceHolder>> getModularServices() {
@@ -110,23 +111,25 @@ public class ModularAnnotationProcessor {
 
     void annotationScan(String pkg, String configurationAnnotation, String serviceAnnotation, boolean lazyInit) throws ProxyCreationException {
         // TODO: need to handle multiple interfaces too
-        try (ScanResult scanResult =
-                     new ClassGraph()
+        if (StringUtils.isNotBlank(pkg)) {
+            try (ScanResult scanResult =
+                         new ClassGraph()
 //                             .addClassLoader(this.classLoader)
-                             .overrideClasspath(this.modularClassLoader.getClassPathUrls())
-                             .overrideClassLoaders(this.modularClassLoader)
+                                 .overrideClasspath(this.modularClassLoader.getClassPathUrls())
+                                 .overrideClassLoaders(this.modularClassLoader)
 //                             .verbose()               // Log to stderr
-                             .enableAllInfo()         // Scan classes, methods, fields, annotations
-                             .acceptPackages(pkg)     // Scan package and subpackages (omit to scan all packages)
-                             .scan()) {               // Start the scan
+                                 .enableAllInfo()         // Scan classes, methods, fields, annotations
+                                 .acceptPackages(pkg)     // Scan package and subpackages (omit to scan all packages)
+                                 .scan()) {               // Start the scan
 
-            processServiceAnnotation(serviceAnnotation, lazyInit, scanResult);
+                processServiceAnnotation(serviceAnnotation, lazyInit, scanResult);
 
-            processConfigurationAnnotation(configurationAnnotation, scanResult);
+                processConfigurationAnnotation(configurationAnnotation, scanResult);
 
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
-                 NoSuchMethodException e) {
-            throw new RuntimeException(e);
+            } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
+                     NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
