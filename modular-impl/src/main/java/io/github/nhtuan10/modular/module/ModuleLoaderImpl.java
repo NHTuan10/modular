@@ -79,7 +79,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
             case MVN:
                 loadModuleFromMaven(name, uri, packageToScan, lazyInit);
                 break;
-            case FILE:
+            case FILE, HTTP:
                 loadModuleFromFile(name, uri, packageToScan, lazyInit);
                 break;
             default:
