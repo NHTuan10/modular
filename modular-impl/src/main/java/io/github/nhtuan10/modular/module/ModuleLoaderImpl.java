@@ -67,36 +67,50 @@ public class ModuleLoaderImpl implements ModuleLoader {
     public ModuleLoaderImpl() {
     }
 
-    public void loadModule(String name, String locationUri, boolean lazyInit) throws MalformedURLException {
-        loadModule(name, locationUri, "*", lazyInit);
+    public void loadModule(String name, List<String> locationUris, boolean lazyInit) throws MalformedURLException {
+        loadModule(name, locationUris, "*", lazyInit);
     }
 
-    public void loadModule(String name, String locationUri, String packageToScan, boolean lazyInit) {
+    public void loadModule(String name, List<String> locationUris, String packageToScan, boolean lazyInit) {
         // Load module
-        URI uri = URI.create(locationUri);
-        log.info("Loading module from " + uri);
-        switch (ArtifactLocationType.valueOf(uri.getScheme().toUpperCase())) {
-            case MVN:
-                loadModuleFromMaven(name, uri, packageToScan, lazyInit);
-                break;
-            case FILE, HTTP:
-                loadModuleFromFile(name, uri, packageToScan, lazyInit);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported artifact location type: " + uri.getScheme());
+
+        List<URI> mavenUris = new ArrayList<>();
+        List<URL> urls = new ArrayList<>();
+        for (String location : locationUris) {
+            URI uri = URI.create(location);
+            log.info("Loading module from " + uri);
+            switch (ArtifactLocationType.valueOf(uri.getScheme().toUpperCase())) {
+                case MVN:
+                    mavenUris.add(uri);
+                    break;
+                case FILE, HTTP:
+                    try {
+                        urls.add(uri.toURL());
+                    } catch (MalformedURLException e) {
+                        throw new ModuleLoadRuntimeException("Error loading module %s from file %s with package %s".formatted(name, uri, packageToScan), e);
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported artifact location type: " + uri.getScheme());
+            }
         }
+        if (!mavenUris.isEmpty()) {
+            urls.addAll(resolveMavenDeps(name, mavenUris, packageToScan, lazyInit));
+        }
+        loadModuleFromUrls(name, packageToScan, lazyInit, urls);
+
+
 //        synchronized (classLoader) {
 
 
 //        }
     }
 
-    private void loadModuleFromMaven(String name, URI uri, String packageToScan, boolean lazyInit) {
+    private List<URL> resolveMavenDeps(String name, List<URI> uris, String packageToScan, boolean lazyInit) {
         // Load module from Maven
-        String mvnArtifact = uri.getHost() + uri.getPath().replace("/", ":");
+        List<String> mvnArtifacts = uris.stream().map(uri -> uri.getHost() + uri.getPath().replace("/", ":")).toList();
 //        log.info("Loading module from Maven: {}", mvnArtifact);
-        List<URL> depUrls = new MavenArtifactsResolver<URL>().resolveMavenDeps(List.of(mvnArtifact), URL.class);
-        loadModuleFromUrls(name, packageToScan, lazyInit, depUrls);
+        return new MavenArtifactsResolver<URL>().resolveMavenDeps(mvnArtifacts, URL.class);
     }
 
     private void loadModuleFromUrls(String name, String packageToScan, boolean lazyInit, List<URL> depUrls) {
@@ -246,7 +260,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return proxy;
     }
 
-    private CompletableFuture<ModuleDetail> startModule(String moduleName, String locationUri, boolean lazyInit, String mainClass, String packageToScan, boolean awaitMainClass) {
+    private CompletableFuture<ModuleDetail> startModule(String moduleName, List<String> locationUris, boolean lazyInit, String mainClass, String packageToScan, boolean awaitMainClass) {
         assert (moduleName != null && StringUtils.isNotBlank(moduleName)) : "Module name cannot be null or empty";
         CompletableFuture<ModuleDetail> moduleDetailCompletableFuture = new CompletableFuture<>();
         if (!moduleDetailMap.containsKey(moduleName)) {
@@ -256,7 +270,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
             Thread t = new Thread(() -> {
                 try {
-                    loadModule(moduleName, locationUri, packageToScan, lazyInit);
+                    loadModule(moduleName, locationUris, packageToScan, lazyInit);
                     Thread.currentThread().setContextClassLoader(getClassLoader(moduleName));
                     if (mainClass != null) {
                         try {
@@ -293,63 +307,63 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     @Override
-    public ModuleDetail startModuleSync(String moduleName, String locationUri, String packageToScan) {
-        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUri, false, null, packageToScan, false);
+    public ModuleDetail startModuleSync(String moduleName, List<String> locationUris, String packageToScan) {
+        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, false, null, packageToScan, false);
 //        return cf.join();
         return awaitModuleReady(moduleName, cf);
     }
 
     @Override
-    public ModuleDetail startModuleSyncWithMainClass(String moduleName, String locationUri, String mainClass, String packageToScan) {
-        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUri, false, mainClass, packageToScan, false);
+    public ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, false, mainClass, packageToScan, false);
 //        return cf.join();
         return awaitModuleReady(moduleName, cf);
     }
 
     @Override
-    public CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, String locationUri, String packageToScan) {
-        return startModule(moduleName, locationUri, false, null, packageToScan, false);
+    public CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, List<String> locationUris, String packageToScan) {
+        return startModule(moduleName, locationUris, false, null, packageToScan, false);
     }
 
 //    public CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, String locationUri) {
-//        return startModuleAsync(moduleName, locationUri, "*");
+//        return startModuleAsync(moduleName, locationUris, "*");
 //    }
 
     @Override
-    public CompletableFuture<ModuleDetail> startModuleAsyncWithMainClass(String moduleName, String locationUri, String mainClass, String packageToScan) {
-        return startModule(moduleName, locationUri, false, mainClass, packageToScan, false);
+    public CompletableFuture<ModuleDetail> startModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+        return startModule(moduleName, locationUris, false, mainClass, packageToScan, false);
     }
 
     // Spring
 
     @Override
-    public ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, String locationUri, String mainClass, String packageToScan) {
-        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUri, true, mainClass, packageToScan, true);
+    public ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, true, mainClass, packageToScan, true);
         return awaitSpringApplicationContextReady(moduleName, cf);
     }
 
     @Override
-    public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, String locationUri, String mainClass, String packageToScan) {
-        CompletableFuture<ModuleDetail> completableFuture = startModule(moduleName, locationUri, true, mainClass, packageToScan, false);
+    public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+        CompletableFuture<ModuleDetail> completableFuture = startModule(moduleName, locationUris, true, mainClass, packageToScan, false);
         return awaitSpringApplicationContextReady(moduleName, completableFuture);
     }
 
-//    public void startSpringModuleSyncWithMainClassLoop(String moduleName, String locationUri, String mainClass) throws ExecutionException, InterruptedException {
-//        startSpringModuleSyncWithMainClassLoop(moduleName, locationUri, mainClass, "*");
+//    public void startSpringModuleSyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass) throws ExecutionException, InterruptedException {
+//        startSpringModuleSyncWithMainClassLoop(moduleName, locationUris, mainClass, "*");
 //    }
 
     @Override
-    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, String locationUri, String mainClass, String packageToScan) {
-        return startModule(moduleName, locationUri, true, mainClass, packageToScan, true);
+    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+        return startModule(moduleName, locationUris, true, mainClass, packageToScan, true);
     }
 
-//    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, String locationUri, String mainClass) {
-//        return startSpringModuleAsyncWithMainClassLoop(moduleName, locationUri, mainClass, "*");
+//    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass) {
+//        return startSpringModuleAsyncWithMainClassLoop(moduleName, locationUris, mainClass, "*");
 //    }
 
     @Override
-    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, String locationUri, String mainClass, String packageToScan) {
-        return startModule(moduleName, locationUri, true, mainClass, packageToScan, false);
+    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+        return startModule(moduleName, locationUris, true, mainClass, packageToScan, false);
     }
 
     @Override
@@ -357,8 +371,8 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return false;
     }
 
-    //    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, String locationUri, String mainClass) {
-//        return startSpringModuleAsyncWithMainClass(moduleName, locationUri, mainClass, "*");
+    //    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass) {
+//        return startSpringModuleAsyncWithMainClass(moduleName, locationUris, mainClass, "*");
 //    }
     @SneakyThrows
     private ModuleDetail awaitModuleReady(String moduleName, CompletableFuture<ModuleDetail> cf) {
@@ -383,8 +397,8 @@ public class ModuleLoaderImpl implements ModuleLoader {
 //        }
     }
 
-//    public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, String locationUri, String mainClass) {
-//        return startSpringModuleSyncWithMainClass(moduleName, locationUri, mainClass, "*");
+//    public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass) {
+//        return startSpringModuleSyncWithMainClass(moduleName, locationUris, mainClass, "*");
 //    }
 
     public void notifyModuleReady(String moduleName) {
