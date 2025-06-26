@@ -57,21 +57,21 @@ public interface ModuleLoader {
 
     }
 
-    ModuleDetail startModuleSync(String moduleName, List<String> locationUris, String packageToScan);
+    ModuleDetail startModuleSync(String moduleName, List<String> locationUris, List<String> packagesToScan);
 
-    ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan);
+    ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan);
 
-    CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, List<String> locationUris, String packageToScan);
+    CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, List<String> locationUris, List<String> packagesToScan);
 
-    CompletableFuture<ModuleDetail> startModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan);
+    CompletableFuture<ModuleDetail> startModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan);
 
-    ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, String packageToScan);
+    ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan);
 
-    ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan);
+    ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan);
 
-    CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, String packageToScan);
+    CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan);
 
-    CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan);
+    CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan);
 
     boolean unloadModule(String moduleName);
 

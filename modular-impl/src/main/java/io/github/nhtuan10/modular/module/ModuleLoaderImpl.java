@@ -68,12 +68,12 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     public void loadModule(String name, List<String> locationUris, boolean lazyInit) throws MalformedURLException {
-        loadModule(name, locationUris, "*", lazyInit);
+        loadModule(name, locationUris, List.of("*"), lazyInit);
     }
 
-    public void loadModule(String name, List<String> locationUris, String packageToScan, boolean lazyInit) {
+    public void loadModule(String name, List<String> locationUris, List<String> packagesToScan, boolean lazyInit) {
         // Load module
-
+        //TODO: do some validation
         List<URI> mavenUris = new ArrayList<>();
         List<URL> urls = new ArrayList<>();
         for (String location : locationUris) {
@@ -87,7 +87,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                     try {
                         urls.add(uri.toURL());
                     } catch (MalformedURLException e) {
-                        throw new ModuleLoadRuntimeException("Error loading module %s from file %s with package %s".formatted(name, uri, packageToScan), e);
+                        throw new ModuleLoadRuntimeException("Error loading module %s from file %s with package %s".formatted(name, uri, packagesToScan), e);
                     }
                     break;
                 default:
@@ -95,9 +95,9 @@ public class ModuleLoaderImpl implements ModuleLoader {
             }
         }
         if (!mavenUris.isEmpty()) {
-            urls.addAll(resolveMavenDeps(name, mavenUris, packageToScan, lazyInit));
+            urls.addAll(resolveMavenDeps(mavenUris));
         }
-        loadModuleFromUrls(name, packageToScan, lazyInit, urls);
+        loadModuleFromUrls(name, packagesToScan, lazyInit, urls);
 
 
 //        synchronized (classLoader) {
@@ -106,14 +106,14 @@ public class ModuleLoaderImpl implements ModuleLoader {
 //        }
     }
 
-    private List<URL> resolveMavenDeps(String name, List<URI> uris, String packageToScan, boolean lazyInit) {
+    private List<URL> resolveMavenDeps(List<URI> uris) {
         // Load module from Maven
         List<String> mvnArtifacts = uris.stream().map(uri -> uri.getHost() + uri.getPath().replace("/", ":")).toList();
 //        log.info("Loading module from Maven: {}", mvnArtifact);
         return new MavenArtifactsResolver<URL>().resolveMavenDeps(mvnArtifacts, URL.class);
     }
 
-    private void loadModuleFromUrls(String name, String packageToScan, boolean lazyInit, List<URL> depUrls) {
+    private void loadModuleFromUrls(String name, List<String> packagesToScan, boolean lazyInit, List<URL> depUrls) {
         ModularClassLoader classLoader = new ModularClassLoader(name, depUrls);
 //        classLoader.setExcludedClassPackages(Set.of(MODULAR_ANNOTATION_PKG));
         ModuleDetail moduleDetail = moduleDetailMap.get(name);
@@ -121,7 +121,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
         ModularAnnotationProcessor m = new ModularAnnotationProcessor(classLoader);
         try {
-            m.annotationProcess(packageToScan, lazyInit);
+            m.annotationProcess(packagesToScan, lazyInit);
 //            m.configurationAnnotationProcessor(packageToScan);
             addModularServices(m.getModularServices());
         }
@@ -151,13 +151,13 @@ public class ModuleLoaderImpl implements ModuleLoader {
         }
     }
 
-    private void loadModuleFromFile(String name, URI uri, String packageToScan, boolean lazyInit) {
+    private void loadModuleFromFile(String name, URI uri, List<String> packagesToScan, boolean lazyInit) {
         // Load module from file
-        log.debug("Loading module {} from file {} with package", name, uri, packageToScan);
+        log.debug("Loading module {} from file {} with package", name, uri, packagesToScan);
         try {
-            loadModuleFromUrls(name, packageToScan, lazyInit, List.of(uri.toURL()));
+            loadModuleFromUrls(name, packagesToScan, lazyInit, List.of(uri.toURL()));
         } catch (MalformedURLException e) {
-            throw new ModuleLoadRuntimeException("Error loading module %s from file %s with package %s".formatted(name, uri, packageToScan), e);
+            throw new ModuleLoadRuntimeException("Error loading module %s from file %s with package %s".formatted(name, uri, packagesToScan), e);
         }
     }
 
@@ -260,7 +260,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return proxy;
     }
 
-    private CompletableFuture<ModuleDetail> startModule(String moduleName, List<String> locationUris, boolean lazyInit, String mainClass, String packageToScan, boolean awaitMainClass) {
+    private CompletableFuture<ModuleDetail> startModule(String moduleName, List<String> locationUris, boolean lazyInit, String mainClass, List<String> packagesToScan, boolean awaitMainClass) {
         assert (moduleName != null && StringUtils.isNotBlank(moduleName)) : "Module name cannot be null or empty";
         CompletableFuture<ModuleDetail> moduleDetailCompletableFuture = new CompletableFuture<>();
         if (!moduleDetailMap.containsKey(moduleName)) {
@@ -270,7 +270,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
             Thread t = new Thread(() -> {
                 try {
-                    loadModule(moduleName, locationUris, packageToScan, lazyInit);
+                    loadModule(moduleName, locationUris, packagesToScan, lazyInit);
                     Thread.currentThread().setContextClassLoader(getClassLoader(moduleName));
                     if (mainClass != null) {
                         try {
@@ -307,22 +307,22 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     @Override
-    public ModuleDetail startModuleSync(String moduleName, List<String> locationUris, String packageToScan) {
-        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, false, null, packageToScan, false);
+    public ModuleDetail startModuleSync(String moduleName, List<String> locationUris, List<String> packagesToScan) {
+        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, false, null, packagesToScan, false);
 //        return cf.join();
         return awaitModuleReady(moduleName, cf);
     }
 
     @Override
-    public ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
-        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, false, mainClass, packageToScan, false);
+    public ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan) {
+        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, false, mainClass, packagesToScan, false);
 //        return cf.join();
         return awaitModuleReady(moduleName, cf);
     }
 
     @Override
-    public CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, List<String> locationUris, String packageToScan) {
-        return startModule(moduleName, locationUris, false, null, packageToScan, false);
+    public CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, List<String> locationUris, List<String> packagesToScan) {
+        return startModule(moduleName, locationUris, false, null, packagesToScan, false);
     }
 
 //    public CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, String locationUri) {
@@ -330,20 +330,20 @@ public class ModuleLoaderImpl implements ModuleLoader {
 //    }
 
     @Override
-    public CompletableFuture<ModuleDetail> startModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+    public CompletableFuture<ModuleDetail> startModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
         return startModule(moduleName, locationUris, false, mainClass, packageToScan, false);
     }
 
     // Spring
 
     @Override
-    public ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+    public ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
         CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, true, mainClass, packageToScan, true);
         return awaitSpringApplicationContextReady(moduleName, cf);
     }
 
     @Override
-    public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+    public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
         CompletableFuture<ModuleDetail> completableFuture = startModule(moduleName, locationUris, true, mainClass, packageToScan, false);
         return awaitSpringApplicationContextReady(moduleName, completableFuture);
     }
@@ -353,7 +353,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
 //    }
 
     @Override
-    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
         return startModule(moduleName, locationUris, true, mainClass, packageToScan, true);
     }
 
@@ -362,7 +362,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
 //    }
 
     @Override
-    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, String packageToScan) {
+    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
         return startModule(moduleName, locationUris, true, mainClass, packageToScan, false);
     }
 

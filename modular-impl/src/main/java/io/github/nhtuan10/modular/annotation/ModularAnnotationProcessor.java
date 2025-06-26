@@ -105,13 +105,13 @@ public class ModularAnnotationProcessor {
 //        }
 //    }
 
-    public void annotationProcess(String pkg, boolean lazyInit) throws ProxyCreationException {
-        annotationScan(pkg, ModularConfiguration.class.getName(), ModularService.class.getName(), lazyInit);
+    public void annotationProcess(List<String> packages, boolean lazyInit) throws ProxyCreationException {
+        annotationScan(packages, ModularConfiguration.class.getName(), ModularService.class.getName(), lazyInit);
     }
 
-    void annotationScan(String pkg, String configurationAnnotation, String serviceAnnotation, boolean lazyInit) throws ProxyCreationException {
+    void annotationScan(List<String> packages, String configurationAnnotation, String serviceAnnotation, boolean lazyInit) throws ProxyCreationException {
         // TODO: need to handle multiple interfaces too
-        if (StringUtils.isNotBlank(pkg)) {
+        if (packages != null && !packages.isEmpty() && StringUtils.isNotBlank(configurationAnnotation) && StringUtils.isNotBlank(serviceAnnotation)) {
             try (ScanResult scanResult =
                          new ClassGraph()
 //                             .addClassLoader(this.classLoader)
@@ -119,7 +119,7 @@ public class ModularAnnotationProcessor {
                                  .overrideClassLoaders(this.modularClassLoader)
 //                             .verbose()               // Log to stderr
                                  .enableAllInfo()         // Scan classes, methods, fields, annotations
-                                 .acceptPackages(pkg)     // Scan package and subpackages (omit to scan all packages)
+                                 .acceptPackages(packages.toArray(new String[0]))     // Scan package and subpackages (omit to scan all packages)
                                  .scan()) {               // Start the scan
 
                 processServiceAnnotation(serviceAnnotation, lazyInit, scanResult);
