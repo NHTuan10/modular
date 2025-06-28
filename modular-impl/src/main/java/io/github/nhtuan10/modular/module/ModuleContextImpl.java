@@ -1,5 +1,6 @@
 package io.github.nhtuan10.modular.module;
 
+import io.github.nhtuan10.modular.api.exception.ServiceLookUpRuntimeException;
 import io.github.nhtuan10.modular.api.module.ModuleContext;
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import lombok.AllArgsConstructor;
@@ -11,12 +12,20 @@ import java.util.List;
 public class ModuleContextImpl implements ModuleContext {
     private Object moduleLoader;
 
-    public <S> List<S> getModularServicesFromSpring(Class<?> clazz) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        return (List<S>) moduleLoader.getClass().getDeclaredMethod("getModularServices", Class.class, boolean.class).invoke(moduleLoader, clazz, true);
+    public <S> List<S> getModularServicesFromSpring(Class<?> clazz) {
+        try {
+            return (List<S>) moduleLoader.getClass().getDeclaredMethod("getModularServices", Class.class, boolean.class).invoke(moduleLoader, clazz, true);
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            throw new ServiceLookUpRuntimeException("Failed to get modular services from Spring for class " + clazz.getName(), e);
+        }
     }
 
-    public <S> List<S> getModularServices(Class<?> clazz) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        return (List<S>) moduleLoader.getClass().getDeclaredMethod("getModularServices", Class.class, boolean.class).invoke(moduleLoader, clazz, false);
+    public <S> List<S> getModularServices(Class<?> clazz) {
+        try {
+            return (List<S>) moduleLoader.getClass().getDeclaredMethod("getModularServices", Class.class, boolean.class).invoke(moduleLoader, clazz, false);
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            throw new ServiceLookUpRuntimeException("Failed to get modular services for class " + clazz.getName(), e);
+        }
     }
 
     @Override

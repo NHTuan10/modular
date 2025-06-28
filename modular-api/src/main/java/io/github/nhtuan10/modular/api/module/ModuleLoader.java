@@ -48,9 +48,9 @@ public interface ModuleLoader {
     }
 
     static ModuleContext getContext() {
-        ModuleLoader moduleLoader = getInstance();
         try {
-            return (ModuleContext) moduleLoader.getClass().getDeclaredMethod("getContext").invoke(null);
+            Class<?> moduleLoaderImplClass = getInstance().getClass();
+            return (ModuleContext) moduleLoaderImplClass.getDeclaredMethod("getContext").invoke(null);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new ModuleLoadRuntimeException("Error getting ModuleContext", e);
         }
