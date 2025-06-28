@@ -9,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 public interface ModuleLoader {
@@ -85,6 +86,7 @@ public interface ModuleLoader {
     }
 
     enum LoadStatus {
+        NEW,
         LOADING,
         LOADED,
         FAILED,

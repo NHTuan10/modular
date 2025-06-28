@@ -21,6 +21,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -73,17 +75,30 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
     public void loadModule(String name, List<String> locationUris, List<String> packagesToScan, boolean lazyInit) {
         // Load module
-        //TODO: do some validation
+        //TODO: do some validation, check if file not or maven artifacts not exits
         List<URI> mavenUris = new ArrayList<>();
         List<URL> urls = new ArrayList<>();
         for (String location : locationUris) {
             URI uri = URI.create(location);
-            log.info("Loading module from " + uri);
+            log.info("Loading module {} from URI {}", name, uri);
             switch (ArtifactLocationType.valueOf(uri.getScheme().toUpperCase())) {
                 case MVN:
                     mavenUris.add(uri);
                     break;
-                case FILE, HTTP:
+                case FILE:
+                    try {
+                        Path path = Paths.get(uri);
+                        if (path.toFile().exists()) {
+                            urls.add(uri.toURL());
+                        }
+                        else{
+                            throw new ModuleLoadRuntimeException("File %s does not exist".formatted(path));
+                        }
+                    } catch (MalformedURLException e) {
+                        throw new ModuleLoadRuntimeException("Error loading module %s from file %s with package %s".formatted(name, uri, packagesToScan), e);
+                    }
+                    break;
+                case HTTP:
                     try {
                         urls.add(uri.toURL());
                     } catch (MalformedURLException e) {
@@ -275,8 +290,8 @@ public class ModuleLoaderImpl implements ModuleLoader {
                     if (mainClass != null) {
                         try {
                             loadClass(moduleName, mainClass).getDeclaredMethod("main", String[].class).invoke(null, (Object) new String[]{});
-                            notifyModuleReady(moduleName);
                             moduleDetailCompletableFuture.complete(moduleDetail);
+                            notifyModuleReady(moduleName);
                             log.info("Finish loading module '{}'", moduleName);
                             if (awaitMainClass) {
                                 Runtime.getRuntime().addShutdownHook(new Thread(await::countDown));
@@ -284,17 +299,21 @@ public class ModuleLoaderImpl implements ModuleLoader {
                             }
                         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                                  ClassNotFoundException | InterruptedException e) {
-                            throw new ModuleLoadRuntimeException("Error starting module", e);
+                            ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException("Error starting module '%s'".formatted(moduleName), e);
+                            moduleDetailCompletableFuture.completeExceptionally(exception);
+                            notifyModuleReady(moduleName);
+                            throw exception;
                         }
                     } else {
-                        notifyModuleReady(moduleName);
                         moduleDetailCompletableFuture.complete(moduleDetail);
+                        notifyModuleReady(moduleName);
                         log.info("Finish loading module '{}'", moduleName);
                     }
                 } catch (Exception e) {
                     ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException("Failed to load module '" + moduleName, e);
                     moduleDetailCompletableFuture.completeExceptionally(exception);
-                    throw e;
+                    notifyModuleReady(moduleName);
+                    throw exception;
                 }
             });
             t.start();
@@ -302,9 +321,14 @@ public class ModuleLoaderImpl implements ModuleLoader {
         } else {
             ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException("Module '" + moduleName + "' is already loaded");
             moduleDetailCompletableFuture.completeExceptionally(exception);
+            notifyModuleReady(moduleName);
             throw exception;
         }
     }
+
+//    static interface StartModuleTask extends Runnable{
+//        void run() throws Exception;
+//    }
 
     @Override
     public ModuleDetail startModuleSync(String moduleName, List<String> locationUris, List<String> packagesToScan) {
@@ -374,15 +398,35 @@ public class ModuleLoaderImpl implements ModuleLoader {
     //    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass) {
 //        return startSpringModuleAsyncWithMainClass(moduleName, locationUris, mainClass, "*");
 //    }
-    @SneakyThrows
+
     private ModuleDetail awaitModuleReady(String moduleName, CompletableFuture<ModuleDetail> cf) {
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
-        moduleDetail.getReadyLatch().await();
+//        cf.exceptionally((throwable) -> {
+//            moduleDetail.setLoadStatus(LoadStatus.FAILED);
+//            if (throwable instanceof RuntimeException runtimeException) {
+//                throw runtimeException;
+//            }else {
+//                throw new RuntimeException(throwable);
+//            }
+//        });
+        try {
+            moduleDetail.getReadyLatch().await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted while waiting for module %s ready".formatted(moduleName), e);
+        }
+        if (cf.isCompletedExceptionally()) {
+            moduleDetail.setLoadStatus(LoadStatus.FAILED);
+            cf.join();
+        } else {
+            moduleDetail.setLoadStatus(LoadStatus.LOADED);
+        }
+
         return moduleDetail;
 //        return cf.join();
     }
 
-    private ModuleDetail awaitSpringApplicationContextReady(String moduleName, CompletableFuture<ModuleDetail> completableFuture) {
+    private ModuleDetail awaitSpringApplicationContextReady(String
+                                                                    moduleName, CompletableFuture<ModuleDetail> completableFuture) {
 //        ModuleDetail moduleDetail = completableFuture
 //                .exceptionally(t -> {
 //                    throw new RuntimeException(t);
