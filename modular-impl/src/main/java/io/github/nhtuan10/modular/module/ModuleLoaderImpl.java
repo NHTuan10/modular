@@ -2,13 +2,13 @@ package io.github.nhtuan10.modular.module;
 
 import io.github.nhtuan10.modular.annotation.ModularAnnotationProcessor;
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
+import io.github.nhtuan10.modular.api.exception.ServiceLookUpRuntimeException;
 import io.github.nhtuan10.modular.api.model.ArtifactLocationType;
 import io.github.nhtuan10.modular.api.module.ModuleContext;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.modular.classloader.MavenArtifactsResolver;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
 import io.github.nhtuan10.modular.proxy.ServiceInvocationInterceptor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -90,8 +91,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                         Path path = Paths.get(uri);
                         if (path.toFile().exists()) {
                             urls.add(uri.toURL());
-                        }
-                        else{
+                        } else {
                             throw new ModuleLoadRuntimeException("File %s does not exist".formatted(path));
                         }
                     } catch (MalformedURLException e) {
@@ -177,9 +177,11 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     public static ModuleContext getContext() {
-        Object moduleLoader = null;
+        Object moduleLoader;
         try {
-            moduleLoader = Class.forName(ModuleLoaderImpl.class.getName(), true, ClassLoader.getSystemClassLoader()).getDeclaredMethod("getInstance").invoke(null);
+            Method m = Class.forName(ModuleLoaderImpl.class.getName(), true, ClassLoader.getSystemClassLoader()).getDeclaredMethod("getInstance");
+            m.setAccessible(true);
+            moduleLoader = m.invoke(null);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                  ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -207,31 +209,35 @@ public class ModuleLoaderImpl implements ModuleLoader {
 //        return loadedModularServices.get(key).stream().findFirst().map(ModularServiceHolder::getProxyObject).orElse(null);
 //    }
 
-    public <I> List<I> getModularServices(Class<?> apiClass, boolean fromSpringAppContext) {
+    public <I> List<I> getModularServices(Class<I> apiClass, boolean fromSpringAppContext) {
         Collection<ModularServiceHolder> serviceHolders = loadedModularServices2.get(apiClass.getName());
-        if (!loadedProxyObjects.containsKey(apiClass)) {
-            List<I> proxyObjects = serviceHolders.stream()
+        if (serviceHolders != null) {
+            if (!loadedProxyObjects.containsKey(apiClass)) {
+                List<I> proxyObjects = serviceHolders.stream()
 //                .map(ModularServiceHolder::getServiceClass)
-                    .map(serviceHolder -> {
-                        try {
-                            Object service;
-                            if (fromSpringAppContext) {
-                                Class serviceClass = serviceHolder.getServiceClass();
-                                Class serviceAppContextProvide = Class.forName(APPLICATION_CONTEXT_PROVIDER, true, serviceClass.getClassLoader());
-                                service = serviceAppContextProvide.getDeclaredMethod("getBean", Class.class).invoke(null, serviceClass);
-                            } else {
-                                service = serviceHolder.getInstance();
+                        .map(serviceHolder -> {
+                            try {
+                                Object service;
+                                if (fromSpringAppContext) {
+                                    Class serviceClass = serviceHolder.getServiceClass();
+                                    Class serviceAppContextProvide = Class.forName(APPLICATION_CONTEXT_PROVIDER, true, serviceClass.getClassLoader());
+                                    service = serviceAppContextProvide.getMethod("getBean", Class.class).invoke(null, serviceClass);
+                                } else {
+                                    service = serviceHolder.getInstance();
+                                }
+                                return this.<I>createProxyObject(apiClass, service);
+                            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                     NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
+                                return null;
                             }
-                            return this.<I>createProxyObject(apiClass, service);
-                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                                 NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
-                            return null;
-                        }
-                    }).toList();
-            loadedProxyObjects.put(apiClass, (List<Object>) proxyObjects);
-            return proxyObjects;
+                        }).toList();
+                loadedProxyObjects.put(apiClass, (List<Object>) proxyObjects);
+                return proxyObjects;
+            } else {
+                return (List<I>) loadedProxyObjects.get(apiClass);
+            }
         } else {
-            return (List<I>) loadedProxyObjects.get(apiClass);
+            throw new ServiceLookUpRuntimeException("Class '%s' is not registered as a Modular service. Please make sure this class is in the scanned packages and have @ModularService annotation".formatted(apiClass.getName()));
         }
     }
 
@@ -256,14 +262,19 @@ public class ModuleLoaderImpl implements ModuleLoader {
 //            return (List<I>) loadedProxyObjects.get(apiClass);
 //        }
 //    }
-    private <I> I createProxyObject(Class<?> apiClass, Object service) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
+    private <I> I createProxyObject(Class<I> apiClass, Object service) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
         ClassLoader apiClassLoader = apiClass.getClassLoader();
-        Object svcInvocationInterceor = apiClassLoader.loadClass(ServiceInvocationInterceptor.class.getName())
+        Object svcInvocationInterceptor = apiClassLoader.loadClass(ServiceInvocationInterceptor.class.getName())
                 .getConstructor(Object.class).newInstance(service);
-        Class<I> c = (Class<I>) new ByteBuddy()
-                .<I>subclass(apiClass)
-                .method(ElementMatchers.any())
-                .intercept(MethodDelegation.to(svcInvocationInterceor))
+        Object equalsMethodInterceptor = apiClassLoader.loadClass(ServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName())
+                .getConstructor(Object.class).newInstance(service);
+        Class<? extends I> c = new ByteBuddy()
+                .subclass(apiClass)
+//                .name(apiClass.get() + "$Proxy")
+                .method(ElementMatchers.isEquals())
+                    .intercept(MethodDelegation.to(equalsMethodInterceptor))
+                .method(ElementMatchers.any().and(ElementMatchers.not(ElementMatchers.isEquals())))
+                    .intercept(MethodDelegation.to(svcInvocationInterceptor))
                 .defineField(PROXY_TARGET_FIELD_NAME, Object.class, Visibility.PRIVATE)
                 .make()
                 .load(apiClassLoader)

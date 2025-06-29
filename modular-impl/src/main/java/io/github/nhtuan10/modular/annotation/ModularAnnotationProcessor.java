@@ -202,7 +202,9 @@ public class ModularAnnotationProcessor {
                     for (ClassInfo interfaceClassInfo : interfacesClassInfoList) {
                         if (interfaceClassInfo.hasAnnotation(ModularService.class.getName())) {
                             Class<?> configClass = configClassInfo.loadClass();
-                            Object object = configClass.getDeclaredMethod(methodInfo.getName()).invoke(configClass.getDeclaredConstructor().newInstance());
+                            Method method =  configClass.getDeclaredMethod(methodInfo.getName());
+                            method.setAccessible(true);
+                            Object object = method.invoke(configClass.getDeclaredConstructor().newInstance());
                             Class<?> interfaceClass = interfaceClassInfo.loadClass();
                             if (!container.containsKey(interfaceClass)) {
                                 container.put(interfaceClass, new HashSet<>());

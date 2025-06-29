@@ -16,6 +16,15 @@ public class Main {
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT.jar",
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT/my-kafka-tool-main-0.1.1-SNAPSHOT.jar" ), "io.github.nhtuan10.mykafkatool.MyKafkaToolLauncher", "");
         SampleService sampleService = Modular.<SampleService>getModularServices(SampleService.class).get(0);
+        System.out.println("Equals: " + sampleService.equals(sampleService));
+        System.out.println("Equals: " + sampleService.equals(new SampleService() {
+            @Override
+            public void test() {
+
+            }
+        }));
+        sampleService.hashCode();
         sampleService.test();
+        sampleService.testDefault();
     }
 }

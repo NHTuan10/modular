@@ -14,7 +14,7 @@ public class ModuleContextImpl implements ModuleContext {
 
     public <S> List<S> getModularServicesFromSpring(Class<?> clazz) {
         try {
-            return (List<S>) moduleLoader.getClass().getDeclaredMethod("getModularServices", Class.class, boolean.class).invoke(moduleLoader, clazz, true);
+            return (List<S>) moduleLoader.getClass().getMethod("getModularServices", Class.class, boolean.class).invoke(moduleLoader, clazz, true);
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new ServiceLookUpRuntimeException("Failed to get modular services from Spring for class " + clazz.getName(), e);
         }
@@ -22,7 +22,7 @@ public class ModuleContextImpl implements ModuleContext {
 
     public <S> List<S> getModularServices(Class<?> clazz) {
         try {
-            return (List<S>) moduleLoader.getClass().getDeclaredMethod("getModularServices", Class.class, boolean.class).invoke(moduleLoader, clazz, false);
+            return (List<S>) moduleLoader.getClass().getMethod("getModularServices", Class.class, boolean.class).invoke(moduleLoader, clazz, false);
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
             throw new ServiceLookUpRuntimeException("Failed to get modular services for class " + clazz.getName(), e);
         }
@@ -35,8 +35,8 @@ public class ModuleContextImpl implements ModuleContext {
         if (ModularClassLoader.class.getName().equals(classLoader.getClass().getName())) {
 //        if (classLoader instanceof ModularClassLoader modularClassLoader) {
             try {
-                String moduleName = classLoader.getClass().getDeclaredMethod("getModuleName").invoke(classLoader).toString();
-                moduleLoader.getClass().getDeclaredMethod("notifyModuleReady", String.class).invoke(moduleLoader, moduleName);
+                String moduleName = classLoader.getClass().getMethod("getModuleName").invoke(classLoader).toString();
+                moduleLoader.getClass().getMethod("notifyModuleReady", String.class).invoke(moduleLoader, moduleName);
             } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
                 throw new ModuleLoadRuntimeException("Exception during ModularContext#notifyModuleReady", e);
             }

@@ -8,11 +8,21 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ToString
-@EqualsAndHashCode
 @ModularService
-public class ServiceImpl implements SampleService {
+public class ServiceImpl extends BaseService implements SampleService {
     @Override
     public void test() {
         log.info("Service 2 Impl: Invoke test");
+        baseMethod();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }

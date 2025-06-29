@@ -4,6 +4,9 @@ import io.github.nhtuan10.modular.api.annotation.ModularService;
 
 @ModularService
 public interface SampleService {
-
+    default void testDefault() {
+        System.out.println("SampleService: testDefault method try to call test");
+        test();
+    }
     void test();
 }

@@ -6,6 +6,7 @@ import lombok.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -20,7 +21,9 @@ public interface ModuleLoader {
     static ModuleLoader getInstance() {
         try {
             Class<?> implementationClass = getImplementationClass();
-            return (ModuleLoader) implementationClass.getDeclaredMethod("getInstance").invoke(null);
+            Method method = implementationClass.getDeclaredMethod("getInstance");
+            method.setAccessible(true);
+            return (ModuleLoader) method.invoke(null);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation instance", e);
         }
@@ -35,12 +38,11 @@ public interface ModuleLoader {
 //        else {
 //            throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation class");
 //        }
-        try (InputStream is = ModuleLoader.class.getClassLoader().getResourceAsStream(MODULAR_IMPL_CLASS_CONFIG_FILE)){
+        try (InputStream is = ModuleLoader.class.getClassLoader().getResourceAsStream(MODULAR_IMPL_CLASS_CONFIG_FILE)) {
             if (is != null) {
                 String clazz = new String(is.readAllBytes());
                 return Class.forName(clazz);
-            }
-            else {
+            } else {
                 throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation class");
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -51,7 +53,8 @@ public interface ModuleLoader {
     static ModuleContext getContext() {
         try {
             Class<?> moduleLoaderImplClass = getInstance().getClass();
-            return (ModuleContext) moduleLoaderImplClass.getDeclaredMethod("getContext").invoke(null);
+            Method m = moduleLoaderImplClass.getDeclaredMethod("getContext");
+            return (ModuleContext) m.invoke(null);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new ModuleLoadRuntimeException("Error getting ModuleContext", e);
         }
@@ -76,11 +79,11 @@ public interface ModuleLoader {
 
     boolean unloadModule(String moduleName);
 
-    static boolean isManaged(Object object){
+    static boolean isManaged(Object object) {
         return isManaged(object.getClass());
     }
 
-    static boolean isManaged(Class<?> clazz){
+    static boolean isManaged(Class<?> clazz) {
         String classLoaderName = clazz.getClassLoader().getName();
         return classLoaderName != null && classLoaderNamePattern.matcher(classLoaderName).matches();
     }
