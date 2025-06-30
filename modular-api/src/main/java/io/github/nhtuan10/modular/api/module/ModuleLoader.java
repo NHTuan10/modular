@@ -1,7 +1,10 @@
 package io.github.nhtuan10.modular.api.module;
 
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -92,11 +95,12 @@ public interface ModuleLoader {
         public static enum SerializeType {
             JACKSON_SMILE,
             JAVA,
+            KRYO
         }
 
         @Builder.Default
         @Getter
-        private SerializeType serializeType = SerializeType.JAVA;
+        private SerializeType serializeType = SerializeType.KRYO;
 
         public static final ModuleLoaderConfiguration DEFAULT = ModuleLoaderConfiguration.builder().build();
     }

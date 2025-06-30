@@ -12,6 +12,7 @@ import io.github.nhtuan10.modular.model.ModularServiceHolder;
 import io.github.nhtuan10.modular.proxy.ServiceInvocationInterceptor;
 import io.github.nhtuan10.modular.serdeserializer.JacksonSmileSerDeserializer;
 import io.github.nhtuan10.modular.serdeserializer.JavaSerDeserializer;
+import io.github.nhtuan10.modular.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
@@ -73,11 +74,11 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     public ModuleLoaderImpl(ModuleLoaderConfiguration configuration) {
-        if (configuration.getSerializeType() == ModuleLoaderConfiguration.SerializeType.JAVA) {
-            serDeserializer = new JavaSerDeserializer();
-        } else {
-            serDeserializer = new JacksonSmileSerDeserializer();
-        }
+        serDeserializer = switch (configuration.getSerializeType()) {
+            case JAVA -> new JavaSerDeserializer();
+            case JACKSON_SMILE -> new JacksonSmileSerDeserializer();
+            case KRYO -> new KryoSerDeserializer();
+        };
         this.configuration = configuration;
     }
 
