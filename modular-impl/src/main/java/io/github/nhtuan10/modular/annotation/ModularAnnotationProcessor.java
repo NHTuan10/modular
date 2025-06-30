@@ -47,10 +47,9 @@ public class ModularAnnotationProcessor {
         if (packages != null && !packages.isEmpty() && StringUtils.isNotBlank(configurationAnnotation) && StringUtils.isNotBlank(serviceAnnotation)) {
             try (ScanResult scanResult =
                          new ClassGraph()
-//                             .addClassLoader(this.classLoader)
                                  .overrideClasspath(this.modularClassLoader.getClassPathUrls())
                                  .overrideClassLoaders(this.modularClassLoader)
-//                             .verbose()               // Log to stderr
+//                             .verbose()               // may need to use some config to enable verbose to log to stderr
                                  .enableAllInfo()         // Scan classes, methods, fields, annotations
                                  .acceptPackages(packages.toArray(new String[0]))     // Scan package and subpackages (omit to scan all packages)
                                  .scan()) {               // Start the scan

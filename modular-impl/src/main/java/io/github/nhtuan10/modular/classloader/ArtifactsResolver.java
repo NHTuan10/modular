@@ -4,5 +4,5 @@ import java.util.List;
 
 public interface ArtifactsResolver<T> {
 
-    List<T> resolveMavenDeps(List<String> deps, Class<T> clazz);
+    List<T> resolveDependencies(List<String> deps, Class<T> clazz);
 }

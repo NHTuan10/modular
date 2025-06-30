@@ -8,7 +8,7 @@ import java.util.List;
 @Slf4j
 public class MavenArtifactsResolver<T> implements ArtifactsResolver<T> {
 
-    public  List<T> resolveMavenDeps(List<String> deps, Class<T> clazz) {
+    public List<T> resolveDependencies(List<String> deps, Class<T> clazz) {
         List<T> dependencyLocations = Maven.resolver()
                 .resolve(deps)
                 .withTransitivity().asList(clazz);

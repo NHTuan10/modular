@@ -6,6 +6,7 @@ import com.esotericsoftware.kryo.kryo5.io.Output;
 
 import java.io.ByteArrayOutputStream;
 
+//TODO: reuse Kryo instance and register classes to boost performance
 public class KryoSerDeserializer implements SerDeserializer {
     @Override
     public Object castWithSerialization(Object obj, ClassLoader classLoader) throws Exception {

@@ -28,17 +28,6 @@ public interface ModuleLoader {
         }
     }
 
-    static ModuleContext getContext() {
-        try {
-            Class<?> moduleLoaderImplClass = getInstance().getClass();
-            Method m = moduleLoaderImplClass.getDeclaredMethod("getContext");
-            return (ModuleContext) m.invoke(null);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new ModuleLoadRuntimeException("Error getting ModuleContext", e);
-        }
-
-    }
-
     ModuleDetail startModuleSync(String moduleName, List<String> locationUris, List<String> packagesToScan);
 
     ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan);
@@ -54,6 +43,10 @@ public interface ModuleLoader {
     CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan);
 
     CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan);
+
+    <I> List<I> getModularServicesFromSpring(Class<I> clazz);
+
+    <I> List<I> getModularServices(Class<I> clazz);
 
     boolean unloadModule(String moduleName);
 

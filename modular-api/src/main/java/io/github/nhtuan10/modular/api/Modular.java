@@ -50,11 +50,11 @@ public interface Modular {
         return ModuleLoader.isManaged(clazz);
     }
 
-    static <S> List<S> getModularServicesFromSpring(Class<?> clazz) {
-        return ModuleLoader.getContext().<S>getModularServicesFromSpring(clazz);
+    static <I> List<I> getModularServicesFromSpring(Class<I> clazz) {
+        return ModuleLoader.getInstance().<I>getModularServicesFromSpring(clazz);
     }
 
-    static <S> List<S> getModularServices(Class<?> clazz) {
-        return ModuleLoader.getContext().<S>getModularServices(clazz);
+    static <I> List<I> getModularServices(Class<I> clazz) {
+        return ModuleLoader.getInstance().<I>getModularServices(clazz);
     }
 }

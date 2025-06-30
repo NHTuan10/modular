@@ -34,7 +34,7 @@ public class ServiceInvocationInterceptor {
                     }
                 })
                 .toArray(Class[]::new);
-        Method m = null;
+        Method m;
         try {
             m = service.getClass().getMethod(method.getName(), parameterTypes);
         } catch (NoSuchMethodException e) {
