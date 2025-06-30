@@ -10,7 +10,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 public interface ModuleLoader {
@@ -113,8 +112,15 @@ public interface ModuleLoader {
 
     @Builder
     class ModuleLoaderConfiguration {
-//        @Builder.Default
-//        @Getter
-//        private final int threadPoolSize = 10;
+        public static enum SerializeType {
+            JACKSON_SMILE,
+            JAVA,
+        }
+
+        @Builder.Default
+        @Getter
+        private SerializeType serializeType = SerializeType.JACKSON_SMILE;
+
+        public static final ModuleLoaderConfiguration DEFAULT = ModuleLoaderConfiguration.builder().build();
     }
 }

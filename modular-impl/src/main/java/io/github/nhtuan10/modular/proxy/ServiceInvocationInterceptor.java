@@ -1,8 +1,10 @@
 package io.github.nhtuan10.modular.proxy;
 
+import com.fasterxml.jackson.dataformat.smile.databind.SmileMapper;
 import io.github.nhtuan10.modular.api.exception.ModularSerializationException;
 import io.github.nhtuan10.modular.api.exception.ModularServiceInvocationException;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import net.bytebuddy.implementation.bind.annotation.*;
 import org.apache.commons.lang3.SerializationUtils;
 
@@ -11,10 +13,11 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ServiceInvocationInterceptor {
     //  private ModularServiceHolder modularServiceHolder;
-    private Object service;
+    private final Object service;
+    private final SerDeserializer serDeserializer;
 //  public ServiceInvocationInterceptor(ModularServiceHolder modularServiceHolder) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
 //    this.modularServiceHolder = modularServiceHolder;
 //    service = modularServiceHolder.getServiceClass().getConstructor().newInstance();
@@ -45,7 +48,7 @@ public class ServiceInvocationInterceptor {
         }
         Object[] convertedArgs = IntStream.range(0, parameterTypes.length).mapToObj(i -> {
             try {
-                return castWithSerialization(allArguments[i], parameterTypes[i].getClassLoader());
+                return serDeserializer.castWithSerialization(allArguments[i], parameterTypes[i]);
             } catch (Exception e) {
                 throw new ModularSerializationException("Failed to serialize argument type '%s' from class '%s', method '%s'".formatted(parameterTypes[i], serviceClassName, method), e);
             }
@@ -53,36 +56,9 @@ public class ServiceInvocationInterceptor {
         }).toArray();
         try {
             Object result = m.invoke(service, convertedArgs);
-            return castWithSerialization(result, this.getClass().getClassLoader());
+            return serDeserializer.castWithSerialization(result, method.getReturnType());
         } catch (Exception e) {
             throw new ModularServiceInvocationException("Failed to invoke method '%s' in service class '%s'".formatted(method, serviceClassName), e);
-        }
-    }
-
-    public static Object castWithSerialization(Object obj, ClassLoader classLoader) throws IOException, ClassNotFoundException {
-        byte[] b = SerializationUtils.serialize((Serializable) obj);
-        InputStream is = new ByteArrayInputStream(b);
-        try (ObjectInputStream objectInputStream = new ObjectInputStreamWithClassLoader(is, classLoader)) {
-            return objectInputStream.readObject();
-        }
-    }
-
-    public static class ObjectInputStreamWithClassLoader extends ObjectInputStream {
-
-        ClassLoader classLoader;
-
-        public ObjectInputStreamWithClassLoader(InputStream in, ClassLoader classLoader) throws IOException {
-            super(in);
-            this.classLoader = classLoader;
-        }
-
-        @Override
-        protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-            try {
-                return Class.forName(desc.getName(), true, classLoader);
-            } catch (Exception e) {
-                return super.resolveClass(desc);
-            }
         }
     }
 
@@ -94,9 +70,9 @@ public class ServiceInvocationInterceptor {
         public Object intercept(@AllArguments Object[] allArguments,
                                 @Origin Method method, @This Object object) {
             // intercept any method of any signature
-            Object comparingObj =  allArguments[0];
+            Object comparingObj = allArguments[0];
             // compare with ByteBuddy generated proxy object or target service object
-            return object == comparingObj  || service.equals(comparingObj);
+            return object == comparingObj || service.equals(comparingObj);
         }
     }
 }

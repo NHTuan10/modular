@@ -9,4 +9,5 @@ public interface SampleService {
         test();
     }
     void test();
+    SomeData testReturn(SomeData in);
 }

@@ -3,6 +3,7 @@ package com.example.vtweb.launcher;
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.sample.api.service.SampleService;
+import io.github.nhtuan10.sample.api.service.SomeData;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -22,9 +23,13 @@ public class Main {
             public void test() {
 
             }
+            @Override
+            public SomeData testReturn(SomeData in) {
+                return null;
+            }
         }));
-        sampleService.hashCode();
+        System.out.println("Hash code: " + sampleService.hashCode());
         sampleService.test();
-        sampleService.testDefault();
+        System.out.println("testReturn: " + sampleService.testReturn(new SomeData("testReturn")));
     }
 }

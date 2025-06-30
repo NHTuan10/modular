@@ -1,0 +1,6 @@
+package io.github.nhtuan10.modular.proxy;
+
+
+public interface SerDeserializer {
+    Object castWithSerialization(Object obj, Class<?> clazz) throws Exception;
+}

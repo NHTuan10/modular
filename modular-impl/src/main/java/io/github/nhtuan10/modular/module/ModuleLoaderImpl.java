@@ -8,6 +8,9 @@ import io.github.nhtuan10.modular.api.module.ModuleContext;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.modular.classloader.MavenArtifactsResolver;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
+import io.github.nhtuan10.modular.proxy.JacksonSmileSerDeserializer;
+import io.github.nhtuan10.modular.proxy.JavaSerDeserializer;
+import io.github.nhtuan10.modular.proxy.SerDeserializer;
 import io.github.nhtuan10.modular.proxy.ServiceInvocationInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
@@ -38,12 +41,12 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
     //    ModularAnnotationProcessor m;
 
-    Map<Class<?>, Collection<ModularServiceHolder>> loadedModularServices = new ConcurrentHashMap<>(); //UNUSED
-    Map<String, Collection<ModularServiceHolder>> loadedModularServices2 = new ConcurrentHashMap<>();
+    final Map<Class<?>, Collection<ModularServiceHolder>> loadedModularServices = new ConcurrentHashMap<>(); //UNUSED
+    final Map<String, Collection<ModularServiceHolder>> loadedModularServices2 = new ConcurrentHashMap<>();
     //    Map<String, ModularClassLoader> modularClassLoaders = new ConcurrentHashMap<>();
-    Map<Class<?>, List<Object>> loadedProxyObjects = new ConcurrentHashMap<>();
-    Map<String, ModuleDetail> moduleDetailMap = new ConcurrentHashMap<>();
-
+    final Map<Class<?>, List<Object>> loadedProxyObjects = new ConcurrentHashMap<>();
+    final Map<String, ModuleDetail> moduleDetailMap = new ConcurrentHashMap<>();
+    final SerDeserializer serDeserializer;
 //    Executor executor;
 
 
@@ -51,7 +54,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
     private static final Object lock = new Object();
 
     public static ModuleLoader getInstance() {
-        return ModuleLoaderImpl.getInstance(ModuleLoader.ModuleLoaderConfiguration.builder().build());
+        return ModuleLoaderImpl.getInstance(ModuleLoaderConfiguration.DEFAULT);
     }
 
 
@@ -59,7 +62,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
         if (instance == null) {
             synchronized (lock) {
                 if (instance == null) {
-                    instance = new ModuleLoaderImpl();
+                    instance = new ModuleLoaderImpl(configuration);
 //                    instance.executor = Executors.newFixedThreadPool(configuration.getThreadPoolSize());
                 }
             }
@@ -67,7 +70,13 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return instance;
     }
 
-    public ModuleLoaderImpl() {
+    public ModuleLoaderImpl(ModuleLoaderConfiguration configuration) {
+        if (configuration.getSerializeType() == ModuleLoaderConfiguration.SerializeType.JAVA){
+            serDeserializer = new JavaSerDeserializer();
+        }
+        else {
+            serDeserializer = new JacksonSmileSerDeserializer();
+        }
     }
 
     public void loadModule(String name, List<String> locationUris, boolean lazyInit) throws MalformedURLException {
@@ -265,7 +274,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
     private <I> I createProxyObject(Class<I> apiClass, Object service) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
         ClassLoader apiClassLoader = apiClass.getClassLoader();
         Object svcInvocationInterceptor = apiClassLoader.loadClass(ServiceInvocationInterceptor.class.getName())
-                .getConstructor(Object.class).newInstance(service);
+                .getConstructor(Object.class, SerDeserializer.class).newInstance(service, serDeserializer);
         Object equalsMethodInterceptor = apiClassLoader.loadClass(ServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName())
                 .getConstructor(Object.class).newInstance(service);
         Class<? extends I> c = new ByteBuddy()
