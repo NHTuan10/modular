@@ -1,6 +1,7 @@
 package io.github.nhtuan10.modular.module;
 
 import io.github.nhtuan10.modular.annotation.ModularAnnotationProcessor;
+import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import io.github.nhtuan10.modular.api.exception.ServiceLookUpRuntimeException;
 import io.github.nhtuan10.modular.api.model.ArtifactLocationType;
@@ -38,21 +39,13 @@ import java.util.concurrent.CountDownLatch;
 public class ModuleLoaderImpl implements ModuleLoader {
     public static final String APPLICATION_CONTEXT_PROVIDER = "io.github.nhtuan10.modular.spring.ApplicationContextProvider";
     public static final String PROXY_TARGET_FIELD_NAME = "target";
-    //    public static final String MODULAR_ANNOTATION_PKG = "io.github.nhtuan10.modular.annotation";
-    //    CustomClassLoader classLoader;
-
-    //    ModularAnnotationProcessor m;
 
     final Map<Class<?>, Collection<ModularServiceHolder>> loadedModularServices = new ConcurrentHashMap<>(); //UNUSED
     final Map<String, Collection<ModularServiceHolder>> loadedModularServices2 = new ConcurrentHashMap<>();
-    //    Map<String, ModularClassLoader> modularClassLoaders = new ConcurrentHashMap<>();
     final Map<Class<?>, List<Object>> loadedProxyObjects = new ConcurrentHashMap<>();
     final Map<String, ModuleDetail> moduleDetailMap = new ConcurrentHashMap<>();
     final SerDeserializer serDeserializer;
     final ModuleLoaderConfiguration configuration;
-//    Executor executor;
-
-
     private volatile static ModuleLoader instance;
     private static final Object lock = new Object();
 
@@ -66,7 +59,6 @@ public class ModuleLoaderImpl implements ModuleLoader {
             synchronized (lock) {
                 if (instance == null) {
                     instance = new ModuleLoaderImpl(configuration);
-//                    instance.executor = Executors.newFixedThreadPool(configuration.getThreadPoolSize());
                 }
             }
         }
@@ -82,13 +74,12 @@ public class ModuleLoaderImpl implements ModuleLoader {
         this.configuration = configuration;
     }
 
-    public void loadModule(String name, List<String> locationUris, boolean lazyInit) throws MalformedURLException {
+    public void loadModule(String name, List<String> locationUris, boolean lazyInit) {
         loadModule(name, locationUris, List.of("*"), lazyInit);
     }
 
     public void loadModule(String name, List<String> locationUris, List<String> packagesToScan, boolean lazyInit) {
         // Load module
-        //TODO: do some validation, check if file not or maven artifacts not exits
         List<URI> mavenUris = new ArrayList<>();
         List<URL> urls = new ArrayList<>();
         for (String location : locationUris) {
@@ -122,43 +113,30 @@ public class ModuleLoaderImpl implements ModuleLoader {
             }
         }
         if (!mavenUris.isEmpty()) {
-            urls.addAll(resolveMavenDeps(mavenUris));
+            urls.addAll(resolveMavenDeps(name, mavenUris));
         }
         loadModuleFromUrls(name, packagesToScan, lazyInit, urls);
-
-
-//        synchronized (classLoader) {
-
-
-//        }
     }
 
-    private List<URL> resolveMavenDeps(List<URI> uris) {
+    private List<URL> resolveMavenDeps(String moduleName, List<URI> uris) {
         // Load module from Maven
         List<String> mvnArtifacts = uris.stream().map(uri -> uri.getHost() + uri.getPath().replace("/", ":")).toList();
-//        log.info("Loading module from Maven: {}", mvnArtifact);
+        log.info("Loading module {} from Maven artifacts: {}", moduleName, mvnArtifacts);
         return new MavenArtifactsResolver<URL>().resolveMavenDeps(mvnArtifacts, URL.class);
     }
 
     private void loadModuleFromUrls(String name, List<String> packagesToScan, boolean lazyInit, List<URL> depUrls) {
         ModularClassLoader classLoader = new ModularClassLoader(name, depUrls);
-//        classLoader.setExcludedClassPackages(Set.of(MODULAR_ANNOTATION_PKG));
         ModuleDetail moduleDetail = moduleDetailMap.get(name);
         moduleDetail.setClassLoader(classLoader);
 
         ModularAnnotationProcessor m = new ModularAnnotationProcessor(classLoader);
         try {
             m.annotationProcess(packagesToScan, lazyInit);
-//            m.configurationAnnotationProcessor(packageToScan);
             addModularServices(m.getModularServices());
         }
-//        catch (ProxyCreationException e) {
-//            log.error("Fail to create proxy", e);
-//            throw new RuntimeException(e);
-//        }
         catch (Exception e) {
-//            log.error("Fail during annotation processing", e);
-            throw new RuntimeException(e);
+            throw new AnnotationProcessingRuntimeException("Fail during annotation processing", e);
         }
     }
 
@@ -180,7 +158,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
     private void loadModuleFromFile(String name, URI uri, List<String> packagesToScan, boolean lazyInit) {
         // Load module from file
-        log.debug("Loading module {} from file {} with package", name, uri, packagesToScan);
+        log.debug("Loading module {} from file {} with packages {}", name, uri, packagesToScan);
         try {
             loadModuleFromUrls(name, packagesToScan, lazyInit, List.of(uri.toURL()));
         } catch (MalformedURLException e) {
@@ -226,7 +204,6 @@ public class ModuleLoaderImpl implements ModuleLoader {
         if (serviceHolders != null) {
             if (!loadedProxyObjects.containsKey(apiClass)) {
                 List<I> proxyObjects = serviceHolders.stream()
-//                .map(ModularServiceHolder::getServiceClass)
                         .map(serviceHolder -> {
                             try {
                                 Object service;
@@ -349,21 +326,15 @@ public class ModuleLoaderImpl implements ModuleLoader {
         }
     }
 
-//    static interface StartModuleTask extends Runnable{
-//        void run() throws Exception;
-//    }
-
     @Override
     public ModuleDetail startModuleSync(String moduleName, List<String> locationUris, List<String> packagesToScan) {
         CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, false, null, packagesToScan, false);
-//        return cf.join();
         return awaitModuleReady(moduleName, cf);
     }
 
     @Override
     public ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan) {
         CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, false, mainClass, packagesToScan, false);
-//        return cf.join();
         return awaitModuleReady(moduleName, cf);
     }
 
@@ -424,14 +395,6 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
     private ModuleDetail awaitModuleReady(String moduleName, CompletableFuture<ModuleDetail> cf) {
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
-//        cf.exceptionally((throwable) -> {
-//            moduleDetail.setLoadStatus(LoadStatus.FAILED);
-//            if (throwable instanceof RuntimeException runtimeException) {
-//                throw runtimeException;
-//            }else {
-//                throw new RuntimeException(throwable);
-//            }
-//        });
         try {
             moduleDetail.getReadyLatch().await();
         } catch (InterruptedException e) {
@@ -445,23 +408,11 @@ public class ModuleLoaderImpl implements ModuleLoader {
         }
 
         return moduleDetail;
-//        return cf.join();
     }
 
     private ModuleDetail awaitSpringApplicationContextReady(String
                                                                     moduleName, CompletableFuture<ModuleDetail> completableFuture) {
-//        ModuleDetail moduleDetail = completableFuture
-//                .exceptionally(t -> {
-//                    throw new RuntimeException(t);
-//                }).get();
-//        return completableFuture.join();
         return awaitModuleReady(moduleName, completableFuture);
-
-//        try {
-//            moduleDetail.readyLatch.await();
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
     }
 
 //    public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass) {

@@ -25,11 +25,6 @@
             <version>0.0.1</version>
             <scope>compile</scope>
         </dependency>
-        <!--		<dependency>-->
-        <!--			<groupId>io.smallrye</groupId>-->
-        <!--			<artifactId>jandex</artifactId>-->
-        <!--			<version>${jandexVersion}</version>-->
-        <!--		</dependency>-->
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
@@ -40,11 +35,6 @@
             <artifactId>slf4j-api</artifactId>
             <version>2.0.16</version>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>org.slf4j</groupId>-->
-        <!--            <artifactId>slf4j-simple</artifactId>-->
-        <!--            <version>2.0.16</version>-->
-        <!--        </dependency>-->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
@@ -54,10 +44,8 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.38</version>
-            <!--			<scope>annotationProcessor</scope>-->
             <optional>true</optional>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -73,14 +61,6 @@
             <artifactId>kryo5</artifactId>
             <version>5.6.2</version>
         </dependency>
-
-        <!--        <dependency>-->
-        <!--            <groupId>org.jboss.shrinkwrap.resolver</groupId>-->
-        <!--            <artifactId>shrinkwrap-resolver-api-maven</artifactId>-->
-        <!--            <version>3.3.3</version>-->
-        <!--            <scope>compile</scope>-->
-
-        <!--        </dependency>-->
         <dependency>
             <groupId>org.jboss.shrinkwrap.resolver</groupId>
             <artifactId>shrinkwrap-resolver-depchain</artifactId>
@@ -94,8 +74,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
-
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
@@ -118,37 +96,6 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-source-plugin</artifactId>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>attach-sources</id>-->
-<!--                        <goals>-->
-<!--                            <goal>jar</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
-
-            <!--            <plugin>-->
-            <!--                <groupId>org.graalvm.buildtools</groupId>-->
-            <!--                <artifactId>native-maven-plugin</artifactId>-->
-            <!--&lt;!&ndash;                <version></version>&ndash;&gt;-->
-            <!--                <extensions>true</extensions>-->
-            <!--                <executions>-->
-            <!--                    <execution>-->
-            <!--                        <id>build-native</id>-->
-            <!--                        <goals>-->
-            <!--                            <goal>compile-no-fork</goal>-->
-            <!--                        </goals>-->
-            <!--                        <phase>package</phase>-->
-            <!--                    </execution>-->
-            <!--                </executions>-->
-            <!--                <configuration>-->
-            <!--                    <mainClass>io.github.nhtuan10.modular.ModularMain</mainClass>-->
-            <!--                </configuration>-->
-            <!--            </plugin>-->
         </plugins>
     </build>
 

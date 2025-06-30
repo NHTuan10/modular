@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 
 public interface ModuleLoader {
 
-//    String MODULAR_IMPL_CLASS_CONFIG_FILE = "io.github.nhtuan10.modular.api.module.ModuleLoader";
     Pattern classLoaderNamePattern = Pattern.compile("^io.github.nhtuan10.modular.module.ModularClassLoader\\[.+\\]$");
 
     static ModuleLoader getInstance() {
