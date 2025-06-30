@@ -96,7 +96,7 @@ public interface ModuleLoader {
 
         @Builder.Default
         @Getter
-        private SerializeType serializeType = SerializeType.JACKSON_SMILE;
+        private SerializeType serializeType = SerializeType.JAVA;
 
         public static final ModuleLoaderConfiguration DEFAULT = ModuleLoaderConfiguration.builder().build();
     }

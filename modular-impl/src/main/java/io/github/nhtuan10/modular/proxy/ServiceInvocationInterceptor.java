@@ -63,7 +63,7 @@ public class ServiceInvocationInterceptor {
         }
         Object[] convertedArgs = IntStream.range(0, parameterTypes.length).mapToObj(i -> {
             try {
-                return serDeserializer.castWithSerialization(allArguments[i], parameterTypes[i]);
+                return serDeserializer.castWithSerialization(allArguments[i], parameterTypes[i].getClassLoader());
             } catch (Exception e) {
                 throw new ModularSerializationException("Failed to serialize argument type '%s' from class '%s', method '%s'".formatted(parameterTypes[i], serviceClassName, method), e);
             }
@@ -71,7 +71,7 @@ public class ServiceInvocationInterceptor {
         }).toArray();
         try {
             Object result = m.invoke(service, convertedArgs);
-            return serDeserializer.castWithSerialization(result, method.getReturnType());
+            return serDeserializer.castWithSerialization(result, this.getClass().getClassLoader());
         } catch (Exception e) {
             throw new ModularServiceInvocationException("Failed to invoke method '%s' in service class '%s'".formatted(method, serviceClassName), e);
         }

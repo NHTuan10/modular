@@ -8,8 +8,8 @@ public class JacksonSmileSerDeserializer implements SerDeserializer {
     private final SmileMapper mapper = new SmileMapper();
 
     @Override
-    public Object castWithSerialization(Object obj, Class<?> clazz) throws IOException {
+    public Object castWithSerialization(Object obj, ClassLoader classLoader) throws IOException, ClassNotFoundException {
         byte[] smileData = mapper.writeValueAsBytes(obj);
-        return mapper.readValue(smileData, clazz);
+        return mapper.readValue(smileData, Class.forName(obj.getClass().getName(), true ,classLoader));
     }
 }

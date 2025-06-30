@@ -6,10 +6,10 @@ import java.io.*;
 
 public class JavaSerDeserializer implements SerDeserializer{
     @Override
-    public Object castWithSerialization(Object obj, Class<?> clazz) throws IOException, ClassNotFoundException {
+    public Object castWithSerialization(Object obj, ClassLoader classLoader) throws IOException, ClassNotFoundException {
         byte[] b = SerializationUtils.serialize((Serializable) obj);
         InputStream is = new ByteArrayInputStream(b);
-        try (ObjectInputStream objectInputStream = new ObjectInputStreamWithClassLoader(is, clazz.getClassLoader())) {
+        try (ObjectInputStream objectInputStream = new ObjectInputStreamWithClassLoader(is, classLoader)) {
             return objectInputStream.readObject();
         }
     }
