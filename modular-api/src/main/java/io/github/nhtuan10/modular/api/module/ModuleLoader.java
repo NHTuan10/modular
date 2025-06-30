@@ -3,8 +3,6 @@ package io.github.nhtuan10.modular.api.module;
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import lombok.*;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -14,38 +12,17 @@ import java.util.regex.Pattern;
 
 public interface ModuleLoader {
 
-    String MODULAR_IMPL_CLASS_CONFIG_FILE = "META-INF/services/io.github.nhtuan10.modular.api.module.ModuleLoader";
+//    String MODULAR_IMPL_CLASS_CONFIG_FILE = "io.github.nhtuan10.modular.api.module.ModuleLoader";
     Pattern classLoaderNamePattern = Pattern.compile("^io.github.nhtuan10.modular.module.ModularClassLoader\\[.+\\]$");
 
     static ModuleLoader getInstance() {
         try {
-            Class<?> implementationClass = getImplementationClass();
+            Class<ModuleLoader> implementationClass = Utils.getImplementationClass(ModuleLoader.class, ModuleLoader.class);
             Method method = implementationClass.getDeclaredMethod("getInstance");
             method.setAccessible(true);
             return (ModuleLoader) method.invoke(null);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation instance", e);
-        }
-    }
-
-    static Class<?> getImplementationClass() {
-//        ServiceLoader<ModuleLoader> loader = ServiceLoader.load(ModuleLoader.class);
-//        if (loader.findFirst().isPresent()) {
-//            ModuleLoader moduleLoader = loader.findFirst().get();
-//            return moduleLoader.getClass();
-//        }
-//        else {
-//            throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation class");
-//        }
-        try (InputStream is = ModuleLoader.class.getClassLoader().getResourceAsStream(MODULAR_IMPL_CLASS_CONFIG_FILE)) {
-            if (is != null) {
-                String clazz = new String(is.readAllBytes());
-                return Class.forName(clazz);
-            } else {
-                throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation class");
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation class", e);
         }
     }
 

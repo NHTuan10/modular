@@ -7,11 +7,12 @@ import io.github.nhtuan10.modular.api.model.ArtifactLocationType;
 import io.github.nhtuan10.modular.api.module.ModuleContext;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.modular.classloader.MavenArtifactsResolver;
+import io.github.nhtuan10.modular.context.ModuleContextImpl;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
-import io.github.nhtuan10.modular.proxy.JacksonSmileSerDeserializer;
-import io.github.nhtuan10.modular.proxy.JavaSerDeserializer;
-import io.github.nhtuan10.modular.proxy.SerDeserializer;
 import io.github.nhtuan10.modular.proxy.ServiceInvocationInterceptor;
+import io.github.nhtuan10.modular.serdeserializer.JacksonSmileSerDeserializer;
+import io.github.nhtuan10.modular.serdeserializer.JavaSerDeserializer;
+import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
@@ -47,6 +48,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
     final Map<Class<?>, List<Object>> loadedProxyObjects = new ConcurrentHashMap<>();
     final Map<String, ModuleDetail> moduleDetailMap = new ConcurrentHashMap<>();
     final SerDeserializer serDeserializer;
+    final ModuleLoaderConfiguration configuration;
 //    Executor executor;
 
 
@@ -71,12 +73,12 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     public ModuleLoaderImpl(ModuleLoaderConfiguration configuration) {
-        if (configuration.getSerializeType() == ModuleLoaderConfiguration.SerializeType.JAVA){
+        if (configuration.getSerializeType() == ModuleLoaderConfiguration.SerializeType.JAVA) {
             serDeserializer = new JavaSerDeserializer();
-        }
-        else {
+        } else {
             serDeserializer = new JacksonSmileSerDeserializer();
         }
+        this.configuration = configuration;
     }
 
     public void loadModule(String name, List<String> locationUris, boolean lazyInit) throws MalformedURLException {
@@ -237,7 +239,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                                 return this.<I>createProxyObject(apiClass, service);
                             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                      NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
-                                return null;
+                                throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(apiClass.getName()), e);
                             }
                         }).toList();
                 loadedProxyObjects.put(apiClass, (List<Object>) proxyObjects);
@@ -274,16 +276,16 @@ public class ModuleLoaderImpl implements ModuleLoader {
     private <I> I createProxyObject(Class<I> apiClass, Object service) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
         ClassLoader apiClassLoader = apiClass.getClassLoader();
         Object svcInvocationInterceptor = apiClassLoader.loadClass(ServiceInvocationInterceptor.class.getName())
-                .getConstructor(Object.class, SerDeserializer.class).newInstance(service, serDeserializer);
+                .getConstructor(Object.class, SerDeserializer.class).newInstance(service, serDeserializer );
         Object equalsMethodInterceptor = apiClassLoader.loadClass(ServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName())
                 .getConstructor(Object.class).newInstance(service);
         Class<? extends I> c = new ByteBuddy()
                 .subclass(apiClass)
 //                .name(apiClass.get() + "$Proxy")
                 .method(ElementMatchers.isEquals())
-                    .intercept(MethodDelegation.to(equalsMethodInterceptor))
+                .intercept(MethodDelegation.to(equalsMethodInterceptor))
                 .method(ElementMatchers.any().and(ElementMatchers.not(ElementMatchers.isEquals())))
-                    .intercept(MethodDelegation.to(svcInvocationInterceptor))
+                .intercept(MethodDelegation.to(svcInvocationInterceptor))
                 .defineField(PROXY_TARGET_FIELD_NAME, Object.class, Visibility.PRIVATE)
                 .make()
                 .load(apiClassLoader)

@@ -1,14 +1,18 @@
 package io.github.nhtuan10.modular.proxy;
 
-import com.fasterxml.jackson.dataformat.smile.databind.SmileMapper;
 import io.github.nhtuan10.modular.api.exception.ModularSerializationException;
 import io.github.nhtuan10.modular.api.exception.ModularServiceInvocationException;
+import io.github.nhtuan10.modular.api.module.ModuleLoader;
+import io.github.nhtuan10.modular.serdeserializer.JacksonSmileSerDeserializer;
+import io.github.nhtuan10.modular.serdeserializer.JavaSerDeserializer;
+import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import net.bytebuddy.implementation.bind.annotation.*;
-import org.apache.commons.lang3.SerializationUtils;
+import net.bytebuddy.implementation.bind.annotation.AllArguments;
+import net.bytebuddy.implementation.bind.annotation.Origin;
+import net.bytebuddy.implementation.bind.annotation.RuntimeType;
+import net.bytebuddy.implementation.bind.annotation.This;
 
-import java.io.*;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -18,6 +22,17 @@ public class ServiceInvocationInterceptor {
     //  private ModularServiceHolder modularServiceHolder;
     private final Object service;
     private final SerDeserializer serDeserializer;
+
+//
+//    public ServiceInvocationInterceptor(Object service, ModuleLoader.ModuleLoaderConfiguration.SerializeType serializeType) {
+//        this.service = service;
+//        if (serializeType == ModuleLoader.ModuleLoaderConfiguration.SerializeType.JAVA) {
+//            serDeserializer = new JavaSerDeserializer();
+//        } else {
+//            serDeserializer = new JacksonSmileSerDeserializer();
+//        }
+////        this.serDeserializer = serDeserializer;
+//    }
 //  public ServiceInvocationInterceptor(ModularServiceHolder modularServiceHolder) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
 //    this.modularServiceHolder = modularServiceHolder;
 //    service = modularServiceHolder.getServiceClass().getConstructor().newInstance();

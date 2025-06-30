@@ -50,10 +50,6 @@ public interface Modular {
         return ModuleLoader.isManaged(clazz);
     }
 
-    static void notifyModuleReady(){
-        ModuleLoader.getContext().notifyModuleReady();
-    }
-
     static <S> List<S> getModularServicesFromSpring(Class<?> clazz) {
         return ModuleLoader.getContext().<S>getModularServicesFromSpring(clazz);
     }

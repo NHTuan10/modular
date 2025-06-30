@@ -17,7 +17,8 @@
         <module>modular-api</module>
         <module>modular-spring</module>
         <module>modular-sample-core</module>
-        <module>modular-sample-plugin</module>
+        <module>modular-sample-plugin-1</module>
+        <module>modular-sample-plugin-2</module>
         <module>modular-sample-api</module>
     </modules>
 

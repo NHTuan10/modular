@@ -5,12 +5,12 @@ import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.sample.api.service.SampleService;
 import io.github.nhtuan10.sample.api.service.SomeData;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        ModuleLoader.ModuleDetail moduleDetail = Modular.startModuleSync("modular-sample-plugin", List.of("mvn://io.github.nhtuan10/modular-sample-plugin/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
+        ModuleLoader.ModuleDetail moduleDetail = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
+        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
         System.out.println("Finished with modular-sample-plugin");
 //        Modular.startModuleSyncWithMainClass("modular-sample-plugin2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin/0.0.1"), "MainClass", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        m.startModuleSyncWithMainClass("my-kafka-tool", List.of(

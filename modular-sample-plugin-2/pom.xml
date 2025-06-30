@@ -10,8 +10,8 @@
         <version>0.0.1</version>
     </parent>
 
-    <artifactId>modular-sample-plugin</artifactId>
-    <name>modular-sample-plugin</name>
+    <artifactId>modular-sample-plugin-2</artifactId>
+    <name>modular-sample-plugin-2</name>
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>

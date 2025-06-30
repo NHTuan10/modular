@@ -1,5 +1,6 @@
 package io.github.nhtuan10.modular.spring;
 
+import io.github.nhtuan10.modular.ModularContext;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
@@ -21,7 +22,7 @@ public class ApplicationContextProvider implements ApplicationContextAware {
     @EventListener
     public void handleContextRefreshEvent(ContextRefreshedEvent contextRefreshedEvent) {
         log.info("ContextRefreshedEvent received.");
-        ModuleLoader.getContext().notifyModuleReady();
+        ModularContext.notifyModuleReady();
     }
 
     @Override

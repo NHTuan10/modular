@@ -10,14 +10,20 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
 public class ModularClassLoader extends URLClassLoader {
-    private final static Logger LOGGER =
-            LoggerFactory.getLogger(ModularClassLoader.class.getName());
 
-    public static final String MODULAR_PACKAGE = "io.github.nhtuan10.modular";
+    public static final String MODULAR_PARENT_PACKAGE = "io.github.nhtuan10.modular";
+
+    public static final Set<String> MODULAR_PACKAGES = Set.of(MODULAR_PARENT_PACKAGE + ".api"
+            , MODULAR_PARENT_PACKAGE + ".annotation"
+            , MODULAR_PARENT_PACKAGE + ".classloader"
+            , MODULAR_PARENT_PACKAGE + ".model"
+            , MODULAR_PARENT_PACKAGE + ".module"
+            , MODULAR_PARENT_PACKAGE + ".serdeserializer");
 
     @Getter
     private Set<String> excludedClassPackages;
@@ -30,8 +36,13 @@ public class ModularClassLoader extends URLClassLoader {
 
     URLClassLoader urlClassLoader;
 
-    public void setExcludedClassPackages(Set<String> excludedClassPackages) {
-        this.excludedClassPackages = Collections.unmodifiableSet(excludedClassPackages);
+//    public void setExcludedClassPackages(Set<String> excludedClassPackages) {
+//        this.excludedClassPackages = Collections.unmodifiableSet(excludedClassPackages);
+//    }
+
+    public ModularClassLoader(String moduleName, List<URL> classPathUrls, Set<String> excludedClassPackages) {
+        this(moduleName, classPathUrls);
+        this.excludedClassPackages = Stream.concat(excludedClassPackages.stream(), this.getDefaultExcludedPackages().stream()).collect(Collectors.toUnmodifiableSet());
     }
 
     public ModularClassLoader(String moduleName, List<URL> classPathUrls) {
@@ -88,8 +99,8 @@ public class ModularClassLoader extends URLClassLoader {
             if (c == null) {
                 try {
                     try {
-                        if (shouldLoadByPlatformClassLoader(name)) {
-                            c = ClassLoader.getPlatformClassLoader().loadClass(name);
+                        if (shouldLoadBySystemClassLoader(name)) {
+                            c = ClassLoader.getSystemClassLoader().loadClass(name);
                         }
                     } catch (ClassNotFoundException e) {
                         // add logs
@@ -113,10 +124,11 @@ public class ModularClassLoader extends URLClassLoader {
         }
     }
 
-    protected boolean shouldLoadByPlatformClassLoader(String name) {
-        return name.startsWith("java") || name.startsWith("jdk") ||
-//                || name.startsWith(MODULAR_PACKAGE)
-                excludedClassPackages.stream().anyMatch(name::startsWith);
+    protected boolean shouldLoadBySystemClassLoader(String name) {
+        Set<String> platformClassLoaderPackages = new HashSet<>(Set.of("java", "jdk"));
+        platformClassLoaderPackages.addAll(MODULAR_PACKAGES);
+        platformClassLoaderPackages.addAll(excludedClassPackages);
+        return platformClassLoaderPackages.stream().anyMatch(name::startsWith);
     }
 
     private static List<URL> getJavaClassPath() {

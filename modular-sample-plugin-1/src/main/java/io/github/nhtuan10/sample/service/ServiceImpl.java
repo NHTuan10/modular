@@ -1,11 +1,14 @@
 package io.github.nhtuan10.sample.service;
 
+import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
 import io.github.nhtuan10.sample.api.service.SampleService;
+import io.github.nhtuan10.sample.api.service.SampleService2;
 import io.github.nhtuan10.sample.api.service.SomeData;
-import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 @Slf4j
 @ToString
@@ -13,7 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 public class ServiceImpl extends BaseService implements SampleService {
     @Override
     public void test() {
-        log.info("Service 2 Impl: Invoke test");
+        log.info("Service Impl: Invoke test");
+        List<SampleService2> sampleService2List = Modular.getModularServices(SampleService2.class);
+        for (SampleService2 sampleService2 : sampleService2List) {
+            sampleService2.test();
+        }
         baseMethod();
     }
 

@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.proxy;
+package io.github.nhtuan10.modular.serdeserializer;
 
 
 public interface SerDeserializer {
