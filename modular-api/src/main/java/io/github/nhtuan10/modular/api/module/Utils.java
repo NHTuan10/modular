@@ -1,6 +1,6 @@
 package io.github.nhtuan10.modular.api.module;
 
-import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
+import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,10 +12,10 @@ public class Utils {
                 String clazz = new String(is.readAllBytes());
                 return (Class<T>) Class.forName(clazz, true, caller.getClassLoader());
             } else {
-                throw new ModuleLoadRuntimeException("Couldn't find any implementation class for " + interfaceClass);
+                throw new ModularRuntimeException("Couldn't find any implementation class for " + interfaceClass);
             }
         } catch (IOException | ClassNotFoundException e) {
-            throw new ModuleLoadRuntimeException("Couldn't find any implementation class for " + interfaceClass, e);
+            throw new ModularRuntimeException("Couldn't find any implementation class for " + interfaceClass, e);
         }
     }
 }

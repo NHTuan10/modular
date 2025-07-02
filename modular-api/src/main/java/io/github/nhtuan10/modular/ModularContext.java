@@ -1,6 +1,6 @@
 package io.github.nhtuan10.modular;
 
-import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
+import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
 import io.github.nhtuan10.modular.api.module.ModuleContext;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.modular.api.module.Utils;
@@ -14,7 +14,7 @@ public final class ModularContext {
             Class<ModuleContext> implementationClass = Utils.getImplementationClass(ModuleContext.class, ModularContext.class);
             INSTANCE = implementationClass.getConstructor(Object.class).newInstance(ModuleLoader.getInstance());
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
-            throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation instance", e);
+            throw new ModularRuntimeException("Couldn't find any ModuleLoader implementation instance", e);
         }
     }
     public static void notifyModuleReady(){

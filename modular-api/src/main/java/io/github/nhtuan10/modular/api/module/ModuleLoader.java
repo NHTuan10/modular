@@ -1,6 +1,6 @@
 package io.github.nhtuan10.modular.api.module;
 
-import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
+import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,7 +24,7 @@ public interface ModuleLoader {
             method.setAccessible(true);
             return (ModuleLoader) method.invoke(null);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            throw new ModuleLoadRuntimeException("Couldn't find any ModuleLoader implementation instance", e);
+            throw new ModularRuntimeException("Couldn't find any ModuleLoader implementation instance", e);
         }
     }
 

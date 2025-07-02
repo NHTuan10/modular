@@ -10,7 +10,6 @@ import java.lang.reflect.Proxy;
 @Slf4j
 // TODO: plan to remove
 public class ProxyCreator {
-    // TODO: need to handle multiple interfaces
     public static Object createNoArgsConstructorsProxyClass(Class<?> interfaceClass, Class<?> impl) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         Object implObject = impl.getConstructor().newInstance();
         Object proxyObject =  Proxy.newProxyInstance(

@@ -10,26 +10,31 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         ModuleLoader.ModuleDetail moduleDetail = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
-        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
+//        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
+        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
         System.out.println("Finished with modular-sample-plugin");
 //        Modular.startModuleSyncWithMainClass("modular-sample-plugin2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin/0.0.1"), "MainClass", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        m.startModuleSyncWithMainClass("my-kafka-tool", List.of(
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT.jar",
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT/my-kafka-tool-main-0.1.1-SNAPSHOT.jar" ), "io.github.nhtuan10.mykafkatool.MyKafkaToolLauncher", "");
-        SampleService sampleService = Modular.<SampleService>getModularServices(SampleService.class).get(0);
-        System.out.println("Equals: " + sampleService.equals(sampleService));
-        System.out.println("Equals: " + sampleService.equals(new SampleService() {
-            @Override
-            public void test() {
+        Modular.<SampleService>getModularServices(SampleService.class).forEach(s -> {
 
-            }
-            @Override
-            public SomeData testReturn(SomeData in) {
-                return null;
-            }
-        }));
-        System.out.println("Hash code: " + sampleService.hashCode());
-        sampleService.test();
-        System.out.println("testReturn: " + sampleService.testReturn(new SomeData("testReturn")));
+            System.out.println("Equals: " + s.equals(s));
+            System.out.println("Equals: " + s.equals(new SampleService() {
+                @Override
+                public void test() {
+
+                }
+
+                @Override
+                public SomeData testReturn(SomeData in) {
+                    return null;
+                }
+            }));
+            System.out.println("Hash code: " + s.hashCode());
+            s.test();
+            System.out.println("testReturn: " + s.testReturn(new SomeData("testReturn")));
+        });
+
     }
 }

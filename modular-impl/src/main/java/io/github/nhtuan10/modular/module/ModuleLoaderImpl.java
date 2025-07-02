@@ -2,6 +2,7 @@ package io.github.nhtuan10.modular.module;
 
 import io.github.nhtuan10.modular.annotation.ModularAnnotationProcessor;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
+import io.github.nhtuan10.modular.api.exception.DuplicatedModuleLoadRuntimeException;
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import io.github.nhtuan10.modular.api.exception.ServiceLookUpRuntimeException;
 import io.github.nhtuan10.modular.api.model.ArtifactLocationType;
@@ -13,7 +14,6 @@ import io.github.nhtuan10.modular.serdeserializer.JacksonSmileSerDeserializer;
 import io.github.nhtuan10.modular.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
-import lombok.Locked;
 import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
@@ -39,7 +39,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
     public static final String PROXY_TARGET_FIELD_NAME = "target";
 
     final Map<String, Collection<ModularServiceHolder>> loadedModularServices2 = new ConcurrentHashMap<>();
-    final Map<Class<?>, List<Object>> loadedProxyObjects = new ConcurrentHashMap<>();
+    final Map<Class<?>, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
     final Map<String, ModuleDetail> moduleDetailMap = new ConcurrentHashMap<>();
     final SerDeserializer serDeserializer;
     final ModuleLoaderConfiguration configuration;
@@ -92,21 +92,21 @@ public class ModuleLoaderImpl implements ModuleLoader {
                         if (path.toFile().exists()) {
                             urls.add(uri.toURL());
                         } else {
-                            throw new ModuleLoadRuntimeException("File %s does not exist".formatted(path));
+                            throw new ModuleLoadRuntimeException(name, "Error loading module %s. File %s does not exist".formatted(path));
                         }
                     } catch (MalformedURLException e) {
-                        throw new ModuleLoadRuntimeException("Error loading module %s from file %s with package %s".formatted(name, uri, packagesToScan), e);
+                        throw new ModuleLoadRuntimeException(name, "Error loading module %s from file %s with package %s".formatted(name, uri, packagesToScan), e);
                     }
                     break;
                 case HTTP:
                     try {
                         urls.add(uri.toURL());
                     } catch (MalformedURLException e) {
-                        throw new ModuleLoadRuntimeException("Error loading module %s from file %s with package %s".formatted(name, uri, packagesToScan), e);
+                        throw new ModuleLoadRuntimeException(name, "Error loading module %s from file %s with package %s".formatted(name, uri, packagesToScan), e);
                     }
                     break;
                 default:
-                    throw new IllegalArgumentException("Unsupported artifact location type: " + uri.getScheme());
+                    throw new ModuleLoadRuntimeException(name, "Unsupported artifact location type: " + uri.getScheme());
             }
         }
         if (!mavenUris.isEmpty()) {
@@ -129,22 +129,18 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
         ModularAnnotationProcessor m = new ModularAnnotationProcessor(classLoader);
         try {
-            m.annotationProcess(packagesToScan, lazyInit);
-            addModularServices(m.getModularServices());
-        }
-        catch (Exception e) {
+            Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(name, packagesToScan, lazyInit);
+            addModularServices(modularServices);
+        } catch (Exception e) {
             throw new AnnotationProcessingRuntimeException("Fail during annotation processing", e);
         }
     }
 
-    @Locked.Write
     private void addModularServices(Map<Class<?>, Collection<ModularServiceHolder>> container) {
-            container.forEach((key, value) -> {
-                if (!loadedModularServices2.containsKey(key.getName())) {
-                    loadedModularServices2.put(key.getName(), Collections.synchronizedSet(new HashSet<>()));
-                }
-                loadedModularServices2.get(key.getName()).addAll(value);
-            });
+        container.forEach((key, value) -> {
+            loadedModularServices2.putIfAbsent(key.getName(), Collections.synchronizedSet(new HashSet<>()));
+            loadedModularServices2.get(key.getName()).addAll(value);
+        });
     }
 
     public Class<?> loadClass(String module, String name) throws ClassNotFoundException {
@@ -165,10 +161,11 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return getModularServices(clazz, true);
     }
 
+    @SuppressWarnings("unchecked")
     public <I> List<I> getModularServices(Class<I> apiClass, boolean fromSpringAppContext) {
         Collection<ModularServiceHolder> serviceHolders = loadedModularServices2.get(apiClass.getName());
         if (serviceHolders != null) {
-            if (!loadedProxyObjects.containsKey(apiClass)) {
+            return (List<I>) loadedProxyObjects.computeIfAbsent(apiClass, clazz -> {
                 List<I> proxyObjects = serviceHolders.stream()
                         .map(serviceHolder -> {
                             try {
@@ -180,17 +177,14 @@ public class ModuleLoaderImpl implements ModuleLoader {
                                 } else {
                                     service = serviceHolder.getInstance();
                                 }
-                                return this.<I>createProxyObject(apiClass, service);
+                                return (I) this.createProxyObject(clazz, service);
                             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                      NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
-                                throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(apiClass.getName()), e);
+                                throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(clazz.getName()), e);
                             }
                         }).toList();
-                loadedProxyObjects.put(apiClass, (List<Object>) proxyObjects);
                 return proxyObjects;
-            } else {
-                return (List<I>) loadedProxyObjects.get(apiClass);
-            }
+            });
         } else {
             throw new ServiceLookUpRuntimeException("Class '%s' is not registered as a Modular service. Please make sure this class is in the scanned packages and have @ModularService annotation".formatted(apiClass.getName()));
         }
@@ -199,7 +193,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
     private <I> I createProxyObject(Class<I> apiClass, Object service) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
         ClassLoader apiClassLoader = apiClass.getClassLoader();
         Object svcInvocationInterceptor = apiClassLoader.loadClass(ServiceInvocationInterceptor.class.getName())
-                .getConstructor(Object.class, SerDeserializer.class).newInstance(service, serDeserializer );
+                .getConstructor(Object.class, SerDeserializer.class).newInstance(service, serDeserializer);
         Object equalsMethodInterceptor = apiClassLoader.loadClass(ServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName())
                 .getConstructor(Object.class).newInstance(service);
         Class<? extends I> c = new ByteBuddy()
@@ -244,7 +238,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                             }
                         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                                  ClassNotFoundException | InterruptedException e) {
-                            ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException("Error starting module '%s'".formatted(moduleName), e);
+                            ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException(moduleName, "Error starting module '%s'".formatted(moduleName), e);
                             moduleDetailCompletableFuture.completeExceptionally(exception);
                             notifyModuleReady(moduleName);
                             throw exception;
@@ -255,7 +249,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                         log.info("Finish loading module '{}'", moduleName);
                     }
                 } catch (Exception e) {
-                    ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException("Failed to load module '" + moduleName, e);
+                    ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName, e);
                     moduleDetailCompletableFuture.completeExceptionally(exception);
                     notifyModuleReady(moduleName);
                     throw exception;
@@ -264,7 +258,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
             t.start();
             return moduleDetailCompletableFuture;
         } else {
-            ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException("Module '" + moduleName + "' is already loaded");
+            DuplicatedModuleLoadRuntimeException exception = new DuplicatedModuleLoadRuntimeException(moduleName, "Module '" + moduleName + "' is already loaded");
             moduleDetailCompletableFuture.completeExceptionally(exception);
             notifyModuleReady(moduleName);
             throw exception;
