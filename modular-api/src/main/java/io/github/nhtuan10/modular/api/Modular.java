@@ -51,10 +51,10 @@ public interface Modular {
     }
 
     static <I> List<I> getModularServicesFromSpring(Class<I> clazz) {
-        return ModuleLoader.getInstance().<I>getModularServicesFromSpring(clazz);
+        return ModuleLoader.getInstance().getModularServicesFromSpring(clazz);
     }
 
     static <I> List<I> getModularServices(Class<I> clazz) {
-        return ModuleLoader.getInstance().<I>getModularServices(clazz);
+        return ModuleLoader.getInstance().getModularServices(clazz);
     }
 }

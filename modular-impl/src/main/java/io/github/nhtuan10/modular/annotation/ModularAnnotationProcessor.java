@@ -3,7 +3,6 @@ package io.github.nhtuan10.modular.annotation;
 import io.github.classgraph.*;
 import io.github.nhtuan10.modular.api.annotation.ModularConfiguration;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
-import io.github.nhtuan10.modular.api.exception.ProxyCreationException;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
 import io.github.nhtuan10.modular.module.ModularClassLoader;
 import lombok.NoArgsConstructor;
@@ -31,20 +30,12 @@ public class ModularAnnotationProcessor {
         this.container = new ConcurrentHashMap<>();
     }
 
-    public Map<Class<?>, Collection<ModularServiceHolder>> getModularServices() {
-        return container;
-    }
-
-    public Collection<ModularServiceHolder> getModularServices(Class<?> key) {
-        return container.get(key);
-    }
-
-    public Map<Class<?>, Collection<ModularServiceHolder>> annotationProcess(String moduleName, List<String> packages, boolean lazyInit) throws ProxyCreationException {
+    public Map<Class<?>, Collection<ModularServiceHolder>> annotationProcess(String moduleName, List<String> packages, boolean lazyInit) {
         annotationScan(moduleName, packages, ModularConfiguration.class.getName(), ModularService.class.getName(), lazyInit);
         return container;
     }
 
-    void annotationScan(String moduleName, List<String> packages, String configurationAnnotation, String serviceAnnotation, boolean lazyInit) throws ProxyCreationException {
+    void annotationScan(String moduleName, List<String> packages, String configurationAnnotation, String serviceAnnotation, boolean lazyInit) {
         if (packages != null && !packages.isEmpty() && StringUtils.isNotBlank(configurationAnnotation) && StringUtils.isNotBlank(serviceAnnotation)) {
             try (ScanResult scanResult =
                          new ClassGraph()
@@ -113,30 +104,29 @@ public class ModularAnnotationProcessor {
     private void processConfigurationAnnotation(String moduleName, String configAnnotation, ScanResult scanResult, String serviceAnnotation) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
         for (ClassInfo configClassInfo : scanResult.getClassesWithAnnotation(configAnnotation)) {
             MethodInfoList methodInfosList = configClassInfo.getMethodInfo().filter(methodFilter -> methodFilter.hasAnnotation(serviceAnnotation));
-            for (MethodInfo methodInfo : methodInfosList) {
-                if (methodInfo.getTypeDescriptor() != null) {
-                    ClassRefTypeSignature classRefTypeSignature = ((ClassRefTypeSignature) methodInfo.getTypeDescriptor().getResultType());
+            for (MethodInfo methodInfo : methodInfosList.filter(m -> m.getTypeDescriptor() != null)) {
+                ClassRefTypeSignature classRefTypeSignature = ((ClassRefTypeSignature) methodInfo.getTypeDescriptor().getResultType());
 
-                    Set<Class<?>> interfaces = new HashSet<>();
-                    ClassInfo returnTypeClassInfo = classRefTypeSignature.getClassInfo();
-                    if (returnTypeClassInfo.isInterface() && returnTypeClassInfo.hasAnnotation(serviceAnnotation)) {
-                        interfaces.add(returnTypeClassInfo.loadClass());
-                    }
-                    interfaces.addAll(returnTypeClassInfo.getInterfaces().stream()
-                            .filter(interfaceFilter -> interfaceFilter.hasAnnotation(serviceAnnotation))
-                            .map(ClassInfo::loadClass).collect(Collectors.toSet()));
-                    Class<?> configClass = configClassInfo.loadClass();
-                    Method method = configClass.getDeclaredMethod(methodInfo.getName());
-                    method.setAccessible(true);
-                    var constructor = configClass.getDeclaredConstructor();
-                    constructor.setAccessible(true);
-                    Object object = method.invoke(constructor.newInstance());
-                    Class<?> serviceClass = object.getClass();
-                    interfaces.forEach(interfaceClass -> {
-                        container.putIfAbsent(interfaceClass, new HashSet<>());
-                        container.get(interfaceClass).add(new ModularServiceHolder(serviceClass, buildServiceName(moduleName, serviceClass.getName(), method.getName()), object, interfaceClass));
-                    });
+                Set<Class<?>> interfaces = new HashSet<>();
+                ClassInfo returnTypeClassInfo = classRefTypeSignature.getClassInfo();
+                if (returnTypeClassInfo.isInterface() && returnTypeClassInfo.hasAnnotation(serviceAnnotation)) {
+                    interfaces.add(returnTypeClassInfo.loadClass());
                 }
+                interfaces.addAll(returnTypeClassInfo.getInterfaces().stream()
+                        .filter(interfaceFilter -> interfaceFilter.hasAnnotation(serviceAnnotation))
+                        .map(ClassInfo::loadClass).collect(Collectors.toSet()));
+                Class<?> configClass = configClassInfo.loadClass();
+                Method method = configClass.getDeclaredMethod(methodInfo.getName());
+                method.setAccessible(true);
+                var constructor = configClass.getDeclaredConstructor();
+                constructor.setAccessible(true);
+                Object object = method.invoke(constructor.newInstance());
+                Class<?> serviceClass = object.getClass();
+                interfaces.forEach(interfaceClass -> {
+                    container.putIfAbsent(interfaceClass, new HashSet<>());
+                    container.get(interfaceClass).add(new ModularServiceHolder(serviceClass, buildServiceName(moduleName, serviceClass.getName(), method.getName()), object, interfaceClass));
+                });
+
             }
         }
     }

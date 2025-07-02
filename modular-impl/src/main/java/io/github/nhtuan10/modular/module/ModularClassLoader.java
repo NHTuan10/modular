@@ -30,13 +30,7 @@ public class ModularClassLoader extends URLClassLoader {
     private List<URL> classPathUrls;
 
     @Getter
-    private String moduleName;
-
-    URLClassLoader urlClassLoader;
-
-//    public void setExcludedClassPackages(Set<String> excludedClassPackages) {
-//        this.excludedClassPackages = Collections.unmodifiableSet(excludedClassPackages);
-//    }
+    private final String moduleName;
 
     public ModularClassLoader(String moduleName, List<URL> classPathUrls, Set<String> excludedClassPackages) {
         this(moduleName, classPathUrls);
@@ -56,19 +50,10 @@ public class ModularClassLoader extends URLClassLoader {
         this.excludedClassPackages = Collections.unmodifiableSet(getDefaultExcludedPackages());
         this.classPathUrls = Collections.unmodifiableList(getJavaClassPath());
     }
-    // add set of string to classPathUrls property
-//    public CustomClassLoader addClassPathUrls(List<URL> classPathUrls){
-//        this.classPathUrls.addAll(classPathUrls);
-//        return this;
-//    }
 
     @Override
     public String getName() {
         return this.getClass().getName() + "[" + moduleName + "]";
-    }
-
-    public URLClassLoader getUrlClassLoader() {
-        return new URLClassLoader(this.classPathUrls.toArray(URL[]::new));
     }
 
     protected Set<String> getDefaultExcludedPackages() {

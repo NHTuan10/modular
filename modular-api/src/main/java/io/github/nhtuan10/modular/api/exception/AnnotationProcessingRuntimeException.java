@@ -8,4 +8,8 @@ public class AnnotationProcessingRuntimeException extends RuntimeException {
     public AnnotationProcessingRuntimeException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public AnnotationProcessingRuntimeException(String moduleName, String message, Throwable cause) {
+        super(message, cause);
+    }
 }

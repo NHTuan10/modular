@@ -71,10 +71,6 @@ public class ModuleLoaderImpl implements ModuleLoader {
         this.configuration = configuration;
     }
 
-    public void loadModule(String name, List<String> locationUris, boolean lazyInit) {
-        loadModule(name, locationUris, List.of("*"), lazyInit);
-    }
-
     public void loadModule(String name, List<String> locationUris, List<String> packagesToScan, boolean lazyInit) {
         // Load module
         List<URI> mavenUris = new ArrayList<>();
@@ -92,7 +88,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                         if (path.toFile().exists()) {
                             urls.add(uri.toURL());
                         } else {
-                            throw new ModuleLoadRuntimeException(name, "Error loading module %s. File %s does not exist".formatted(path));
+                            throw new ModuleLoadRuntimeException(name, "Error loading module %s. File %s does not exist".formatted(name, path));
                         }
                     } catch (MalformedURLException e) {
                         throw new ModuleLoadRuntimeException(name, "Error loading module %s from file %s with package %s".formatted(name, uri, packagesToScan), e);
@@ -132,7 +128,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
             Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(name, packagesToScan, lazyInit);
             addModularServices(modularServices);
         } catch (Exception e) {
-            throw new AnnotationProcessingRuntimeException("Fail during annotation processing", e);
+            throw new AnnotationProcessingRuntimeException(name, "Fail during annotation processing", e);
         }
     }
 
@@ -161,30 +157,29 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return getModularServices(clazz, true);
     }
 
-    @SuppressWarnings("unchecked")
+
     public <I> List<I> getModularServices(Class<I> apiClass, boolean fromSpringAppContext) {
         Collection<ModularServiceHolder> serviceHolders = loadedModularServices2.get(apiClass.getName());
         if (serviceHolders != null) {
-            return (List<I>) loadedProxyObjects.computeIfAbsent(apiClass, clazz -> {
-                List<I> proxyObjects = serviceHolders.stream()
-                        .map(serviceHolder -> {
-                            try {
-                                Object service;
-                                if (fromSpringAppContext) {
-                                    Class serviceClass = serviceHolder.getServiceClass();
-                                    Class serviceAppContextProvide = Class.forName(APPLICATION_CONTEXT_PROVIDER, true, serviceClass.getClassLoader());
-                                    service = serviceAppContextProvide.getMethod("getBean", Class.class).invoke(null, serviceClass);
-                                } else {
-                                    service = serviceHolder.getInstance();
-                                }
-                                return (I) this.createProxyObject(clazz, service);
-                            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                                     NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
-                                throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(clazz.getName()), e);
+            @SuppressWarnings("unchecked")
+            List<I> proxyObjects = (List<I>) loadedProxyObjects.computeIfAbsent(apiClass, clazz ->
+                    serviceHolders.stream().map(serviceHolder -> {
+                        try {
+                            Object service;
+                            if (fromSpringAppContext) {
+                                Class<?> serviceClass = serviceHolder.getServiceClass();
+                                Class<?> serviceAppContextProvide = Class.forName(APPLICATION_CONTEXT_PROVIDER, true, serviceClass.getClassLoader());
+                                service = serviceAppContextProvide.getMethod("getBean", Class.class).invoke(null, serviceClass);
+                            } else {
+                                service = serviceHolder.getInstance();
                             }
-                        }).toList();
-                return proxyObjects;
-            });
+                            return (I) this.createProxyObject(clazz, service);
+                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                 NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
+                            throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(clazz.getName()), e);
+                        }
+                    }).toList());
+            return proxyObjects;
         } else {
             throw new ServiceLookUpRuntimeException("Class '%s' is not registered as a Modular service. Please make sure this class is in the scanned packages and have @ModularService annotation".formatted(apiClass.getName()));
         }
@@ -215,7 +210,8 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     private CompletableFuture<ModuleDetail> startModule(String moduleName, List<String> locationUris, boolean lazyInit, String mainClass, List<String> packagesToScan, boolean awaitMainClass) {
-        assert (moduleName != null && StringUtils.isNotBlank(moduleName)) : "Module name cannot be null or empty";
+        assert (StringUtils.isNotBlank(moduleName)) : "Module name cannot be null or empty";
+        final String FINISH_LOADING_MSG = "Finish loading module '{}'";
         CompletableFuture<ModuleDetail> moduleDetailCompletableFuture = new CompletableFuture<>();
         if (!moduleDetailMap.containsKey(moduleName)) {
             CountDownLatch await = new CountDownLatch(1);
@@ -231,7 +227,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                             loadClass(moduleName, mainClass).getDeclaredMethod("main", String[].class).invoke(null, (Object) new String[]{});
                             moduleDetailCompletableFuture.complete(moduleDetail);
                             notifyModuleReady(moduleName);
-                            log.info("Finish loading module '{}'", moduleName);
+                            log.info(FINISH_LOADING_MSG, moduleName);
                             if (awaitMainClass) {
                                 Runtime.getRuntime().addShutdownHook(new Thread(await::countDown));
                                 await.await();
@@ -246,7 +242,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                     } else {
                         moduleDetailCompletableFuture.complete(moduleDetail);
                         notifyModuleReady(moduleName);
-                        log.info("Finish loading module '{}'", moduleName);
+                        log.info(FINISH_LOADING_MSG, moduleName);
                     }
                 } catch (Exception e) {
                     ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName, e);

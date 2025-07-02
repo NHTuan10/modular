@@ -21,7 +21,7 @@ public class ServiceInvocationInterceptor {
 
     @RuntimeType
     public Object intercept(@AllArguments Object[] allArguments,
-                            @Origin Method method, @This Object object) {
+                            @Origin Method method) {
         // intercept any method of any signature
         String serviceClassName = service.getClass().getName();
         Class<?>[] parameterTypes = Arrays.stream(method.getParameterTypes())
@@ -62,7 +62,7 @@ public class ServiceInvocationInterceptor {
 
         @RuntimeType
         public Object intercept(@AllArguments Object[] allArguments,
-                                @Origin Method method, @This Object object) {
+                                @This Object object) {
             Object comparingObj = allArguments[0];
             // compare with ByteBuddy generated proxy object and target service object to see any match
             return object == comparingObj || service.equals(comparingObj);

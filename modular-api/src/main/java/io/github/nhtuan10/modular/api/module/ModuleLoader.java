@@ -84,7 +84,7 @@ public interface ModuleLoader {
 
     @Builder
     class ModuleLoaderConfiguration {
-        public static enum SerializeType {
+        public enum SerializeType {
             JACKSON_SMILE,
             JAVA,
             KRYO

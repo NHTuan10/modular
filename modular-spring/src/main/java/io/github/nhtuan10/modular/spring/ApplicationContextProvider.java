@@ -30,7 +30,7 @@ public class ApplicationContextProvider implements ApplicationContextAware {
         context = ac;
     }
 
-    public static Object getBean(Class requiredType) {
+    public static Object getBean(Class<?> requiredType) {
         return context.getBean(requiredType);
     }
 
