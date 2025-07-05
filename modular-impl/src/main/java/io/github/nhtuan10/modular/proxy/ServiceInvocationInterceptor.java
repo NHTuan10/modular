@@ -25,13 +25,18 @@ public class ServiceInvocationInterceptor {
                             @Origin Method method) {
         // intercept any method of any signature
         String serviceClassName = service.getClass().getName();
-        Class<?>[] serviceClassLoaderParameterTypes = Arrays.stream(method.getParameterTypes())
-                .map(Class::getName)
-                .map(s -> {
+        Class<?>[] serviceClassLoaderParameterTypes = (Class<?>[]) Arrays.stream(method.getParameterTypes())
+//                .map(Class::getName)
+                .map(clazz -> {
                     try {
-                        return service.getClass().getClassLoader().loadClass(s);
-                    } catch (ClassNotFoundException e) {
-                        throw new ServiceInvocationRuntimeException("Class not found for parameter type '%s' from class '%s', method '%s'".formatted(s, serviceClassName, method), e);
+                        return serDeserializer.castWithSerialization(clazz, service.getClass().getClassLoader());
+//                        return service.getClass().getClassLoader().loadClass(clazz);
+                    }
+//                    catch (ClassNotFoundException e) {
+//                        throw new ServiceInvocationRuntimeException("Class not found for parameter type '%s' from class '%s', method '%s'".formatted(clazz, serviceClassName, method), e);
+//                    }
+                    catch (Exception e) {
+                        throw new ServiceInvocationRuntimeException("Failed to serialize parameter type '%s' from class '%s', method '%s'".formatted(clazz, serviceClassName, method), e);
                     }
                 })
                 .toArray(Class[]::new);
