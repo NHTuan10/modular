@@ -8,6 +8,3 @@ public interface SampleService2 extends SomeInterface {
     void test();
 }
 
-interface SomeInterface {
-
-}

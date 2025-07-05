@@ -6,6 +6,8 @@ import io.github.nhtuan10.modular.api.exception.DuplicatedModuleLoadRuntimeExcep
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import io.github.nhtuan10.modular.api.exception.ServiceLookUpRuntimeException;
 import io.github.nhtuan10.modular.api.model.ArtifactLocationType;
+import io.github.nhtuan10.modular.api.module.ExternalContainer;
+import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.modular.classloader.MavenArtifactsResolver;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
@@ -68,11 +70,11 @@ public class ModuleLoaderImpl implements ModuleLoader {
         this.configuration = configuration;
     }
 
-    public void loadModule(String name, List<String> locationUris, List<String> packagesToScan, ExternalContainer externalContainer) {
+    public void loadModule(String name, ModuleLoadConfiguration moduleLoadConfiguration) {
         // Load module
         List<URI> mavenUris = new ArrayList<>();
         List<URL> urls = new ArrayList<>();
-        for (String location : locationUris) {
+        for (String location : moduleLoadConfiguration.locationUris()) {
             URI uri = URI.create(location);
             log.info("Loading module {} from URI {}", name, uri);
             switch (ArtifactLocationType.valueOf(uri.getScheme().toUpperCase())) {
@@ -88,14 +90,14 @@ public class ModuleLoaderImpl implements ModuleLoader {
                             throw new ModuleLoadRuntimeException(name, "Error loading module %s. File %s does not exist".formatted(name, path));
                         }
                     } catch (MalformedURLException e) {
-                        throw new ModuleLoadRuntimeException(name, "Error loading module %s from file %s with package %s".formatted(name, uri, packagesToScan), e);
+                        throw new ModuleLoadRuntimeException(name, "Error loading module %s from file %s with package %s".formatted(name, uri, moduleLoadConfiguration.packagesToScan()), e);
                     }
                     break;
                 case HTTP:
                     try {
                         urls.add(uri.toURL());
                     } catch (MalformedURLException e) {
-                        throw new ModuleLoadRuntimeException(name, "Error loading module %s from file %s with package %s".formatted(name, uri, packagesToScan), e);
+                        throw new ModuleLoadRuntimeException(name, "Error loading module %s from file %s with package %s".formatted(name, uri, moduleLoadConfiguration.packagesToScan()), e);
                     }
                     break;
                 default:
@@ -105,7 +107,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
         if (!mavenUris.isEmpty()) {
             urls.addAll(resolveMavenDeps(name, mavenUris));
         }
-        loadModuleFromUrls(name, packagesToScan, externalContainer, urls);
+        loadModuleFromUrls(name, moduleLoadConfiguration, urls);
     }
 
     private List<URL> resolveMavenDeps(String moduleName, List<URI> uris) {
@@ -115,14 +117,14 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return new MavenArtifactsResolver<URL>().resolveDependencies(mvnArtifacts, URL.class);
     }
 
-    private void loadModuleFromUrls(String name, List<String> packagesToScan, ExternalContainer externalContainer, List<URL> depUrls) {
+    private void loadModuleFromUrls(String name, ModuleLoadConfiguration moduleLoadConfiguration, List<URL> depUrls) {
         ModularClassLoader classLoader = new ModularClassLoader(name, depUrls);
         ModuleDetail moduleDetail = moduleDetailMap.get(name);
         moduleDetail.setClassLoader(classLoader);
 
         ModularAnnotationProcessor m = new ModularAnnotationProcessor(classLoader);
         try {
-            Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(name, packagesToScan, externalContainer);
+            Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(name, moduleLoadConfiguration);
             addModularServices(modularServices);
         } catch (Exception e) {
             throw new AnnotationProcessingRuntimeException(name, "Fail during annotation processing", e);
@@ -239,6 +241,18 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     private CompletableFuture<ModuleDetail> startModule(String moduleName, List<String> locationUris, ExternalContainer externalContainer, String mainClass, List<String> packagesToScan, boolean awaitMainClass) {
+        ModuleLoadConfiguration config = ModuleLoadConfiguration.builder()
+                .locationUris(locationUris)
+                .externalContainer(externalContainer)
+                .mainClass(mainClass)
+                .packagesToScan(packagesToScan)
+                .allowNonAnnotatedServices(false)
+                .awaitMainClass(awaitMainClass)
+                .build();
+        return startModule(moduleName, config);
+    }
+
+    private CompletableFuture<ModuleDetail> startModule(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
         assert (StringUtils.isNotBlank(moduleName)) : "Module name cannot be null or empty";
         final String FINISH_LOADING_MSG = "Finish loading module '{}'";
         CompletableFuture<ModuleDetail> moduleDetailCompletableFuture = new CompletableFuture<>();
@@ -249,15 +263,15 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
             Thread t = new Thread(() -> {
                 try {
-                    loadModule(moduleName, locationUris, packagesToScan, externalContainer);
+                    loadModule(moduleName, moduleLoadConfiguration);
                     Thread.currentThread().setContextClassLoader(getClassLoader(moduleName));
-                    if (mainClass != null) {
+                    if (moduleLoadConfiguration.mainClass() != null) {
                         try {
-                            loadClass(moduleName, mainClass).getDeclaredMethod("main", String[].class).invoke(null, (Object) new String[]{});
+                            loadClass(moduleName, moduleLoadConfiguration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) new String[]{});
                             moduleDetailCompletableFuture.complete(moduleDetail);
                             notifyModuleReady(moduleName);
                             log.info(FINISH_LOADING_MSG, moduleName);
-                            if (awaitMainClass) {
+                            if (moduleLoadConfiguration.awaitMainClass()) {
                                 Runtime.getRuntime().addShutdownHook(new Thread(await::countDown));
                                 await.await();
                             }
@@ -324,6 +338,17 @@ public class ModuleLoaderImpl implements ModuleLoader {
     public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
         CompletableFuture<ModuleDetail> completableFuture = startModule(moduleName, locationUris, ExternalContainer.SPRING, mainClass, packageToScan, false);
         return awaitSpringApplicationContextReady(moduleName, completableFuture);
+    }
+
+    @Override
+    public ModuleDetail startModuleSync(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
+        CompletableFuture<ModuleDetail> completableFuture = startModule(moduleName, moduleLoadConfiguration);
+        return awaitSpringApplicationContextReady(moduleName, completableFuture);
+    }
+
+    @Override
+    public CompletableFuture<ModuleDetail> startModuleASync(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
+        return startModule(moduleName, moduleLoadConfiguration);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package io.github.nhtuan10.modular.api;
 
+import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 
 import java.util.List;
@@ -36,6 +37,14 @@ public interface Modular {
 
     static CompletableFuture<ModuleLoader.ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan) {
         return ModuleLoader.getInstance().startSpringModuleAsyncWithMainClass(moduleName, locationUris, mainClass, packagesToScan);
+    }
+
+    static ModuleLoader.ModuleDetail startModuleSync(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
+        return ModuleLoader.getInstance().startModuleSync(moduleName, moduleLoadConfiguration);
+    }
+
+    static CompletableFuture<ModuleLoader.ModuleDetail> startModuleASync(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
+        return ModuleLoader.getInstance().startModuleASync(moduleName, moduleLoadConfiguration);
     }
 
     static boolean unloadModule(String moduleName) {

@@ -5,6 +5,7 @@ import io.github.nhtuan10.modular.api.annotation.ModularService;
 import io.github.nhtuan10.sample.api.service.SampleService;
 import io.github.nhtuan10.sample.api.service.SampleService2;
 import io.github.nhtuan10.sample.api.service.SomeData;
+import io.github.nhtuan10.sample.api.service.SomeInterface;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -28,12 +29,22 @@ public class SampleService2Impl implements SampleService2, SampleService {
     public String testStringParam(String in) {
         return "SampleService2Impl ->" + in;
     }
+
+    @Override
+    public void someInterfaceMethod() {
+        log.info("SomeInterface method invoked from SampleService2Impl");
+    }
 }
 
 @ModularConfiguration
 class Config {
     @ModularService
     SampleService2Impl sampleService2FromMethod() {
+        return new SampleService2Impl();
+    }
+
+    @ModularService
+    SomeInterface someInterface() {
         return new SampleService2Impl();
     }
 }

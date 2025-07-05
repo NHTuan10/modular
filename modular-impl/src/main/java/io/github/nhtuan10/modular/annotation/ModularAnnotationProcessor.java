@@ -5,8 +5,9 @@ import io.github.nhtuan10.modular.api.annotation.ModularConfiguration;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
 import io.github.nhtuan10.modular.api.annotation.ModularSpringService;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
+import io.github.nhtuan10.modular.api.module.ExternalContainer;
+import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
-import io.github.nhtuan10.modular.module.ExternalContainer;
 import io.github.nhtuan10.modular.module.ModularClassLoader;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class is not a thread safe
@@ -45,7 +47,8 @@ public class ModularAnnotationProcessor {
 //    }
 
 
-    public Map<Class<?>, Collection<ModularServiceHolder>> annotationProcess(String moduleName, List<String> packages, ExternalContainer externalContainer) {
+    public Map<Class<?>, Collection<ModularServiceHolder>> annotationProcess(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
+        List<String> packages = moduleLoadConfiguration.packagesToScan();
         if (packages != null && !packages.isEmpty()) {
             try (ScanResult scanResult =
                          new ClassGraph()
@@ -57,10 +60,14 @@ public class ModularAnnotationProcessor {
                                  .scan()) {               // Start the scan
 
                 processServiceAnnotation(moduleName, AnnotationProcessorConfig.DEFAULT, scanResult);
-                processServiceAnnotation(moduleName, AnnotationProcessorConfig.SPRING, scanResult);
+                if (moduleLoadConfiguration.externalContainer() == ExternalContainer.SPRING) {
+                    processServiceAnnotation(moduleName, AnnotationProcessorConfig.SPRING, scanResult);
+                }
 
-                processConfigurationAnnotation(moduleName, AnnotationProcessorConfig.DEFAULT, scanResult);
-                processConfigurationAnnotation(moduleName, AnnotationProcessorConfig.SPRING, scanResult);
+                processConfigurationAnnotation(moduleName, AnnotationProcessorConfig.DEFAULT, moduleLoadConfiguration.allowNonAnnotatedServices(), scanResult);
+                if (moduleLoadConfiguration.externalContainer() == ExternalContainer.SPRING) {
+                    processConfigurationAnnotation(moduleName, AnnotationProcessorConfig.SPRING, moduleLoadConfiguration.allowNonAnnotatedServices(), scanResult);
+                }
 
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
@@ -154,7 +161,7 @@ public class ModularAnnotationProcessor {
         return sb.toString();
     }
 
-    private void processConfigurationAnnotation(String moduleName, AnnotationProcessorConfig config, ScanResult scanResult) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
+    private void processConfigurationAnnotation(String moduleName, AnnotationProcessorConfig config, boolean allowNonAnnotatedServices, ScanResult scanResult) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
         String configAnnotation = config.getConfigAnnotation().getName();
         String serviceImplAnnotation = config.getServiceImplAnnotation().getName();
         String serviceInterfaceAnnotation = config.getServiceInterfaceAnnotation().getName();
@@ -169,9 +176,11 @@ public class ModularAnnotationProcessor {
                 if (returnTypeClassInfo.isInterface() && returnTypeClassInfo.hasAnnotation(serviceInterfaceAnnotation)) {
                     interfaces.add(returnTypeClass);
                 }
-                interfaces.addAll(returnTypeClassInfo.getInterfaces().stream()
-                        .filter(interfaceFilter -> interfaceFilter.hasAnnotation(serviceInterfaceAnnotation))
-                        .map(ClassInfo::loadClass).collect(Collectors.toSet()));
+                Stream<ClassInfo> interfaceStreams = returnTypeClassInfo.getInterfaces().stream();
+                if (!allowNonAnnotatedServices) {
+                    interfaceStreams = interfaceStreams.filter(interfaceFilter -> interfaceFilter.hasAnnotation(serviceInterfaceAnnotation));
+                }
+                interfaces.addAll(interfaceStreams.map(ClassInfo::loadClass).collect(Collectors.toSet()));
                 if (!interfaces.isEmpty()) {
                     Class<?> configClass = configClassInfo.loadClass();
                     Method method = configClass.getDeclaredMethod(methodInfo.getName());

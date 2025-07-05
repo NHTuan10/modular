@@ -1,6 +1,6 @@
 package io.github.nhtuan10.modular.model;
 
-import io.github.nhtuan10.modular.module.ExternalContainer;
+import io.github.nhtuan10.modular.api.module.ExternalContainer;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
