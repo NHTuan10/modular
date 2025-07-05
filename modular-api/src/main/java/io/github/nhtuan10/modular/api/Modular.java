@@ -61,4 +61,16 @@ public interface Modular {
     static <I> List<I> getModularServices(Class<I> clazz) {
         return ModuleLoader.getInstance().getModularServices(clazz);
     }
+
+    static <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, boolean copyTransClassLoaderObjects) {
+        return ModuleLoader.getInstance().getModularServicesFromSpring(name, clazz, copyTransClassLoaderObjects);
+    }
+
+    static <I> List<I> getModularServicesFromSpring(Class<I> clazz, boolean copyTransClassLoaderObjects) {
+        return Modular.getModularServicesFromSpring(null, clazz, copyTransClassLoaderObjects);
+    }
+
+    static <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects) {
+        return ModuleLoader.getInstance().getModularServices(clazz, copyTransClassLoaderObjects);
+    }
 }

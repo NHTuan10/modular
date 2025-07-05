@@ -20,7 +20,9 @@ public class KryoSerDeserializer implements SerDeserializer {
         output.close();
 
         Class<?> resultClass = Class.forName(obj.getClass().getName(), true, classLoader);
-        kryo.setClassLoader(classLoader);
+        if (classLoader != null) {
+            kryo.setClassLoader(classLoader);
+        }
         Input input = new Input(bos.toByteArray());
         Object result = kryo.readObject(input, resultClass);
         input.close();

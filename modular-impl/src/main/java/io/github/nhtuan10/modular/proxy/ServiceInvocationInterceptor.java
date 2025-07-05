@@ -18,13 +18,14 @@ import java.util.stream.IntStream;
 public class ServiceInvocationInterceptor {
     private final Object service;
     private final SerDeserializer serDeserializer;
+    private final boolean copyTransClassLoaderObjects;
 
     @RuntimeType
     public Object intercept(@AllArguments Object[] allArguments,
                             @Origin Method method) {
         // intercept any method of any signature
         String serviceClassName = service.getClass().getName();
-        Class<?>[] parameterTypes = Arrays.stream(method.getParameterTypes())
+        Class<?>[] serviceClassLoaderParameterTypes = Arrays.stream(method.getParameterTypes())
                 .map(Class::getName)
                 .map(s -> {
                     try {
@@ -34,23 +35,26 @@ public class ServiceInvocationInterceptor {
                     }
                 })
                 .toArray(Class[]::new);
-        Method m;
+        Method serviceClassLoaderMethod;
         try {
-            m = service.getClass().getMethod(method.getName(), parameterTypes);
+            serviceClassLoaderMethod = service.getClass().getMethod(method.getName(), serviceClassLoaderParameterTypes);
         } catch (NoSuchMethodException e) {
             throw new ServiceInvocationRuntimeException("No method found for method '%s' in service class '%s'".formatted(method, serviceClassName), e);
         }
-        Object[] convertedArgs = IntStream.range(0, parameterTypes.length).mapToObj(i -> {
+        Object[] convertedArgs = IntStream.range(0, serviceClassLoaderParameterTypes.length).mapToObj(i -> {
             try {
-                return serDeserializer.castWithSerialization(allArguments[i], parameterTypes[i].getClassLoader());
+                return copyTransClassLoaderObjects ? serDeserializer.castWithSerialization(allArguments[i], serviceClassLoaderParameterTypes[i].getClassLoader())
+                        : ProxyCreator.createProxyObject(serviceClassLoaderParameterTypes[i], allArguments[i], serDeserializer, false);
             } catch (Exception e) {
-                throw new SerializationRuntimeException("Failed to serialize argument type '%s' from class '%s', method '%s'".formatted(parameterTypes[i], serviceClassName, method), e);
+                throw new SerializationRuntimeException("Failed to serialize argument type '%s' from class '%s', method '%s'".formatted(serviceClassLoaderParameterTypes[i], serviceClassName, method), e);
             }
 
         }).toArray();
         try {
-            Object result = m.invoke(service, convertedArgs);
-            return serDeserializer.castWithSerialization(result, this.getClass().getClassLoader());
+            Object result = serviceClassLoaderMethod.invoke(service, convertedArgs);
+            return copyTransClassLoaderObjects ? serDeserializer.castWithSerialization(result, this.getClass().getClassLoader())
+                    : (result != null ? ProxyCreator.createProxyObject(method.getReturnType(), result, serDeserializer, false) : null);
+
         } catch (Exception e) {
             throw new ServiceInvocationRuntimeException("Failed to invoke method '%s' in service class '%s'".formatted(method, serviceClassName), e);
         }

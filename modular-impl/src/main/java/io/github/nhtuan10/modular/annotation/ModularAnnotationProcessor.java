@@ -83,7 +83,7 @@ public class ModularAnnotationProcessor {
                 Class<?> interfaceClass = classInfo.loadClass();
                 List<ClassInfo> implClassesInfo = scanResult.getClassesImplementing(interfaceClass.getName()).stream()
                         .toList();
-                Set<ModularServiceHolder> serviceInfoSet = new HashSet<>();
+                Set<ModularServiceHolder> serviceInfoSet = new LinkedHashSet<>();
                 for (ClassInfo implClassInfo : implClassesInfo) {
                     if (implClassInfo.hasAnnotation(serviceImplAnnotationName)) {
                         Class<?> implClass = implClassInfo.loadClass();
@@ -119,7 +119,7 @@ public class ModularAnnotationProcessor {
                         }
                     }
                 }
-                container.putIfAbsent(interfaceClass, new HashSet<>());
+                container.putIfAbsent(interfaceClass, new LinkedHashSet<>());
                 container.get(interfaceClass).addAll(serviceInfoSet);
             }
         }
@@ -194,7 +194,7 @@ public class ModularAnnotationProcessor {
                         modularServiceHolder.setExternalBeanName(getServiceExternalBeanName(methodInfo.getAnnotationInfo(serviceImplAnnotation), method.getName()));
                     }
                     interfaces.forEach(interfaceClass -> {
-                        container.putIfAbsent(interfaceClass, new HashSet<>());
+                        container.putIfAbsent(interfaceClass, new LinkedHashSet<>());
                         container.get(interfaceClass).add(modularServiceHolder);
                     });
                 }

@@ -44,9 +44,13 @@ public interface ModuleLoader {
 
     CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan);
 
+    <I> List<I> getModularServices(Class<I> clazz);
+
+    <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects);
+
     <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz);
 
-    <I> List<I> getModularServices(Class<I> clazz);
+    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, boolean copyTransClassLoaderObjects);
 
     boolean unloadModule(String moduleName);
 
