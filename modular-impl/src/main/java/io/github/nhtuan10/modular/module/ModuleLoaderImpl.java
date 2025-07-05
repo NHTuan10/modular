@@ -40,7 +40,8 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
     final Map<String, Collection<ModularServiceHolder>> loadedModularServices2 = new ConcurrentHashMap<>();
     //    final Map<Class<?>, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
-    final Map<ProxyCacheKey, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
+//    final Map<ProxyCacheKey, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
+    final Map<ProxyCacheKey, Object> loadedProxyObjects = new ConcurrentHashMap<>();
     final Map<String, ModuleDetail> moduleDetailMap = new ConcurrentHashMap<>();
     final SerDeserializer serDeserializer;
     final ModuleLoaderConfiguration configuration;
@@ -162,26 +163,27 @@ public class ModuleLoaderImpl implements ModuleLoader {
         //TODO: need to refactor this code to support another DI or external container rather than Spring
         Collection<ModularServiceHolder> serviceHolders = loadedModularServices2.get(apiClass.getName());
         if (serviceHolders != null) {
-            @SuppressWarnings("unchecked")
+//
 //            List<I> proxyObjects = (List<I>) loadedProxyObjects.computeIfAbsent(apiClass, clazz ->
-            List<I> proxyObjects = (List<I>) loadedProxyObjects.computeIfAbsent(new ProxyCacheKey(apiClass, externalContainer, beanName), proxyCacheKey -> {
-                Class<?> clazz = proxyCacheKey.apiClass();
-                return serviceHolders.stream().map(serviceHolder -> {
-                    try {
-                        if (serviceHolder.getExternalContainer() != externalContainer) { // continue
-                            return null;
-                        }
-                        Object service;
-                        if (externalContainer == ExternalContainer.SPRING) {
-                            Class<?> serviceClass = serviceHolder.getServiceClass();
-                            Class<?> serviceAppContextProvide = Class.forName(APPLICATION_CONTEXT_PROVIDER, true, serviceClass.getClassLoader());
-                            try {
-                                if (StringUtils.isNotBlank(beanName)) {
-                                    if (beanName.equals(serviceHolder.getExternalBeanName())) {
-                                        service = serviceAppContextProvide.getMethod("getBean", String.class).invoke(null, beanName);
-                                    } else {
-                                        return null;
-                                    }
+//            List<I> proxyObjects = (List<I>) loadedProxyObjects.computeIfAbsent(new ProxyCacheKey(apiClass, externalContainer, beanName), proxyCacheKey -> {
+//                Class<?> clazz = proxyCacheKey.apiClass();
+            @SuppressWarnings("unchecked")
+            List<I> proxyObjects = (List<I>) serviceHolders.stream().map(serviceHolder -> {
+                try {
+                    if (serviceHolder.getExternalContainer() != externalContainer) { // continue
+                        return null;
+                    }
+                    Object service;
+                    if (externalContainer == ExternalContainer.SPRING) {
+                        Class<?> serviceClass = serviceHolder.getServiceClass();
+                        Class<?> serviceAppContextProvide = Class.forName(APPLICATION_CONTEXT_PROVIDER, true, serviceClass.getClassLoader());
+                        try {
+                            if (StringUtils.isNotBlank(beanName)) {
+                                if (beanName.equals(serviceHolder.getExternalBeanName())) {
+                                    service = serviceAppContextProvide.getMethod("getBean", String.class).invoke(null, beanName);
+                                } else {
+                                    return null;
+                                }
 //                                    catch (InvocationTargetException ex){
 //                                        if ("org.springframework.beans.factory.NoSuchBeanDefinitionException".equals(ex.getTargetException().getClass().getName())){
 //                                            return null;
@@ -190,35 +192,45 @@ public class ModuleLoaderImpl implements ModuleLoader {
 //                                            throw new ServiceLookUpRuntimeException("Error when getModularServices from Spring Application Context for class %s with name %s".formatted(clazz.getName(), beanName),ex);
 //                                        }
 //                                    }
-                                } else {
+                            } else {
 //                                        service = serviceAppContextProvide.getMethod("getBean", Class.class).invoke(null, serviceClass);
-                                    service = serviceAppContextProvide.getMethod("getBean", String.class).invoke(null, serviceHolder.getExternalBeanName());
-                                }
-                            } catch (Exception ex) {
-                                throw new ServiceLookUpRuntimeException("Error when getModularServices from Spring Application Context for class %s with name %s".formatted(clazz.getName(), beanName), ex);
+                                service = serviceAppContextProvide.getMethod("getBean", String.class).invoke(null, serviceHolder.getExternalBeanName());
                             }
-                            serviceHolder.setExternalBeanName(beanName);
-                            serviceHolder.setServiceClass(service.getClass());
-                            serviceHolder.setInstance(service);
-                            return (I) this.createProxyObject(clazz, service);
-                        } else if (externalContainer == null && serviceHolder.getInstance() != null) {
-                            service = serviceHolder.getInstance();
-                            return (I) this.createProxyObject(clazz, service);
+                        } catch (Exception ex) {
+                            throw new ServiceLookUpRuntimeException("Error when getModularServices from Spring Application Context for class %s with name %s".formatted(apiClass.getName(), beanName), ex);
                         }
-                    } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                             NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
-                        throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(clazz.getName()), e);
+                        serviceHolder.setExternalBeanName(beanName);
+                        serviceHolder.setServiceClass(service.getClass());
+                        serviceHolder.setInstance(service);
+                    } else if (externalContainer == null) {
+                        service = serviceHolder.getInstance();
+                    } else {
+                        throw new ServiceLookUpRuntimeException("Unsupported external container: " + externalContainer);
                     }
-                    return null;
-                }).filter(Objects::nonNull).toList();
-            });
+                    if (service != null) {
+                        return loadedProxyObjects.computeIfAbsent(new ProxyCacheKey(apiClass, service), proxyCacheKey -> {
+                            try {
+                                return this.createProxyObject(apiClass, service);
+                            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                     NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
+                                throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(apiClass.getName()), e);
+                            }
+                        });
+                    } else
+                        return null;
+                } catch (
+                        ClassNotFoundException e) {
+                    throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(apiClass.getName()), e);
+                }
+            }).filter(Objects::nonNull).toList();
+//            };
             return proxyObjects;
         } else {
             throw new ServiceLookUpRuntimeException("Class '%s' is not registered as a Modular service. Please make sure this class is in the scanned packages and have @ModularService annotation".formatted(apiClass.getName()));
         }
     }
 
-    public static record ProxyCacheKey(Class<?> apiClass, ExternalContainer externalContainer, String beanName) {
+    public static record ProxyCacheKey(Class<?> apiClass, Object service) {
     }
 
     private <I> I createProxyObject(Class<I> apiClass, Object service) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {

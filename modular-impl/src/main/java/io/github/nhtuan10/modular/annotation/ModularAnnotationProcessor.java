@@ -4,6 +4,7 @@ import io.github.classgraph.*;
 import io.github.nhtuan10.modular.api.annotation.ModularConfiguration;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
 import io.github.nhtuan10.modular.api.annotation.ModularSpringService;
+import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
 import io.github.nhtuan10.modular.module.ExternalContainer;
 import io.github.nhtuan10.modular.module.ModularClassLoader;
@@ -86,32 +87,36 @@ public class ModularAnnotationProcessor {
                 for (ClassInfo implClassInfo : implClassesInfo) {
                     if (implClassInfo.hasAnnotation(serviceImplAnnotationName)) {
                         Class<?> implClass = implClassInfo.loadClass();
-                        Object service = null;
-                        Set<Class<?>> interfaceClasses = new HashSet<>();
-                        interfaceClasses.add(interfaceClass);
+                        Set<Class<?>> interfaceClasses = new HashSet<>(Set.of(interfaceClass));
                         // check if any service instance of the implementation class exists
+                        boolean doesServiceExist = false;
                         for (ClassInfo i : implClassInfo.getInterfaces().filter(c -> !c.equals(classInfo) && c.hasAnnotation(serviceInterfaceAnnotationName))) {
                             Class<?> c = i.loadClass();
                             if (container.containsKey(c)) {
-                                service = container.get(c).stream()
-                                        .map(ModularServiceHolder::getInstance).filter(s -> s != null && s.getClass()
+                                ModularServiceHolder serviceHolder = container.get(c).stream()
+                                        .filter(s -> s.getServiceClass() != null && s.getServiceClass()
                                                 .equals(implClass)).findFirst().orElse(null);
-                                interfaceClasses.add(c);
+                                if (serviceHolder != null) {
+                                    doesServiceExist = true;
+                                    serviceHolder.getInterfaceClasses().addAll(interfaceClasses);
+                                    serviceInfoSet.add(serviceHolder);
+                                    break;
+                                }
                             }
                         }
-                        String name = buildServiceName(moduleName, implClass.getName(), externalContainer);
-                        ModularServiceHolder modularServiceHolder;
-                        if (externalContainer == null) {
-                            if (service == null) {
-                                service = implClass.getConstructor().newInstance();
+                        if (!doesServiceExist) {
+                            String name = buildServiceName(moduleName, implClass.getName(), externalContainer);
+                            ModularServiceHolder modularServiceHolder;
+                            if (externalContainer == null) {
+                                Object service = implClass.getConstructor().newInstance();
+                                modularServiceHolder = new ModularServiceHolder(moduleName, implClass, name, service, interfaceClasses);
+                            } else {
+                                modularServiceHolder = new ModularServiceHolder(moduleName, implClass, name, interfaceClasses, externalContainer);
+                                String extBeanName = StringUtils.uncapitalize(implClass.getSimpleName());
+                                modularServiceHolder.setExternalBeanName(getServiceExternalBeanName(implClassInfo.getAnnotationInfo(serviceImplAnnotationName), extBeanName));
                             }
-                            modularServiceHolder = new ModularServiceHolder(moduleName, implClass, name, service, interfaceClasses);
-                        } else {
-                            modularServiceHolder = new ModularServiceHolder(moduleName, implClass, name, interfaceClasses, externalContainer);
-                            String extBeanName = StringUtils.uncapitalize(implClass.getSimpleName());
-                            modularServiceHolder.setExternalBeanName(getServiceExternalBeanName(implClassInfo.getAnnotationInfo(serviceImplAnnotationName), extBeanName));
+                            serviceInfoSet.add(modularServiceHolder);
                         }
-                        serviceInfoSet.add(modularServiceHolder);
                     }
                 }
                 container.putIfAbsent(interfaceClass, new HashSet<>());
@@ -176,6 +181,9 @@ public class ModularAnnotationProcessor {
                         var constructor = configClass.getDeclaredConstructor();
                         constructor.setAccessible(true);
                         Object object = method.invoke(constructor.newInstance());
+                        if (object == null) {
+                            throw new AnnotationProcessingRuntimeException(moduleName, "Error processing module %s: Modular service creation method %s#%s returns null, which is not allowed".formatted(moduleName, configClassInfo.getName(), method.getName()));
+                        }
                         Class<?> serviceClass = object.getClass();
                         modularServiceHolder = new ModularServiceHolder(moduleName, serviceClass, buildServiceName(moduleName, serviceClass.getName(), method.getName(), null), object, interfaces);
                     } else {

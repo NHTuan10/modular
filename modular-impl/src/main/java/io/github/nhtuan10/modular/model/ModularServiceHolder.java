@@ -9,7 +9,8 @@ import lombok.ToString;
 import java.util.Set;
 
 @ToString
-@EqualsAndHashCode(exclude = {"interfaceClass"})
+//@EqualsAndHashCode(exclude = {"interfaceClass"})
+@EqualsAndHashCode
 @Getter
 public final class ModularServiceHolder {
     private final String moduleName;
