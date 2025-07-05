@@ -10,4 +10,6 @@ public interface SampleService {
     }
     void test();
     SomeData testReturn(SomeData in);
+
+    String testStringParam(String in);
 }

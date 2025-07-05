@@ -21,7 +21,12 @@ public class SampleService2Impl implements SampleService2, SampleService {
 
     @Override
     public SomeData testReturn(SomeData in) {
-        return new SomeData(in.name() + " from SampleService2Impl");
+        return new SomeData(in.getName() + " from SampleService2Impl");
+    }
+
+    @Override
+    public String testStringParam(String in) {
+        return "SampleService2Impl ->" + in;
     }
 }
 

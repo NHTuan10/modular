@@ -27,13 +27,23 @@ public class Main {
                 }
 
                 @Override
+                public String testStringParam(String in) {
+                    return "";
+                }
+
+                @Override
                 public SomeData testReturn(SomeData in) {
                     return null;
                 }
             }));
             System.out.println("Hash code: " + s.hashCode());
             s.test();
-            System.out.println("testReturn: " + s.testReturn(new SomeData("testReturn")));
+            SomeData d = new SomeData("input testReturn");
+            Object result = s.testReturn(d);
+            System.out.println("testReturn: " + result);
+            System.out.println("d.getName()" + d.getName());
+
+            System.out.println("Return from testStringParam: " + s.testStringParam("input testStringParam"));
         });
 
     }

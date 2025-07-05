@@ -26,7 +26,13 @@ public class ServiceImpl extends BaseService implements SampleService {
 
     @Override
     public SomeData testReturn(SomeData in) {
-        return new SomeData(in.name() + " from ServiceImpl");
+        in.setName("set by sample-plugin-1 ServiceImpl#testReturn");
+        return new SomeData(in.getName() + " from ServiceImpl");
+    }
+
+    @Override
+    public String testStringParam(String in) {
+        return "ServiceImpl ->" + in;
     }
 
     @Override
