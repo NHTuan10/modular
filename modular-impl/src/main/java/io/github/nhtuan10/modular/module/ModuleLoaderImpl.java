@@ -136,7 +136,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
     private void addModularServices(Map<Class<?>, Collection<ModularServiceHolder>> container) {
         container.forEach((key, value) -> {
-            loadedModularServices2.putIfAbsent(key.getName(), Collections.synchronizedSet(new HashSet<>()));
+            loadedModularServices2.putIfAbsent(key.getName(), Collections.synchronizedSet(new LinkedHashSet<>()));
             loadedModularServices2.get(key.getName()).addAll(value);
         });
     }
