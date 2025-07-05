@@ -39,7 +39,8 @@ public class ModuleLoaderImpl implements ModuleLoader {
     public static final String PROXY_TARGET_FIELD_NAME = "target";
 
     final Map<String, Collection<ModularServiceHolder>> loadedModularServices2 = new ConcurrentHashMap<>();
-    final Map<Class<?>, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
+    //    final Map<Class<?>, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
+    final Map<ProxyCacheKey, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
     final Map<String, ModuleDetail> moduleDetailMap = new ConcurrentHashMap<>();
     final SerDeserializer serDeserializer;
     final ModuleLoaderConfiguration configuration;
@@ -71,7 +72,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
         this.configuration = configuration;
     }
 
-    public void loadModule(String name, List<String> locationUris, List<String> packagesToScan, boolean lazyInit) {
+    public void loadModule(String name, List<String> locationUris, List<String> packagesToScan, ExternalContainer externalContainer) {
         // Load module
         List<URI> mavenUris = new ArrayList<>();
         List<URL> urls = new ArrayList<>();
@@ -108,7 +109,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
         if (!mavenUris.isEmpty()) {
             urls.addAll(resolveMavenDeps(name, mavenUris));
         }
-        loadModuleFromUrls(name, packagesToScan, lazyInit, urls);
+        loadModuleFromUrls(name, packagesToScan, externalContainer, urls);
     }
 
     private List<URL> resolveMavenDeps(String moduleName, List<URI> uris) {
@@ -118,14 +119,14 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return new MavenArtifactsResolver<URL>().resolveDependencies(mvnArtifacts, URL.class);
     }
 
-    private void loadModuleFromUrls(String name, List<String> packagesToScan, boolean lazyInit, List<URL> depUrls) {
+    private void loadModuleFromUrls(String name, List<String> packagesToScan, ExternalContainer externalContainer, List<URL> depUrls) {
         ModularClassLoader classLoader = new ModularClassLoader(name, depUrls);
         ModuleDetail moduleDetail = moduleDetailMap.get(name);
         moduleDetail.setClassLoader(classLoader);
 
         ModularAnnotationProcessor m = new ModularAnnotationProcessor(classLoader);
         try {
-            Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(name, packagesToScan, lazyInit);
+            Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(name, packagesToScan, externalContainer);
             addModularServices(modularServices);
         } catch (Exception e) {
             throw new AnnotationProcessingRuntimeException(name, "Fail during annotation processing", e);
@@ -149,40 +150,75 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
     @Override
     public <I> List<I> getModularServices(Class<I> clazz) {
-        return getModularServices(clazz, false);
+        return getModularServices(clazz, null, null);
     }
 
     @Override
-    public <I> List<I> getModularServicesFromSpring(Class<I> clazz) {
-        return getModularServices(clazz, true);
+    public <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz) {
+        return getModularServices(clazz, ExternalContainer.SPRING, name);
     }
 
-
-    public <I> List<I> getModularServices(Class<I> apiClass, boolean fromSpringAppContext) {
+    public <I> List<I> getModularServices(Class<I> apiClass, ExternalContainer externalContainer, String beanName) {
+        //TODO: need to refactor this code to support another DI or external container rather than Spring
         Collection<ModularServiceHolder> serviceHolders = loadedModularServices2.get(apiClass.getName());
         if (serviceHolders != null) {
             @SuppressWarnings("unchecked")
-            List<I> proxyObjects = (List<I>) loadedProxyObjects.computeIfAbsent(apiClass, clazz ->
-                    serviceHolders.stream().map(serviceHolder -> {
-                        try {
-                            Object service;
-                            if (fromSpringAppContext) {
-                                Class<?> serviceClass = serviceHolder.getServiceClass();
-                                Class<?> serviceAppContextProvide = Class.forName(APPLICATION_CONTEXT_PROVIDER, true, serviceClass.getClassLoader());
-                                service = serviceAppContextProvide.getMethod("getBean", Class.class).invoke(null, serviceClass);
-                            } else {
-                                service = serviceHolder.getInstance();
-                            }
-                            return (I) this.createProxyObject(clazz, service);
-                        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                                 NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
-                            throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(clazz.getName()), e);
+//            List<I> proxyObjects = (List<I>) loadedProxyObjects.computeIfAbsent(apiClass, clazz ->
+            List<I> proxyObjects = (List<I>) loadedProxyObjects.computeIfAbsent(new ProxyCacheKey(apiClass, externalContainer, beanName), proxyCacheKey -> {
+                Class<?> clazz = proxyCacheKey.apiClass();
+                return serviceHolders.stream().map(serviceHolder -> {
+                    try {
+                        if (serviceHolder.getExternalContainer() != externalContainer) { // continue
+                            return null;
                         }
-                    }).toList());
+                        Object service;
+                        if (externalContainer == ExternalContainer.SPRING) {
+                            Class<?> serviceClass = serviceHolder.getServiceClass();
+                            Class<?> serviceAppContextProvide = Class.forName(APPLICATION_CONTEXT_PROVIDER, true, serviceClass.getClassLoader());
+                            try {
+                                if (StringUtils.isNotBlank(beanName)) {
+                                    if (beanName.equals(serviceHolder.getExternalBeanName())) {
+                                        service = serviceAppContextProvide.getMethod("getBean", String.class).invoke(null, beanName);
+                                    } else {
+                                        return null;
+                                    }
+//                                    catch (InvocationTargetException ex){
+//                                        if ("org.springframework.beans.factory.NoSuchBeanDefinitionException".equals(ex.getTargetException().getClass().getName())){
+//                                            return null;
+//                                        }
+//                                        else {
+//                                            throw new ServiceLookUpRuntimeException("Error when getModularServices from Spring Application Context for class %s with name %s".formatted(clazz.getName(), beanName),ex);
+//                                        }
+//                                    }
+                                } else {
+//                                        service = serviceAppContextProvide.getMethod("getBean", Class.class).invoke(null, serviceClass);
+                                    service = serviceAppContextProvide.getMethod("getBean", String.class).invoke(null, serviceHolder.getExternalBeanName());
+                                }
+                            } catch (Exception ex) {
+                                throw new ServiceLookUpRuntimeException("Error when getModularServices from Spring Application Context for class %s with name %s".formatted(clazz.getName(), beanName), ex);
+                            }
+                            serviceHolder.setExternalBeanName(beanName);
+                            serviceHolder.setServiceClass(service.getClass());
+                            serviceHolder.setInstance(service);
+                            return (I) this.createProxyObject(clazz, service);
+                        } else if (externalContainer == null && serviceHolder.getInstance() != null) {
+                            service = serviceHolder.getInstance();
+                            return (I) this.createProxyObject(clazz, service);
+                        }
+                    } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                             NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
+                        throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(clazz.getName()), e);
+                    }
+                    return null;
+                }).filter(Objects::nonNull).toList();
+            });
             return proxyObjects;
         } else {
             throw new ServiceLookUpRuntimeException("Class '%s' is not registered as a Modular service. Please make sure this class is in the scanned packages and have @ModularService annotation".formatted(apiClass.getName()));
         }
+    }
+
+    public static record ProxyCacheKey(Class<?> apiClass, ExternalContainer externalContainer, String beanName) {
     }
 
     private <I> I createProxyObject(Class<I> apiClass, Object service) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
@@ -209,7 +245,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
         return proxy;
     }
 
-    private CompletableFuture<ModuleDetail> startModule(String moduleName, List<String> locationUris, boolean lazyInit, String mainClass, List<String> packagesToScan, boolean awaitMainClass) {
+    private CompletableFuture<ModuleDetail> startModule(String moduleName, List<String> locationUris, ExternalContainer externalContainer, String mainClass, List<String> packagesToScan, boolean awaitMainClass) {
         assert (StringUtils.isNotBlank(moduleName)) : "Module name cannot be null or empty";
         final String FINISH_LOADING_MSG = "Finish loading module '{}'";
         CompletableFuture<ModuleDetail> moduleDetailCompletableFuture = new CompletableFuture<>();
@@ -220,7 +256,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
             Thread t = new Thread(() -> {
                 try {
-                    loadModule(moduleName, locationUris, packagesToScan, lazyInit);
+                    loadModule(moduleName, locationUris, packagesToScan, externalContainer);
                     Thread.currentThread().setContextClassLoader(getClassLoader(moduleName));
                     if (mainClass != null) {
                         try {
@@ -263,48 +299,48 @@ public class ModuleLoaderImpl implements ModuleLoader {
 
     @Override
     public ModuleDetail startModuleSync(String moduleName, List<String> locationUris, List<String> packagesToScan) {
-        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, false, null, packagesToScan, false);
+        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, null, null, packagesToScan, false);
         return awaitModuleReady(moduleName, cf);
     }
 
     @Override
     public ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan) {
-        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, false, mainClass, packagesToScan, false);
+        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, null, mainClass, packagesToScan, false);
         return awaitModuleReady(moduleName, cf);
     }
 
     @Override
     public CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, List<String> locationUris, List<String> packagesToScan) {
-        return startModule(moduleName, locationUris, false, null, packagesToScan, false);
+        return startModule(moduleName, locationUris, null, null, packagesToScan, false);
     }
 
     @Override
     public CompletableFuture<ModuleDetail> startModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
-        return startModule(moduleName, locationUris, false, mainClass, packageToScan, false);
+        return startModule(moduleName, locationUris, null, mainClass, packageToScan, false);
     }
 
     // Spring
 
     @Override
     public ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
-        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, true, mainClass, packageToScan, true);
+        CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, ExternalContainer.SPRING, mainClass, packageToScan, true);
         return awaitSpringApplicationContextReady(moduleName, cf);
     }
 
     @Override
     public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
-        CompletableFuture<ModuleDetail> completableFuture = startModule(moduleName, locationUris, true, mainClass, packageToScan, false);
+        CompletableFuture<ModuleDetail> completableFuture = startModule(moduleName, locationUris, ExternalContainer.SPRING, mainClass, packageToScan, false);
         return awaitSpringApplicationContextReady(moduleName, completableFuture);
     }
 
     @Override
     public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
-        return startModule(moduleName, locationUris, true, mainClass, packageToScan, true);
+        return startModule(moduleName, locationUris, ExternalContainer.SPRING, mainClass, packageToScan, true);
     }
 
     @Override
     public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
-        return startModule(moduleName, locationUris, true, mainClass, packageToScan, false);
+        return startModule(moduleName, locationUris, ExternalContainer.SPRING, mainClass, packageToScan, false);
     }
 
     @Override

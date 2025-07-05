@@ -34,6 +34,14 @@ public class ApplicationContextProvider implements ApplicationContextAware {
         return context.getBean(requiredType);
     }
 
+    public static Object getBean(String beanName, Class<?> requiredType) {
+        return context.getBean(beanName, requiredType);
+    }
+
+
+    public static Object getBean(String beanName) {
+        return context.getBean(beanName);
+    }
 
     public static void registerBean(String beanName, Object bean) {
         ((ConfigurableApplicationContext) context).getBeanFactory().registerSingleton(beanName, bean);

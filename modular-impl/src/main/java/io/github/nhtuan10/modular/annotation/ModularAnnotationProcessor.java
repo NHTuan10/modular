@@ -3,12 +3,17 @@ package io.github.nhtuan10.modular.annotation;
 import io.github.classgraph.*;
 import io.github.nhtuan10.modular.api.annotation.ModularConfiguration;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
+import io.github.nhtuan10.modular.api.annotation.ModularSpringService;
 import io.github.nhtuan10.modular.model.ModularServiceHolder;
+import io.github.nhtuan10.modular.module.ExternalContainer;
 import io.github.nhtuan10.modular.module.ModularClassLoader;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -30,13 +35,17 @@ public class ModularAnnotationProcessor {
         this.container = new ConcurrentHashMap<>();
     }
 
-    public Map<Class<?>, Collection<ModularServiceHolder>> annotationProcess(String moduleName, List<String> packages, boolean lazyInit) {
-        annotationScan(moduleName, packages, ModularConfiguration.class.getName(), ModularService.class.getName(), lazyInit);
-        return container;
-    }
+//    public Map<Class<?>, Collection<ModularServiceHolder>> annotationProcess(String moduleName, List<String> packages, ExternalContainer externalContainer) {
+//        if (externalContainer == ExternalContainer.SPRING) {
+//            annotationScan(moduleName, packages, ModularConfiguration.class.getName(), ModularSpringService.class.getName(), externalContainer);
+//        }
+//        annotationScan(moduleName, packages, ModularConfiguration.class.getName(), ModularService.class.getName(), externalContainer);
+//        return container;
+//    }
 
-    void annotationScan(String moduleName, List<String> packages, String configurationAnnotation, String serviceAnnotation, boolean lazyInit) {
-        if (packages != null && !packages.isEmpty() && StringUtils.isNotBlank(configurationAnnotation) && StringUtils.isNotBlank(serviceAnnotation)) {
+
+    public Map<Class<?>, Collection<ModularServiceHolder>> annotationProcess(String moduleName, List<String> packages, ExternalContainer externalContainer) {
+        if (packages != null && !packages.isEmpty()) {
             try (ScanResult scanResult =
                          new ClassGraph()
                                  .overrideClasspath(this.modularClassLoader.getClassPathUrls())
@@ -46,41 +55,63 @@ public class ModularAnnotationProcessor {
                                  .acceptPackages(packages.toArray(new String[0]))     // Scan package and subpackages (omit to scan all packages)
                                  .scan()) {               // Start the scan
 
-                processServiceAnnotation(moduleName, serviceAnnotation, lazyInit, scanResult);
+                processServiceAnnotation(moduleName, AnnotationProcessorConfig.DEFAULT, scanResult);
+                processServiceAnnotation(moduleName, AnnotationProcessorConfig.SPRING, scanResult);
 
-                processConfigurationAnnotation(moduleName, configurationAnnotation, scanResult, serviceAnnotation);
+                processConfigurationAnnotation(moduleName, AnnotationProcessorConfig.DEFAULT, scanResult);
+                processConfigurationAnnotation(moduleName, AnnotationProcessorConfig.SPRING, scanResult);
 
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
         }
+        return container;
     }
 
-    private void processServiceAnnotation(String moduleName, String serviceAnnotation, boolean lazyInit, ScanResult scanResult) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        for (ClassInfo classInfo : scanResult.getClassesWithAnnotation(serviceAnnotation)) {
+//    void annotationScan(String moduleName, List<String> packages, String configurationAnnotation, String serviceAnnotation, ExternalContainer externalContainer) {
+//
+//    }
+
+    private void processServiceAnnotation(String moduleName, AnnotationProcessorConfig config, ScanResult scanResult) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        String serviceInterfaceAnnotationName = config.getServiceInterfaceAnnotation().getName();
+        String serviceImplAnnotationName = config.getServiceImplAnnotation().getName();
+        ExternalContainer externalContainer = config.getExternalContainer();
+        for (ClassInfo classInfo : scanResult.getClassesWithAnnotation(serviceInterfaceAnnotationName)) {
             if (classInfo.isInterface()) {
                 Class<?> interfaceClass = classInfo.loadClass();
                 List<ClassInfo> implClassesInfo = scanResult.getClassesImplementing(interfaceClass.getName()).stream()
                         .toList();
                 Set<ModularServiceHolder> serviceInfoSet = new HashSet<>();
                 for (ClassInfo implClassInfo : implClassesInfo) {
-                    if (implClassInfo.hasAnnotation(serviceAnnotation)) {
+                    if (implClassInfo.hasAnnotation(serviceImplAnnotationName)) {
                         Class<?> implClass = implClassInfo.loadClass();
                         Object service = null;
+                        Set<Class<?>> interfaceClasses = new HashSet<>();
+                        interfaceClasses.add(interfaceClass);
                         // check if any service instance of the implementation class exists
-                        for (ClassInfo i : implClassInfo.getInterfaces().filter(c -> c.hasAnnotation(serviceAnnotation))) {
+                        for (ClassInfo i : implClassInfo.getInterfaces().filter(c -> !c.equals(classInfo) && c.hasAnnotation(serviceInterfaceAnnotationName))) {
                             Class<?> c = i.loadClass();
                             if (container.containsKey(c)) {
                                 service = container.get(c).stream()
-                                        .map(ModularServiceHolder::getInstance).filter(s -> s.getClass().equals(implClass)).findFirst().orElse(null);
+                                        .map(ModularServiceHolder::getInstance).filter(s -> s != null && s.getClass()
+                                                .equals(implClass)).findFirst().orElse(null);
+                                interfaceClasses.add(c);
                             }
                         }
-                        if (service == null && !lazyInit) {
-                            service = implClass.getConstructor().newInstance();
+                        String name = buildServiceName(moduleName, implClass.getName(), externalContainer);
+                        ModularServiceHolder modularServiceHolder;
+                        if (externalContainer == null) {
+                            if (service == null) {
+                                service = implClass.getConstructor().newInstance();
+                            }
+                            modularServiceHolder = new ModularServiceHolder(moduleName, implClass, name, service, interfaceClasses);
+                        } else {
+                            modularServiceHolder = new ModularServiceHolder(moduleName, implClass, name, interfaceClasses, externalContainer);
+                            String extBeanName = StringUtils.uncapitalize(implClass.getSimpleName());
+                            modularServiceHolder.setExternalBeanName(getServiceExternalBeanName(implClassInfo.getAnnotationInfo(serviceImplAnnotationName), extBeanName));
                         }
-
-                        serviceInfoSet.add(new ModularServiceHolder(implClass, buildServiceName(moduleName, implClass.getName()), service, interfaceClass));
+                        serviceInfoSet.add(modularServiceHolder);
                     }
                 }
                 container.putIfAbsent(interfaceClass, new HashSet<>());
@@ -89,45 +120,90 @@ public class ModularAnnotationProcessor {
         }
     }
 
-    private String buildServiceName(String moduleName, String className) {
-        return buildServiceName(moduleName, className, null);
-    }
-
-    private String buildServiceName(String moduleName, String className, String methodName) {
-        if (methodName != null) {
-            return moduleName + "#" + className + "#" + methodName;
+    private String getServiceExternalBeanName(AnnotationInfo annotationInfo, String defaultExternalBeanName) {
+        Object extBeanNameParam = annotationInfo.getParameterValues().getValue("beanName");
+        if (extBeanNameParam == null || StringUtils.isBlank(extBeanNameParam.toString())) {
+            return defaultExternalBeanName;
         } else {
-            return moduleName + "#" + className;
+            return extBeanNameParam.toString().trim();
         }
     }
 
-    private void processConfigurationAnnotation(String moduleName, String configAnnotation, ScanResult scanResult, String serviceAnnotation) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
-        for (ClassInfo configClassInfo : scanResult.getClassesWithAnnotation(configAnnotation)) {
-            MethodInfoList methodInfosList = configClassInfo.getMethodInfo().filter(methodFilter -> methodFilter.hasAnnotation(serviceAnnotation));
-            for (MethodInfo methodInfo : methodInfosList.filter(m -> m.getTypeDescriptor() != null)) {
-                ClassRefTypeSignature classRefTypeSignature = ((ClassRefTypeSignature) methodInfo.getTypeDescriptor().getResultType());
+    private String buildServiceName(String moduleName, String className, ExternalContainer externalContainer) {
+        return buildServiceName(moduleName, className, null, externalContainer);
+    }
 
-                Set<Class<?>> interfaces = new HashSet<>();
+    private String buildServiceName(String moduleName, String className, String methodName, ExternalContainer externalContainer) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(moduleName).append("#").append(className);
+        if (methodName != null) {
+            sb.append("#").append(methodName);
+        }
+//        if (externalContainer ) {
+//            sb.append("#").append(RandomStringUtils.randomAlphanumeric(10));
+//        } else {
+//            if (methodName != null) {
+//                sb.append("#").append(methodName);
+//            }
+//        }
+        return sb.toString();
+    }
+
+    private void processConfigurationAnnotation(String moduleName, AnnotationProcessorConfig config, ScanResult scanResult) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
+        String configAnnotation = config.getConfigAnnotation().getName();
+        String serviceImplAnnotation = config.getServiceImplAnnotation().getName();
+        String serviceInterfaceAnnotation = config.getServiceInterfaceAnnotation().getName();
+        ExternalContainer externalContainer = config.getExternalContainer();
+        for (ClassInfo configClassInfo : scanResult.getClassesWithAnnotation(configAnnotation)) {
+            MethodInfoList methodInfosList = configClassInfo.getMethodInfo().filter(methodInfo -> methodInfo.hasAnnotation(serviceImplAnnotation) && methodInfo.getTypeDescriptor() != null);
+            for (MethodInfo methodInfo : methodInfosList) {
+                ClassRefTypeSignature classRefTypeSignature = ((ClassRefTypeSignature) methodInfo.getTypeDescriptor().getResultType());
                 ClassInfo returnTypeClassInfo = classRefTypeSignature.getClassInfo();
-                if (returnTypeClassInfo.isInterface() && returnTypeClassInfo.hasAnnotation(serviceAnnotation)) {
-                    interfaces.add(returnTypeClassInfo.loadClass());
+                Class<?> returnTypeClass = returnTypeClassInfo.loadClass();
+                Set<Class<?>> interfaces = new HashSet<>();
+                if (returnTypeClassInfo.isInterface() && returnTypeClassInfo.hasAnnotation(serviceInterfaceAnnotation)) {
+                    interfaces.add(returnTypeClass);
                 }
                 interfaces.addAll(returnTypeClassInfo.getInterfaces().stream()
-                        .filter(interfaceFilter -> interfaceFilter.hasAnnotation(serviceAnnotation))
+                        .filter(interfaceFilter -> interfaceFilter.hasAnnotation(serviceInterfaceAnnotation))
                         .map(ClassInfo::loadClass).collect(Collectors.toSet()));
-                Class<?> configClass = configClassInfo.loadClass();
-                Method method = configClass.getDeclaredMethod(methodInfo.getName());
-                method.setAccessible(true);
-                var constructor = configClass.getDeclaredConstructor();
-                constructor.setAccessible(true);
-                Object object = method.invoke(constructor.newInstance());
-                Class<?> serviceClass = object.getClass();
-                interfaces.forEach(interfaceClass -> {
-                    container.putIfAbsent(interfaceClass, new HashSet<>());
-                    container.get(interfaceClass).add(new ModularServiceHolder(serviceClass, buildServiceName(moduleName, serviceClass.getName(), method.getName()), object, interfaceClass));
-                });
-
+                if (!interfaces.isEmpty()) {
+                    Class<?> configClass = configClassInfo.loadClass();
+                    Method method = configClass.getDeclaredMethod(methodInfo.getName());
+                    ModularServiceHolder modularServiceHolder;
+                    if (externalContainer == null) {
+                        method.setAccessible(true);
+                        var constructor = configClass.getDeclaredConstructor();
+                        constructor.setAccessible(true);
+                        Object object = method.invoke(constructor.newInstance());
+                        Class<?> serviceClass = object.getClass();
+                        modularServiceHolder = new ModularServiceHolder(moduleName, serviceClass, buildServiceName(moduleName, serviceClass.getName(), method.getName(), null), object, interfaces);
+                    } else {
+//                        if (returnTypeClassInfo.isStandardClass()) {
+//                            modularServiceHolder.setServiceClass(returnTypeClass);
+//                        }
+                        modularServiceHolder = new ModularServiceHolder(moduleName, returnTypeClass, buildServiceName(moduleName, configClass.getName(), method.getName(), externalContainer), interfaces, externalContainer);
+                        modularServiceHolder.setExternalBeanName(getServiceExternalBeanName(methodInfo.getAnnotationInfo(serviceImplAnnotation), method.getName()));
+                    }
+                    interfaces.forEach(interfaceClass -> {
+                        container.putIfAbsent(interfaceClass, new HashSet<>());
+                        container.get(interfaceClass).add(modularServiceHolder);
+                    });
+                }
             }
         }
+    }
+
+    @RequiredArgsConstructor
+    @Getter
+    public static enum AnnotationProcessorConfig {
+        DEFAULT(ModularService.class, ModularService.class, ModularConfiguration.class, null),
+        SPRING(ModularService.class, ModularSpringService.class, ModularConfiguration.class, ExternalContainer.SPRING);
+
+        final Class<? extends Annotation> serviceInterfaceAnnotation;
+        final Class<? extends Annotation> serviceImplAnnotation;
+        final Class<? extends Annotation> configAnnotation;
+        final ExternalContainer externalContainer;
+
     }
 }
