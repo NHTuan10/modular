@@ -12,8 +12,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import java.util.stream.IntStream;
 
 @RequiredArgsConstructor
@@ -76,7 +75,11 @@ public class ServiceInvocationInterceptor {
         if (copyTransClassLoaderObjects) {
             return serDeserializer.castWithSerialization(obj, targetClassLoader);
         } else {
-            if (obj == null) return null;
+            if (obj == null) {
+                return null;
+            } else if (targetClassLoader.equals(sourceClassLoader)) {
+                return obj;
+            }
             if (type.isPrimitive() || type.equals(String.class)) {
                 return obj;
             } else if (type.isEnum() || type.isRecord()) {
@@ -88,68 +91,68 @@ public class ServiceInvocationInterceptor {
                     castedArray[i] = cast(array[i], type.getComponentType(), sourceClassLoader, targetClassLoader);
                 }
                 return castedArray;
-            } else if (Collection.class.isAssignableFrom(type)) {
-                Collection collection = (Collection) obj;
-                if (!collection.isEmpty()) {
-                    ClassLoader itemCL = collection.iterator().next().getClass().getClassLoader();
-                    return ProxyCreator.createProxyObject(type, obj, serDeserializer, false, itemCL, sourceClassLoader);
-                } else {
-                    return obj;
-                }
             }
 //            else if (Collection.class.isAssignableFrom(type)) {
-//
-//                if (Set.class.isAssignableFrom(type)) {
-//                    Collection collection = (Collection) obj;
-//                    Set castedCollection = HashSet.class.getConstructor().newInstance();
-//                    if (!collection.isEmpty()) {
-//                        for (Object item : collection) {
-//                            Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
-//                            castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
-//                        }
-//                    }
-//                    return Collections.unmodifiableSet(castedCollection);
-//                } else if (Queue.class.isAssignableFrom(type)) {
-//                    Collection collection = (Collection) obj;
-//                    Queue castedCollection = LinkedList.class.getConstructor().newInstance();
-//                    for (Object item : collection) {
-//                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
-//                        castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
-//                    }
-//                    return castedCollection;
-//                } else if (Collection.class.equals(type) || List.class.isAssignableFrom(type)) {
-//                    Collection collection = (Collection) obj;
-//                    List castedCollection = ArrayList.class.getConstructor().newInstance();
-//                    for (Object item : collection) {
-//                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
-//                        castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
-//                    }
-//                    return Collections.unmodifiableList(castedCollection);
+//                Collection collection = (Collection) obj;
+//                if (!collection.isEmpty()) {
+//                    ClassLoader itemCL = collection.iterator().next().getClass().getClassLoader();
+//                    return ProxyCreator.createProxyObject(type, obj, serDeserializer, false, itemCL, sourceClassLoader);
 //                } else {
-//                    Collection collection = (Collection) obj;
-//                    Class<? extends Collection> c = (Class<? extends Collection>) obj.getClass();
-//                    Collection castedCollection = c.getConstructor().newInstance();
-//                    for (Object item : collection) {
-//                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
-//                        castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
-//                    }
-//                    return castedCollection;
+//                    return obj;
 //                }
-//            } else if (Map.class.isAssignableFrom(type)) {
-//                Map map = (Map) obj;
-//                Map castedMap = HashMap.class.getConstructor().newInstance();
-//                for (Object key : map.keySet()) {
-//                    Class<?> keyType = (Class<?>) serDeserializer.castWithSerialization(key.getClass(), targetClassLoader);
-//                    if (map.get(key) == null) {
-//                        castedMap.put(cast(key, keyType, sourceClassLoader, targetClassLoader), null);
-//                    } else {
-//                        Class<?> valueType = (Class<?>) serDeserializer.castWithSerialization(map.get(key).getClass(), targetClassLoader);
-//                        castedMap.put(cast(key, keyType, sourceClassLoader, targetClassLoader), cast(map.get(key), valueType, sourceClassLoader, targetClassLoader));
-//                    }
-//                }
-//                return Collections.unmodifiableMap(castedMap);
 //            }
-            else if (type.getClassLoader() == null) {
+            else if (Collection.class.isAssignableFrom(type)) {
+
+                if (Set.class.isAssignableFrom(type)) {
+                    Collection collection = (Collection) obj;
+                    Set castedCollection = HashSet.class.getConstructor().newInstance();
+                    if (!collection.isEmpty()) {
+                        for (Object item : collection) {
+                            Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
+                            castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
+                        }
+                    }
+                    return Collections.unmodifiableSet(castedCollection);
+                } else if (Queue.class.isAssignableFrom(type)) {
+                    Collection collection = (Collection) obj;
+                    Queue castedCollection = LinkedList.class.getConstructor().newInstance();
+                    for (Object item : collection) {
+                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
+                        castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
+                    }
+                    return castedCollection;
+                } else if (Collection.class.equals(type) || List.class.isAssignableFrom(type)) {
+                    Collection collection = (Collection) obj;
+                    List castedCollection = ArrayList.class.getConstructor().newInstance();
+                    for (Object item : collection) {
+                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
+                        castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
+                    }
+                    return Collections.unmodifiableList(castedCollection);
+                } else {
+                    Collection collection = (Collection) obj;
+                    Class<? extends Collection> c = (Class<? extends Collection>) obj.getClass();
+                    Collection castedCollection = c.getConstructor().newInstance();
+                    for (Object item : collection) {
+                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
+                        castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
+                    }
+                    return castedCollection;
+                }
+            } else if (Map.class.isAssignableFrom(type)) {
+                Map map = (Map) obj;
+                Map castedMap = HashMap.class.getConstructor().newInstance();
+                for (Object key : map.keySet()) {
+                    Class<?> keyType = (Class<?>) serDeserializer.castWithSerialization(key.getClass(), targetClassLoader);
+                    if (map.get(key) == null) {
+                        castedMap.put(cast(key, keyType, sourceClassLoader, targetClassLoader), null);
+                    } else {
+                        Class<?> valueType = (Class<?>) serDeserializer.castWithSerialization(map.get(key).getClass(), targetClassLoader);
+                        castedMap.put(cast(key, keyType, sourceClassLoader, targetClassLoader), cast(map.get(key), valueType, sourceClassLoader, targetClassLoader));
+                    }
+                }
+                return Collections.unmodifiableMap(castedMap);
+            } else if (type.getClassLoader() == null) {
                 // TODO: revise this implementation to support type loaded by bootstrap class loader
                 return serDeserializer.castWithSerialization(obj, targetClassLoader);
             } else {
