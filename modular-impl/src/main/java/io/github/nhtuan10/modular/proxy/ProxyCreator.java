@@ -15,14 +15,14 @@ import java.lang.reflect.InvocationTargetException;
 public class ProxyCreator {
     private static Objenesis objenesis = new ObjenesisStd();
     public static <I> I createProxyObject(Class<I> apiClass, Object service, SerDeserializer serDeserializer, boolean copyTransClassLoaderObjects,
-                                          ClassLoader apiClassLoader, ClassLoader serviceClassLoader) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchFieldException, NoSuchMethodException {
-//        ClassLoader apiClassLoader = apiClass.getClassLoader();
-        if (apiClassLoader == null)
-            apiClassLoader = ClassLoader.getSystemClassLoader();
+                                          ClassLoader sourceClassLoader, ClassLoader targetClassLoader) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchFieldException, NoSuchMethodException {
+//        ClassLoader sourceClassLoader = apiClass.getClassLoader();
+        if (sourceClassLoader == null)
+            sourceClassLoader = ClassLoader.getSystemClassLoader();
 
-        Object svcInvocationInterceptor = Class.forName(ServiceInvocationInterceptor.class.getName(), true, apiClassLoader)
-                .getConstructor(Object.class, SerDeserializer.class, boolean.class, ClassLoader.class).newInstance(service, serDeserializer, copyTransClassLoaderObjects, serviceClassLoader);
-        Object equalsMethodInterceptor = Class.forName(ServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName(), true, apiClassLoader)
+        Object svcInvocationInterceptor = Class.forName(ServiceInvocationInterceptor.class.getName(), true, sourceClassLoader)
+                .getConstructor(Object.class, SerDeserializer.class, boolean.class, ClassLoader.class, ClassLoader.class).newInstance(service, serDeserializer, copyTransClassLoaderObjects, sourceClassLoader, targetClassLoader);
+        Object equalsMethodInterceptor = Class.forName(ServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName(), true, sourceClassLoader)
                 .getConstructor(Object.class).newInstance(service);
         Class<? extends I> c = new ByteBuddy()
                 .subclass(apiClass)
@@ -33,7 +33,7 @@ public class ProxyCreator {
                 .intercept(MethodDelegation.to(svcInvocationInterceptor))
                 .defineField(ModuleLoaderImpl.PROXY_TARGET_FIELD_NAME, Object.class, Visibility.PRIVATE)
                 .make()
-                .load(apiClassLoader)
+                .load(sourceClassLoader)
                 .getLoaded();
         I proxy = objenesis.getInstantiatorOf(c).newInstance();
         Field targetField = c.getDeclaredField(ModuleLoaderImpl.PROXY_TARGET_FIELD_NAME);

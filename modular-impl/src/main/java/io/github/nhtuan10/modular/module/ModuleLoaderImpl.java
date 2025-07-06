@@ -16,10 +16,12 @@ import io.github.nhtuan10.modular.serdeserializer.JacksonSmileSerDeserializer;
 import io.github.nhtuan10.modular.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -118,11 +120,12 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     private void loadModuleFromUrls(String name, ModuleLoadConfiguration moduleLoadConfiguration, List<URL> depUrls) {
-        ModularClassLoader classLoader = new ModularClassLoader(name, depUrls);
+        ModularClassLoader moduleClassLoader = new ModularClassLoader(name, depUrls);
         ModuleDetail moduleDetail = moduleDetailMap.get(name);
-        moduleDetail.setClassLoader(classLoader);
-
-        ModularAnnotationProcessor m = new ModularAnnotationProcessor(classLoader);
+        moduleDetail.setClassLoader(moduleClassLoader);
+        addAllOpens(ModuleLoaderImpl.class.getClassLoader());
+        addAllOpens(moduleClassLoader);
+        ModularAnnotationProcessor m = new ModularAnnotationProcessor(moduleClassLoader);
         try {
             Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(name, moduleLoadConfiguration);
             addModularServices(modularServices);
@@ -135,6 +138,25 @@ public class ModuleLoaderImpl implements ModuleLoader {
         container.forEach((key, value) -> {
             loadedModularServices2.putIfAbsent(key.getName(), Collections.synchronizedSet(new LinkedHashSet<>()));
             loadedModularServices2.get(key.getName()).addAll(value);
+        });
+    }
+
+    @SneakyThrows
+    private void addAllOpens(ClassLoader classLoader) {
+        final Module unnamedModule = classLoader.getUnnamedModule();
+        final Method method = Module.class.getDeclaredMethod("implAddExportsOrOpens", String.class, Module.class, boolean.class, boolean.class);
+        method.setAccessible(true);
+
+        ModuleLayer.boot().modules().forEach(module -> {
+            final Set<String> packages = module.getPackages();
+            for (String eachPackage : packages) {
+                try {
+                    method.invoke(module, eachPackage, unnamedModule, true, true);
+                } catch (Exception e) {
+                    log.error("Error when add-opens {}/{}={}", module.getName(), eachPackage, unnamedModule.toString(), e);
+                }
+                log.info("--add-open " + module.getName() + "/" + eachPackage + "=" + unnamedModule.toString());
+            }
         });
     }
 
