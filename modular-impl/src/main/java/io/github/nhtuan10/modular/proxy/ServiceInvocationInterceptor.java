@@ -94,8 +94,8 @@ public class ServiceInvocationInterceptor {
                     Collection collection = (Collection) obj;
                     Set castedCollection = HashSet.class.getConstructor().newInstance();
                     if (!collection.isEmpty()) {
-                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(new ArrayList<>(collection).get(0).getClass(), targetClassLoader);
                         for (Object item : collection) {
+                            Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
                             castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
                         }
                     }
@@ -103,32 +103,26 @@ public class ServiceInvocationInterceptor {
                 } else if (Queue.class.isAssignableFrom(type)) {
                     Collection collection = (Collection) obj;
                     Queue castedCollection = LinkedList.class.getConstructor().newInstance();
-                    if (!collection.isEmpty()) {
-                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(new ArrayList<>(collection).get(0).getClass(), targetClassLoader);
-                        for (Object item : collection) {
-                            castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
-                        }
+                    for (Object item : collection) {
+                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
+                        castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
                     }
                     return castedCollection;
                 } else if (Collection.class.equals(type) || List.class.isAssignableFrom(type)) {
                     Collection collection = (Collection) obj;
                     List castedCollection = ArrayList.class.getConstructor().newInstance();
-                    if (!collection.isEmpty()) {
-                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(new ArrayList<>(collection).get(0).getClass(), targetClassLoader);
-                        for (Object item : collection) {
-                            castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
-                        }
+                    for (Object item : collection) {
+                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
+                        castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
                     }
                     return Collections.unmodifiableList(castedCollection);
                 } else {
                     Collection collection = (Collection) obj;
                     Class<? extends Collection> c = (Class<? extends Collection>) obj.getClass();
                     Collection castedCollection = c.getConstructor().newInstance();
-                    if (!collection.isEmpty()) {
-                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(new ArrayList<>(collection).get(0).getClass(), targetClassLoader);
-                        for (Object item : collection) {
-                            castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
-                        }
+                    for (Object item : collection) {
+                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(item.getClass(), targetClassLoader);
+                        castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
                     }
                     return castedCollection;
                 }
@@ -136,14 +130,15 @@ public class ServiceInvocationInterceptor {
                 Map map = (Map) obj;
                 Map castedMap = HashMap.class.getConstructor().newInstance();
                 for (Object key : map.keySet()) {
-                    castedMap.put(cast(key, (Class<?>) serDeserializer.castWithSerialization(obj.getClass().getComponentType(), targetClassLoader), sourceClassLoader, targetClassLoader), cast(map.get(key), type.getComponentType(), sourceClassLoader, targetClassLoader));
+                    Class<?> keyType = (Class<?>) serDeserializer.castWithSerialization(key.getClass(), targetClassLoader);
+                    Class<?> valueType = (Class<?>) serDeserializer.castWithSerialization(map.get(key).getClass(), targetClassLoader);
+                    castedMap.put(cast(key, keyType, sourceClassLoader, targetClassLoader), cast(map.get(key), valueType, sourceClassLoader, targetClassLoader));
                 }
                 return Collections.unmodifiableMap(castedMap);
             } else if (type.getClassLoader() == null) {
                 // TODO: revise this implementation to support type loaded by bootstrap class loader
                 return serDeserializer.castWithSerialization(obj, targetClassLoader);
-            }
-            else {
+            } else {
                 return ProxyCreator.createProxyObject(type, obj, serDeserializer, false, targetClassLoader, sourceClassLoader);
             }
         }
