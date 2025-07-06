@@ -131,8 +131,12 @@ public class ServiceInvocationInterceptor {
                 Map castedMap = HashMap.class.getConstructor().newInstance();
                 for (Object key : map.keySet()) {
                     Class<?> keyType = (Class<?>) serDeserializer.castWithSerialization(key.getClass(), targetClassLoader);
-                    Class<?> valueType = (Class<?>) serDeserializer.castWithSerialization(map.get(key).getClass(), targetClassLoader);
-                    castedMap.put(cast(key, keyType, sourceClassLoader, targetClassLoader), cast(map.get(key), valueType, sourceClassLoader, targetClassLoader));
+                    if (map.get(key) == null) {
+                        castedMap.put(cast(key, keyType, sourceClassLoader, targetClassLoader), null);
+                    } else {
+                        Class<?> valueType = (Class<?>) serDeserializer.castWithSerialization(map.get(key).getClass(), targetClassLoader);
+                        castedMap.put(cast(key, keyType, sourceClassLoader, targetClassLoader), cast(map.get(key), valueType, sourceClassLoader, targetClassLoader));
+                    }
                 }
                 return Collections.unmodifiableMap(castedMap);
             } else if (type.getClassLoader() == null) {
