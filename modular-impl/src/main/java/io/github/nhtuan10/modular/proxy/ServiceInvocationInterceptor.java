@@ -152,10 +152,12 @@ public class ServiceInvocationInterceptor {
                     }
                 }
                 return Collections.unmodifiableMap(castedMap);
-            } else if (type.getClassLoader() == null) {
-                // TODO: revise this implementation to support type loaded by bootstrap class loader
-                return serDeserializer.castWithSerialization(obj, targetClassLoader);
-            } else {
+            }
+//            else if (type.getClassLoader() == null) {
+//                // TODO: revise this implementation to support type loaded by bootstrap class loader
+//                return serDeserializer.castWithSerialization(obj, targetClassLoader);
+//            }
+            else {
                 return ProxyCreator.createProxyObject(type, obj, serDeserializer, false, targetClassLoader, sourceClassLoader);
             }
         }
