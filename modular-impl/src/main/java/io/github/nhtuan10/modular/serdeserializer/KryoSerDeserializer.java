@@ -3,6 +3,7 @@ package io.github.nhtuan10.modular.serdeserializer;
 import com.esotericsoftware.kryo.kryo5.Kryo;
 import com.esotericsoftware.kryo.kryo5.io.Input;
 import com.esotericsoftware.kryo.kryo5.io.Output;
+import com.esotericsoftware.kryo.kryo5.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.io.ByteArrayOutputStream;
 
@@ -13,7 +14,9 @@ public class KryoSerDeserializer implements SerDeserializer {
         if (obj == null)
             return null;
         Kryo kryo = new Kryo();
+        kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
         kryo.setRegistrationRequired(false);
+        kryo.setReferences(true);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Output output = new Output(bos);
         kryo.writeObject(output, obj);

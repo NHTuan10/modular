@@ -1,5 +1,7 @@
 package io.github.nhtuan10.modular.proxy;
 
+import com.esotericsoftware.kryo.kryo5.objenesis.Objenesis;
+import com.esotericsoftware.kryo.kryo5.objenesis.ObjenesisStd;
 import io.github.nhtuan10.modular.module.ModuleLoaderImpl;
 import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
 import net.bytebuddy.ByteBuddy;
@@ -11,8 +13,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 public class ProxyCreator {
+    private static Objenesis objenesis = new ObjenesisStd();
     public static <I> I createProxyObject(Class<I> apiClass, Object service, SerDeserializer serDeserializer, boolean copyTransClassLoaderObjects,
-                                          ClassLoader apiClassLoader, ClassLoader serviceClassLoader) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
+                                          ClassLoader apiClassLoader, ClassLoader serviceClassLoader) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchFieldException, NoSuchMethodException {
 //        ClassLoader apiClassLoader = apiClass.getClassLoader();
         if (apiClassLoader == null)
             apiClassLoader = ClassLoader.getSystemClassLoader();
@@ -32,7 +35,7 @@ public class ProxyCreator {
                 .make()
                 .load(apiClassLoader)
                 .getLoaded();
-        I proxy = c.getConstructor(new Class[]{}).newInstance();
+        I proxy = objenesis.getInstantiatorOf(c).newInstance();
         Field targetField = c.getDeclaredField(ModuleLoaderImpl.PROXY_TARGET_FIELD_NAME);
         targetField.setAccessible(true);
         targetField.set(proxy, service);
