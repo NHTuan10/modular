@@ -12,7 +12,7 @@ import net.bytebuddy.implementation.bind.annotation.This;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.*;
 import java.util.stream.IntStream;
 
 @RequiredArgsConstructor
@@ -69,6 +69,7 @@ public class ServiceInvocationInterceptor {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private Object cast(Object obj, Class<?> type, ClassLoader sourceClassLoader, ClassLoader targetClassLoader) throws Exception {
         if (copyTransClassLoaderObjects) {
             return serDeserializer.castWithSerialization(obj, targetClassLoader);
@@ -85,19 +86,63 @@ public class ServiceInvocationInterceptor {
                     castedArray[i] = cast(array[i], type.getComponentType(), sourceClassLoader, targetClassLoader);
                 }
                 return castedArray;
+            }
+            // TODO: try open java.util classes for reflections
+            else if (Collection.class.isAssignableFrom(type)) {
+
+                if (Set.class.isAssignableFrom(type)) {
+                    Collection collection = (Collection) obj;
+                    Set castedCollection = HashSet.class.getConstructor().newInstance();
+                    if (!collection.isEmpty()) {
+                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(new ArrayList<>(collection).get(0).getClass(), targetClassLoader);
+                        for (Object item : collection) {
+                            castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
+                        }
+                    }
+                    return Collections.unmodifiableSet(castedCollection);
+                } else if (Queue.class.isAssignableFrom(type)) {
+                    Collection collection = (Collection) obj;
+                    Queue castedCollection = LinkedList.class.getConstructor().newInstance();
+                    if (!collection.isEmpty()) {
+                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(new ArrayList<>(collection).get(0).getClass(), targetClassLoader);
+                        for (Object item : collection) {
+                            castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
+                        }
+                    }
+                    return castedCollection;
+                } else if (Collection.class.equals(type) || List.class.isAssignableFrom(type)) {
+                    Collection collection = (Collection) obj;
+                    List castedCollection = ArrayList.class.getConstructor().newInstance();
+                    if (!collection.isEmpty()) {
+                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(new ArrayList<>(collection).get(0).getClass(), targetClassLoader);
+                        for (Object item : collection) {
+                            castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
+                        }
+                    }
+                    return Collections.unmodifiableList(castedCollection);
+                } else {
+                    Collection collection = (Collection) obj;
+                    Class<? extends Collection> c = (Class<? extends Collection>) obj.getClass();
+                    Collection castedCollection = c.getConstructor().newInstance();
+                    if (!collection.isEmpty()) {
+                        Class<?> itemType = (Class<?>) serDeserializer.castWithSerialization(new ArrayList<>(collection).get(0).getClass(), targetClassLoader);
+                        for (Object item : collection) {
+                            castedCollection.add(cast(item, itemType, sourceClassLoader, targetClassLoader));
+                        }
+                    }
+                    return castedCollection;
+                }
+            } else if (Map.class.isAssignableFrom(type)) {
+                Map map = (Map) obj;
+                Map castedMap = HashMap.class.getConstructor().newInstance();
+                for (Object key : map.keySet()) {
+                    castedMap.put(cast(key, (Class<?>) serDeserializer.castWithSerialization(obj.getClass().getComponentType(), targetClassLoader), sourceClassLoader, targetClassLoader), cast(map.get(key), type.getComponentType(), sourceClassLoader, targetClassLoader));
+                }
+                return Collections.unmodifiableMap(castedMap);
             } else if (type.getClassLoader() == null) {
                 // TODO: revise this implementation to support type loaded by bootstrap class loader
                 return serDeserializer.castWithSerialization(obj, targetClassLoader);
             }
-//            else if (Collection.class.isAssignableFrom(type)) {
-//                Class<?> c  = obj.getClass();
-//                Collection collection = (Collection) obj;
-//                Collection castedCollection = (Collection) c.newInstance();
-//                for (Object item : collection) {
-//                    castedCollection.add(cast(item, type.getComponentType(), sourceClassLoader, targetClassLoader));
-//                }
-//                return castedCollection;
-//            }
             else {
                 return ProxyCreator.createProxyObject(type, obj, serDeserializer, false, targetClassLoader, sourceClassLoader);
             }
