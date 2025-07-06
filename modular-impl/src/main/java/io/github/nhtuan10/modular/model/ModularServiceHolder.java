@@ -24,20 +24,23 @@ public final class ModularServiceHolder {
     private ExternalContainer externalContainer;
     @Setter
     private String externalBeanName;
+    private final ClassLoader classLoader;
 
-    public ModularServiceHolder(String moduleName, Class<?> serviceClass, String name, Set<Class<?>> interfaceClasses, ExternalContainer externalContainer) {
+    public ModularServiceHolder(String moduleName, Class<?> serviceClass, String name, Set<Class<?>> interfaceClasses, ExternalContainer externalContainer, ClassLoader classLoader) {
         this.moduleName = moduleName;
         this.serviceClass = serviceClass;
         this.name = name;
         this.interfaceClasses = interfaceClasses;
         this.externalContainer = externalContainer;
+        this.classLoader = classLoader;
     }
 
-    public ModularServiceHolder(String moduleName, Class<?> serviceClass, String name, Object instance, Set<Class<?>> interfaceClasses) {
+    public ModularServiceHolder(String moduleName, Class<?> serviceClass, String name, Object instance, Set<Class<?>> interfaceClasses, ClassLoader classLoader) {
         this.moduleName = moduleName;
         this.name = name;
         this.serviceClass = serviceClass;
         this.instance = instance;
         this.interfaceClasses = interfaceClasses;
+        this.classLoader = classLoader;
     }
 }

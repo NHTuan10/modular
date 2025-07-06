@@ -217,7 +217,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
                     if (service != null) {
                         return loadedProxyObjects.computeIfAbsent(new ProxyCacheKey(apiClass, service), proxyCacheKey -> {
                             try {
-                                return ProxyCreator.createProxyObject(apiClass, service, this.serDeserializer, copyTransClassLoaderObjects);
+                                return ProxyCreator.createProxyObject(apiClass, service, this.serDeserializer, copyTransClassLoaderObjects, apiClass.getClassLoader(), serviceHolder.getClassLoader());
                             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                      NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
                                 throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(apiClass.getName()), e);

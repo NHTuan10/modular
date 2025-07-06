@@ -116,9 +116,9 @@ public class ModularAnnotationProcessor {
                             ModularServiceHolder modularServiceHolder;
                             if (externalContainer == null) {
                                 Object service = implClass.getConstructor().newInstance();
-                                modularServiceHolder = new ModularServiceHolder(moduleName, implClass, name, service, interfaceClasses);
+                                modularServiceHolder = new ModularServiceHolder(moduleName, implClass, name, service, interfaceClasses, modularClassLoader);
                             } else {
-                                modularServiceHolder = new ModularServiceHolder(moduleName, implClass, name, interfaceClasses, externalContainer);
+                                modularServiceHolder = new ModularServiceHolder(moduleName, implClass, name, interfaceClasses, externalContainer, modularClassLoader);
                                 String extBeanName = StringUtils.uncapitalize(implClass.getSimpleName());
                                 modularServiceHolder.setExternalBeanName(getServiceExternalBeanName(implClassInfo.getAnnotationInfo(serviceImplAnnotationName), extBeanName));
                             }
@@ -194,12 +194,12 @@ public class ModularAnnotationProcessor {
                             throw new AnnotationProcessingRuntimeException(moduleName, "Error processing module %s: Modular service creation method %s#%s returns null, which is not allowed".formatted(moduleName, configClassInfo.getName(), method.getName()));
                         }
                         Class<?> serviceClass = object.getClass();
-                        modularServiceHolder = new ModularServiceHolder(moduleName, serviceClass, buildServiceName(moduleName, serviceClass.getName(), method.getName(), null), object, interfaces);
+                        modularServiceHolder = new ModularServiceHolder(moduleName, serviceClass, buildServiceName(moduleName, serviceClass.getName(), method.getName(), null), object, interfaces, modularClassLoader);
                     } else {
 //                        if (returnTypeClassInfo.isStandardClass()) {
 //                            modularServiceHolder.setServiceClass(returnTypeClass);
 //                        }
-                        modularServiceHolder = new ModularServiceHolder(moduleName, returnTypeClass, buildServiceName(moduleName, configClass.getName(), method.getName(), externalContainer), interfaces, externalContainer);
+                        modularServiceHolder = new ModularServiceHolder(moduleName, returnTypeClass, buildServiceName(moduleName, configClass.getName(), method.getName(), externalContainer), interfaces, externalContainer, modularClassLoader);
                         modularServiceHolder.setExternalBeanName(getServiceExternalBeanName(methodInfo.getAnnotationInfo(serviceImplAnnotation), method.getName()));
                     }
                     interfaces.forEach(interfaceClass -> {

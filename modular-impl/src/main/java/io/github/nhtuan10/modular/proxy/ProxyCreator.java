@@ -11,12 +11,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 public class ProxyCreator {
-    public static <I> I createProxyObject(Class<I> apiClass, Object service, SerDeserializer serDeserializer, boolean copyTransClassLoaderObjects) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
-        ClassLoader apiClassLoader = apiClass.getClassLoader();
+    public static <I> I createProxyObject(Class<I> apiClass, Object service, SerDeserializer serDeserializer, boolean copyTransClassLoaderObjects,
+                                          ClassLoader apiClassLoader, ClassLoader serviceClassLoader) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException, NoSuchFieldException {
+//        ClassLoader apiClassLoader = apiClass.getClassLoader();
         if (apiClassLoader == null)
-            return (I) service;
+            apiClassLoader = ClassLoader.getSystemClassLoader();
+
         Object svcInvocationInterceptor = Class.forName(ServiceInvocationInterceptor.class.getName(), true, apiClassLoader)
-                .getConstructor(Object.class, SerDeserializer.class, boolean.class).newInstance(service, serDeserializer, copyTransClassLoaderObjects);
+                .getConstructor(Object.class, SerDeserializer.class, boolean.class, ClassLoader.class).newInstance(service, serDeserializer, copyTransClassLoaderObjects, serviceClassLoader);
         Object equalsMethodInterceptor = Class.forName(ServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName(), true, apiClassLoader)
                 .getConstructor(Object.class).newInstance(service);
         Class<? extends I> c = new ByteBuddy()
