@@ -80,7 +80,7 @@ public class ServiceInvocationInterceptor {
             } else if (targetClassLoader.equals(sourceClassLoader)) {
                 return obj;
             }
-            if (type.isPrimitive() || type.equals(String.class)) {
+            if (type.isPrimitive() || isBoxedPrimitive(type) || type.equals(String.class)) {
                 return obj;
             } else if (type.isEnum() || type.isRecord()) {
                 return serDeserializer.castWithSerialization(obj, targetClassLoader);
@@ -161,6 +161,17 @@ public class ServiceInvocationInterceptor {
                 return ProxyCreator.createProxyObject(type, obj, serDeserializer, false, targetClassLoader, sourceClassLoader);
             }
         }
+    }
+
+    private boolean isBoxedPrimitive(Class<?> type) {
+        return type == Integer.class ||
+                type == Long.class ||
+                type == Short.class ||
+                type == Byte.class ||
+                type == Float.class ||
+                type == Double.class ||
+                type == Boolean.class ||
+                type == Character.class;
     }
 
     @AllArgsConstructor
