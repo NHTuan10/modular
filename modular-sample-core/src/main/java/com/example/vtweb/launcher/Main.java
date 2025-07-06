@@ -37,8 +37,13 @@ public class Main {
                 }
 
                 @Override
-                public String testStringParam(String in) {
+                public String testObjectArray(SomeData[] in) {
                     return "";
+                }
+
+                @Override
+                public List<SomeData> testObjectList(List<SomeData> in) {
+                    return List.of();
                 }
 
                 @Override
@@ -52,8 +57,15 @@ public class Main {
             Object result = s.testReturn(d);
             System.out.println("testReturn: " + result);
             System.out.println("d.getName(): " + d.getName());
-
-            System.out.println("Return from testStringParam: " + s.testStringParam("input testStringParam"));
+            var inArr = new SomeData[]{new SomeData("input testObjectArray")};
+            System.out.println("Return from testObjectArray: " + s.testObjectArray(inArr));
+            System.out.println("In array: " + inArr[0]);
+//            var list = new ArrayList<SomeData>();
+//            list.add(new SomeData("input testObjectList-1"));
+//            list.add(new SomeData("input testObjectList-2"));
+            var list = List.of(new SomeData("input testObjectList-1"), new SomeData("input testObjectList-2"));
+            System.out.println("Return from testObjectList: " + s.testObjectList(list));
+            System.out.println("In list: " + list);
         });
 
     }

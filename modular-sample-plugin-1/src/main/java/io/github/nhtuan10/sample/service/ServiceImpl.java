@@ -8,6 +8,7 @@ import io.github.nhtuan10.sample.api.service.SomeData;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -31,8 +32,23 @@ public class ServiceImpl extends BaseService implements SampleService {
     }
 
     @Override
-    public String testStringParam(String in) {
-        return "ServiceImpl ->" + in;
+    public String testObjectArray(SomeData[] in) {
+        in[0].setName("set by sample-plugin-1 ServiceImpl#testReturn");
+        return "ServiceImpl ->" + List.of(in);
+    }
+
+    @Override
+    public List<SomeData> testObjectList(List<SomeData> in) {
+//        in.forEach(d -> d.setName("set by sample-plugin-1 ServiceImpl#testObjectList"));
+        for (SomeData d : in) {
+            d.setName("set by sample-plugin-1 ServiceImpl#testObjectList");
+        }
+        var r = new ArrayList<SomeData>();
+        for (SomeData d : in) {
+            r.add(new SomeData(d.getName() + " result from ServiceImpl#testObjectList"));
+        }
+        return r;
+//        return in.stream().map(d -> new SomeData( "Result from ServiceImpl#testObjectList")).toList();
     }
 
     @Override

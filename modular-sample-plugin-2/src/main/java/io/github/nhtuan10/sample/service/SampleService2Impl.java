@@ -10,6 +10,8 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+
 @Slf4j
 @ToString
 @EqualsAndHashCode
@@ -26,8 +28,13 @@ public class SampleService2Impl implements SampleService2, SampleService {
     }
 
     @Override
-    public String testStringParam(String in) {
-        return "SampleService2Impl ->" + in;
+    public String testObjectArray(SomeData[] in) {
+        return "SampleService2Impl ->" + List.of(in);
+    }
+
+    @Override
+    public List<SomeData> testObjectList(List<SomeData> in) {
+        return List.of();
     }
 
     @Override
