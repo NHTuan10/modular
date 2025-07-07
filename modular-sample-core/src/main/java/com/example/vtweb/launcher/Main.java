@@ -11,11 +11,12 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        ModuleLoader.ModuleDetail moduleDetail = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
+//        ModuleLoader.ModuleDetail moduleDetail = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
         var plugin2Config = ModuleLoadConfiguration.builder()
-                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
+//                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
+                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.service"))
                 .allowNonAnnotatedServices(true)
                 .build();
@@ -27,7 +28,8 @@ public class Main {
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT/my-kafka-tool-main-0.1.1-SNAPSHOT.jar" ), "io.github.nhtuan10.mykafkatool.MyKafkaToolLauncher", "");
         Modular.getModularServices(SomeInterface.class).forEach(SomeInterface::someInterfaceMethod);
 
-        Modular.getModularServices(SampleService.class, false).forEach(s -> {
+//        Modular.getModularServices(SampleService.class, false).parallelStream().forEach(s -> {
+        Modular.getModularServices(SampleService.class, false).parallelStream().forEach(s -> {
 
             System.out.println("Equals: " + s.equals(s));
             System.out.println("Equals: " + s.equals(new SampleService() {

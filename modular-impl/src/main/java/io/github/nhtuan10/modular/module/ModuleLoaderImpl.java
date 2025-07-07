@@ -123,8 +123,8 @@ public class ModuleLoaderImpl implements ModuleLoader {
         ModularClassLoader moduleClassLoader = new ModularClassLoader(name, depUrls);
         ModuleDetail moduleDetail = moduleDetailMap.get(name);
         moduleDetail.setClassLoader(moduleClassLoader);
-        addAllOpens(ModuleLoaderImpl.class.getClassLoader());
-        addAllOpens(moduleClassLoader);
+//        addAllOpens(ModuleLoaderImpl.class.getClassLoader());
+//        addAllOpens(moduleClassLoader);
         ModularAnnotationProcessor m = new ModularAnnotationProcessor(moduleClassLoader);
         try {
             Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(name, moduleLoadConfiguration);
