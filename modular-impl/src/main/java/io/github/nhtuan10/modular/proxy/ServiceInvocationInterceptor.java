@@ -32,7 +32,7 @@ public class ServiceInvocationInterceptor {
 //                .map(Class::getName)
                 .map(clazz -> {
                     try {
-                        return serDeserializer.castWithSerialization(clazz, targetClassLoader);
+                        return sourceClassLoader == targetClassLoader ? clazz : serDeserializer.castWithSerialization(clazz, targetClassLoader);
 //                        return service.getClass().getClassLoader().loadClass(clazz);
                     }
 //                    catch (ClassNotFoundException e) {
@@ -72,17 +72,13 @@ public class ServiceInvocationInterceptor {
 
     @SuppressWarnings("unchecked")
     private Object cast(Object obj, Class<?> type, ClassLoader sourceClassLoader, ClassLoader targetClassLoader) throws Exception {
+        if (obj == null || targetClassLoader == sourceClassLoader || type.isPrimitive() || isBoxedPrimitive(type) || type.equals(String.class)) {
+            return obj;
+        }
         if (copyTransClassLoaderObjects) {
             return serDeserializer.castWithSerialization(obj, targetClassLoader);
         } else {
-            if (obj == null) {
-                return null;
-            } else if (targetClassLoader.equals(sourceClassLoader)) {
-                return obj;
-            }
-            if (type.isPrimitive() || isBoxedPrimitive(type) || type.equals(String.class)) {
-                return obj;
-            } else if (type.isEnum() || type.isRecord()) {
+            if (type.isEnum() || type.isRecord()) {
                 return serDeserializer.castWithSerialization(obj, targetClassLoader);
             } else if (type.isArray()) {
                 Object[] array = (Object[]) obj;
