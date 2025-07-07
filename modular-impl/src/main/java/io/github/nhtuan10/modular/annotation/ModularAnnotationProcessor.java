@@ -173,7 +173,7 @@ public class ModularAnnotationProcessor {
                 ClassInfo returnTypeClassInfo = classRefTypeSignature.getClassInfo();
                 Class<?> returnTypeClass = returnTypeClassInfo.loadClass();
                 Set<Class<?>> interfaces = new HashSet<>();
-                if (returnTypeClassInfo.isInterface() && (!allowNonAnnotatedServices || returnTypeClassInfo.hasAnnotation(serviceInterfaceAnnotation))) {
+                if (returnTypeClassInfo.isInterface() && (allowNonAnnotatedServices || returnTypeClassInfo.hasAnnotation(serviceInterfaceAnnotation))) {
                     interfaces.add(returnTypeClass);
                 }
                 Stream<ClassInfo> interfaceStreams = returnTypeClassInfo.getInterfaces().stream();
