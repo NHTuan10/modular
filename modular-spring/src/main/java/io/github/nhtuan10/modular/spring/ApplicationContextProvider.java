@@ -1,6 +1,6 @@
 package io.github.nhtuan10.modular.spring;
 
-import io.github.nhtuan10.modular.ModularContext;
+import io.github.nhtuan10.modular.context.ModularContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;

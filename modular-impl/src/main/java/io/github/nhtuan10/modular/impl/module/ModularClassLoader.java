@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.module;
+package io.github.nhtuan10.modular.impl.module;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -17,11 +17,12 @@ public class ModularClassLoader extends URLClassLoader {
     public static final String MODULAR_PARENT_PACKAGE = "io.github.nhtuan10.modular";
 
     public static final Set<String> MODULAR_PACKAGES = Set.of(MODULAR_PARENT_PACKAGE + ".api"
-            , MODULAR_PARENT_PACKAGE + ".annotation"
-            , MODULAR_PARENT_PACKAGE + ".classloader"
-            , MODULAR_PARENT_PACKAGE + ".model"
-            , MODULAR_PARENT_PACKAGE + ".module"
-            , MODULAR_PARENT_PACKAGE + ".serdeserializer");
+            , MODULAR_PARENT_PACKAGE + ".impl.annotation"
+            , MODULAR_PARENT_PACKAGE + ".impl.classloader"
+            , MODULAR_PARENT_PACKAGE + ".impl.model"
+            , MODULAR_PARENT_PACKAGE + ".impl.module"
+            , MODULAR_PARENT_PACKAGE + ".impl.serdeserializer"
+    );
 
     @Getter
     private Set<String> excludedClassPackages;

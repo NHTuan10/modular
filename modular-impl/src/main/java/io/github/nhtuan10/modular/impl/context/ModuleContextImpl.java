@@ -1,8 +1,8 @@
-package io.github.nhtuan10.modular.context;
+package io.github.nhtuan10.modular.impl.context;
 
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import io.github.nhtuan10.modular.api.module.ModuleContext;
-import io.github.nhtuan10.modular.module.ModularClassLoader;
+import io.github.nhtuan10.modular.impl.module.ModularClassLoader;
 import lombok.AllArgsConstructor;
 
 import java.lang.reflect.InvocationTargetException;

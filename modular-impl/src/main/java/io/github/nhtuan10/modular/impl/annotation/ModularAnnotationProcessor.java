@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.annotation;
+package io.github.nhtuan10.modular.impl.annotation;
 
 import io.github.classgraph.*;
 import io.github.nhtuan10.modular.api.annotation.ModularConfiguration;
@@ -7,8 +7,8 @@ import io.github.nhtuan10.modular.api.annotation.ModularSpringService;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
 import io.github.nhtuan10.modular.api.module.ExternalContainer;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
-import io.github.nhtuan10.modular.model.ModularServiceHolder;
-import io.github.nhtuan10.modular.module.ModularClassLoader;
+import io.github.nhtuan10.modular.impl.model.ModularServiceHolder;
+import io.github.nhtuan10.modular.impl.module.ModularClassLoader;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -85,7 +85,8 @@ public class ModularAnnotationProcessor {
         String serviceInterfaceAnnotationName = config.getServiceInterfaceAnnotation().getName();
         String serviceImplAnnotationName = config.getServiceImplAnnotation().getName();
         ExternalContainer externalContainer = config.getExternalContainer();
-        for (ClassInfo classInfo : scanResult.getClassesWithAnnotation(serviceInterfaceAnnotationName)) {
+        ClassInfoList serviceClasses = scanResult.getClassesWithAnnotation(serviceInterfaceAnnotationName);
+        for (ClassInfo classInfo : serviceClasses) {
             if (classInfo.isInterface()) {
                 Class<?> interfaceClass = classInfo.loadClass();
                 List<ClassInfo> implClassesInfo = scanResult.getClassesImplementing(interfaceClass.getName()).stream()

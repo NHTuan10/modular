@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.classloader;
+package io.github.nhtuan10.modular.impl.classloader;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;

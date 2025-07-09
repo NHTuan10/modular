@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.model;
+package io.github.nhtuan10.modular.impl.model;
 
 import io.github.nhtuan10.modular.api.module.ExternalContainer;
 import lombok.EqualsAndHashCode;
