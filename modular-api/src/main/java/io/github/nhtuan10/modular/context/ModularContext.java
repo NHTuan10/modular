@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular;
+package io.github.nhtuan10.modular.context;
 
 import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
 import io.github.nhtuan10.modular.api.module.ModuleContext;

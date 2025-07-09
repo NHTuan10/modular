@@ -1,9 +1,9 @@
-package io.github.nhtuan10.modular.proxy;
+package io.github.nhtuan10.modular.impl.proxy;
 
 import com.esotericsoftware.kryo.kryo5.objenesis.Objenesis;
 import com.esotericsoftware.kryo.kryo5.objenesis.ObjenesisStd;
-import io.github.nhtuan10.modular.module.ModuleLoaderImpl;
-import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
+import io.github.nhtuan10.modular.impl.module.ModuleLoaderImpl;
+import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.implementation.MethodDelegation;

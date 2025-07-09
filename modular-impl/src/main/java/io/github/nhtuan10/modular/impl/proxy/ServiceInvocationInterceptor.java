@@ -1,8 +1,8 @@
-package io.github.nhtuan10.modular.proxy;
+package io.github.nhtuan10.modular.impl.proxy;
 
 import io.github.nhtuan10.modular.api.exception.SerializationRuntimeException;
 import io.github.nhtuan10.modular.api.exception.ServiceInvocationRuntimeException;
-import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
+import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import net.bytebuddy.implementation.bind.annotation.AllArguments;

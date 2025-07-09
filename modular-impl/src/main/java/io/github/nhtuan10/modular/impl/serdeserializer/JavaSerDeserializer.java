@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.serdeserializer;
+package io.github.nhtuan10.modular.impl.serdeserializer;
 
 import org.apache.commons.lang3.SerializationUtils;
 

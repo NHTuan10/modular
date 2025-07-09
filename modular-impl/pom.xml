@@ -94,6 +94,14 @@
                             <version>1.18.38</version>
                         </path>
                     </annotationProcessorPaths>
+                    <!--                    <compilerArgs>-->
+                    <!--                        <arg>&#45;&#45;add-modules</arg>-->
+                    <!--                        <arg>ALL-MODULE-PATH</arg>-->
+                    <!--                    </compilerArgs>-->
+                    <compilerArgs>
+                        <arg>--add-reads</arg>
+                        <arg>io.github.nhtuan10.modular.impl=ALL-UNNAMED</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>

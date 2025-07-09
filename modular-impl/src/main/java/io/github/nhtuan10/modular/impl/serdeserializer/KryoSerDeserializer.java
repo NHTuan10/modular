@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.serdeserializer;
+package io.github.nhtuan10.modular.impl.serdeserializer;
 
 import com.esotericsoftware.kryo.kryo5.Kryo;
 import com.esotericsoftware.kryo.kryo5.io.Input;
@@ -7,7 +7,6 @@ import com.esotericsoftware.kryo.kryo5.objenesis.strategy.StdInstantiatorStrateg
 
 import java.io.ByteArrayOutputStream;
 
-//TODO: reuse Kryo instance and register classes to boost performance
 public class KryoSerDeserializer implements SerDeserializer {
     ThreadLocal<Kryo> kryoThreadLocal = ThreadLocal.withInitial(() -> {
         Kryo kryo = new Kryo();
