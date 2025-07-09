@@ -1,4 +1,4 @@
-package com.example.vtweb.launcher;
+package io.github.nhtuan10.sample.launcher;
 
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
@@ -17,7 +17,7 @@ public class Main {
         var plugin2Config = ModuleLoadConfiguration.builder()
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
-                .packagesToScan(List.of("io.github.nhtuan10.sample.service"))
+                .packagesToScan(List.of("io.github.nhtuan10.sample"))
                 .allowNonAnnotatedServices(true)
                 .build();
         ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", plugin2Config);
@@ -29,7 +29,7 @@ public class Main {
         Modular.getModularServices(SomeInterface.class).forEach(SomeInterface::someInterfaceMethod);
 
 //        Modular.getModularServices(SampleService.class, false).parallelStream().forEach(s -> {
-        Modular.getModularServices(SampleService.class, false).parallelStream().forEach(s -> {
+        Modular.getModularServices(SampleService.class).parallelStream().forEach(s -> {
 
             System.out.println("Equals: " + s.equals(s));
             System.out.println("Equals: " + s.equals(new SampleService() {

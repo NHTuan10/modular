@@ -1,4 +1,4 @@
-package io.github.nhtuan10.sample.service;
+package io.github.nhtuan10.sample.plugin1;
 
 import lombok.extern.slf4j.Slf4j;
 
