@@ -185,8 +185,23 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     @Override
+    public <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer) {
+        return getModularServices(clazz, null, externalContainer, name, true);
+    }
+
+    @Override
+    public <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer) {
+        return getModularServices(clazz, moduleName, externalContainer, name, true);
+    }
+
+    @Override
     public <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer, boolean copyTransClassLoaderObjects) {
         return getModularServices(clazz, moduleName, externalContainer, name, copyTransClassLoaderObjects);
+    }
+
+    @Override
+    public <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName) {
+        return getModularServices(clazz, ExternalContainer.SPRING, name, false);
     }
 
     @Override

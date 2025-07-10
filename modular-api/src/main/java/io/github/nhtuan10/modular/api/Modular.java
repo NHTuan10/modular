@@ -68,6 +68,10 @@ public interface Modular {
         return Modular.getModularServicesFromSpring(null, clazz);
     }
 
+    static <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName) {
+        return ModuleLoader.getInstance().getModularServicesFromSpring(name, clazz, moduleName);
+    }
+
     static <I> List<I> getModularServices(Class<I> clazz) {
         return ModuleLoader.getInstance().getModularServices(clazz);
     }
@@ -91,4 +95,13 @@ public interface Modular {
     static <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer, boolean copyTransClassLoaderObjects) {
         return ModuleLoader.getInstance().getModularServices(name, clazz, moduleName, externalContainer, copyTransClassLoaderObjects);
     }
+
+    static <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer) {
+        return ModuleLoader.getInstance().getModularServices(name, clazz, externalContainer);
+    }
+
+    static <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer) {
+        return ModuleLoader.getInstance().getModularServices(name, clazz, moduleName, externalContainer);
+    }
+
 }
