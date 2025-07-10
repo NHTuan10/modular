@@ -11,12 +11,11 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-//        ModuleLoader.ModuleDetail moduleDetail = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
-//        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
+        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
         var plugin2Config = ModuleLoadConfiguration.builder()
-//                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
-                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
+                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
+//                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.service"))
                 .allowNonAnnotatedServices(true)
                 .build();
@@ -70,5 +69,7 @@ public class Main {
             System.out.println("In list: " + list);
         });
 
+        System.out.println("Load from 1 module only ---");
+        Modular.getModularServices(SampleService.class, "modular-sample-plugin-2").forEach(SampleService::test);
     }
 }
