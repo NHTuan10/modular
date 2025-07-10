@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.impl.classloader;
+package io.github.nhtuan10.modular.api.classloader;
 
 import java.util.List;
 

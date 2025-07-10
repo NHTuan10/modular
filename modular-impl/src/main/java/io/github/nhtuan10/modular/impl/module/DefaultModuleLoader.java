@@ -10,6 +10,7 @@ import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.modular.impl.annotation.ModularAnnotationProcessor;
 import io.github.nhtuan10.modular.impl.classloader.MavenArtifactsResolver;
+import io.github.nhtuan10.modular.impl.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.impl.model.ModularServiceHolder;
 import io.github.nhtuan10.modular.impl.proxy.ProxyCreator;
 import io.github.nhtuan10.modular.impl.serdeserializer.JacksonSmileSerDeserializer;
@@ -33,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 @Slf4j
-public class ModuleLoaderImpl implements ModuleLoader {
+public class DefaultModuleLoader implements ModuleLoader {
     public static final String APPLICATION_CONTEXT_PROVIDER = "io.github.nhtuan10.modular.spring.ApplicationContextProvider";
     public static final String PROXY_TARGET_FIELD_NAME = "target";
 
@@ -48,7 +49,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
     private static final Object lock = new Object();
 
     public static ModuleLoader getInstance() {
-        return ModuleLoaderImpl.getInstance(ModuleLoaderConfiguration.DEFAULT);
+        return DefaultModuleLoader.getInstance(ModuleLoaderConfiguration.DEFAULT);
     }
 
 
@@ -56,14 +57,14 @@ public class ModuleLoaderImpl implements ModuleLoader {
         if (instance == null) {
             synchronized (lock) {
                 if (instance == null) {
-                    instance = new ModuleLoaderImpl(configuration);
+                    instance = new DefaultModuleLoader(configuration);
                 }
             }
         }
         return instance;
     }
 
-    public ModuleLoaderImpl(ModuleLoaderConfiguration configuration) {
+    public DefaultModuleLoader(ModuleLoaderConfiguration configuration) {
         serDeserializer = switch (configuration.getSerializeType()) {
             case JAVA -> new JavaSerDeserializer();
             case JACKSON_SMILE -> new JacksonSmileSerDeserializer();
@@ -174,8 +175,18 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     @Override
+    public <I> List<I> getModularServices(Class<I> clazz, String moduleName) {
+        return getModularServices(clazz, moduleName, null, null, true);
+    }
+
+    @Override
     public <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects) {
         return getModularServices(clazz, null, null, copyTransClassLoaderObjects);
+    }
+
+    @Override
+    public <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer, boolean copyTransClassLoaderObjects) {
+        return getModularServices(clazz, moduleName, externalContainer, name, copyTransClassLoaderObjects);
     }
 
     @Override
@@ -189,6 +200,10 @@ public class ModuleLoaderImpl implements ModuleLoader {
     }
 
     public <I> List<I> getModularServices(Class<I> apiClass, ExternalContainer externalContainer, String beanName, boolean copyTransClassLoaderObjects) {
+        return getModularServices(apiClass, null, externalContainer, beanName, copyTransClassLoaderObjects);
+    }
+
+    <I> List<I> getModularServices(Class<I> apiClass, String moduleName, ExternalContainer externalContainer, String beanName, boolean copyTransClassLoaderObjects) {
         //TODO: need to refactor this code to support another DI or external container rather than Spring
         Collection<ModularServiceHolder> serviceHolders = loadedModularServices2.get(apiClass.getName());
         if (serviceHolders != null) {
@@ -197,7 +212,7 @@ public class ModuleLoaderImpl implements ModuleLoader {
 //            List<I> proxyObjects = (List<I>) loadedProxyObjects.computeIfAbsent(new ProxyCacheKey(apiClass, externalContainer, beanName), proxyCacheKey -> {
 //                Class<?> clazz = proxyCacheKey.apiClass();
             @SuppressWarnings("unchecked")
-            List<I> proxyObjects = (List<I>) serviceHolders.stream().map(serviceHolder -> {
+            List<I> proxyObjects = (List<I>) serviceHolders.stream().filter(sh -> (moduleName == null || sh.getModuleName().equals(moduleName))).map(serviceHolder -> {
                 try {
                     if (serviceHolder.getExternalContainer() != externalContainer) { // continue
                         return null;

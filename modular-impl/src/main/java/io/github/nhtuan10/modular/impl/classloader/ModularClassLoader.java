@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.impl.module;
+package io.github.nhtuan10.modular.impl.classloader;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

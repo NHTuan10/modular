@@ -1,5 +1,6 @@
 package io.github.nhtuan10.modular.api;
 
+import io.github.nhtuan10.modular.api.module.ExternalContainer;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 
@@ -81,5 +82,13 @@ public interface Modular {
 
     static <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects) {
         return ModuleLoader.getInstance().getModularServices(clazz, copyTransClassLoaderObjects);
+    }
+
+    static <I> List<I> getModularServices(Class<I> clazz, String moduleName) {
+        return ModuleLoader.getInstance().getModularServices(clazz, moduleName);
+    }
+
+    static <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer, boolean copyTransClassLoaderObjects) {
+        return ModuleLoader.getInstance().getModularServices(name, clazz, moduleName, externalContainer, copyTransClassLoaderObjects);
     }
 }

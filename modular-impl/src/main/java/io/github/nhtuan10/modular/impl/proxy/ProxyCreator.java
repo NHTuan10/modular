@@ -2,7 +2,7 @@ package io.github.nhtuan10.modular.impl.proxy;
 
 import com.esotericsoftware.kryo.kryo5.objenesis.Objenesis;
 import com.esotericsoftware.kryo.kryo5.objenesis.ObjenesisStd;
-import io.github.nhtuan10.modular.impl.module.ModuleLoaderImpl;
+import io.github.nhtuan10.modular.impl.module.DefaultModuleLoader;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
@@ -31,12 +31,12 @@ public class ProxyCreator {
                 .intercept(MethodDelegation.to(equalsMethodInterceptor))
                 .method(ElementMatchers.any().and(ElementMatchers.not(ElementMatchers.isEquals())))
                 .intercept(MethodDelegation.to(svcInvocationInterceptor))
-                .defineField(ModuleLoaderImpl.PROXY_TARGET_FIELD_NAME, Object.class, Visibility.PRIVATE)
+                .defineField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME, Object.class, Visibility.PRIVATE)
                 .make()
                 .load(sourceClassLoader)
                 .getLoaded();
         I proxy = objenesis.getInstantiatorOf(c).newInstance();
-        Field targetField = c.getDeclaredField(ModuleLoaderImpl.PROXY_TARGET_FIELD_NAME);
+        Field targetField = c.getDeclaredField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME);
         targetField.setAccessible(true);
         targetField.set(proxy, service);
         return proxy;

@@ -50,7 +50,19 @@ public interface ModuleLoader {
 
     <I> List<I> getModularServices(Class<I> clazz);
 
+    <I> List<I> getModularServices(Class<I> clazz, String moduleName);
+
     <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects);
+
+//    <I> List<I> getModularServices(Class<I> clazz, String moduleName, boolean copyTransClassLoaderObjects);
+
+//    <I> List<I> getModularServices(String name, Class<I> clazz,  ExternalContainer externalContainer);
+
+//    <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer);
+
+//    <I> List<I> getModularServices(String name, Class<I> clazz,ExternalContainer externalContainer, boolean copyTransClassLoaderObjects);
+
+    <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer, boolean copyTransClassLoaderObjects);
 
     <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz);
 

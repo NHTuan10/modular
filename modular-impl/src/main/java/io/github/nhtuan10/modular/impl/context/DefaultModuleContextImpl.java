@@ -2,13 +2,13 @@ package io.github.nhtuan10.modular.impl.context;
 
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import io.github.nhtuan10.modular.api.module.ModuleContext;
-import io.github.nhtuan10.modular.impl.module.ModularClassLoader;
+import io.github.nhtuan10.modular.impl.classloader.ModularClassLoader;
 import lombok.AllArgsConstructor;
 
 import java.lang.reflect.InvocationTargetException;
 
 @AllArgsConstructor
-public class ModuleContextImpl implements ModuleContext {
+public class DefaultModuleContextImpl implements ModuleContext {
     private Object moduleLoader;
 
     @Override
