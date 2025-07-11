@@ -2,7 +2,7 @@ package io.github.nhtuan10.modular.impl.context;
 
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
 import io.github.nhtuan10.modular.api.module.ModuleContext;
-import io.github.nhtuan10.modular.impl.classloader.ModularClassLoader;
+import io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader;
 import lombok.AllArgsConstructor;
 
 import java.lang.reflect.InvocationTargetException;
@@ -14,7 +14,7 @@ public class DefaultModuleContextImpl implements ModuleContext {
     @Override
     public void notifyModuleReady() {
         ClassLoader classLoader = this.getClass().getClassLoader();
-        if (ModularClassLoader.class.getName().equals(classLoader.getClass().getName())) {
+        if (DefaultModularClassLoader.class.getName().equals(classLoader.getClass().getName())) {
             try {
                 String moduleName = classLoader.getClass().getMethod("getModuleName").invoke(classLoader).toString();
                 moduleLoader.getClass().getMethod("notifyModuleReady", String.class).invoke(moduleLoader, moduleName);

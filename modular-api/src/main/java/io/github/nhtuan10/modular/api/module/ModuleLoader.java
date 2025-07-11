@@ -1,5 +1,6 @@
 package io.github.nhtuan10.modular.api.module;
 
+import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +16,7 @@ import java.util.regex.Pattern;
 
 public interface ModuleLoader {
 
-    Pattern classLoaderNamePattern = Pattern.compile("^io.github.nhtuan10.modular.impl.module.ModularClassLoader\\[.+\\]$");
+//    Pattern classLoaderNamePattern = Pattern.compile("^io.github.nhtuan10.modular.impl.classloader.ModularClassLoader\\[.+\\]$");
 
     static ModuleLoader getInstance() {
         try {
@@ -78,8 +79,10 @@ public interface ModuleLoader {
     }
 
     static boolean isManaged(Class<?> clazz) {
-        String classLoaderName = clazz.getClassLoader().getName();
-        return classLoaderName != null && classLoaderNamePattern.matcher(classLoaderName).matches();
+//        String classLoaderName = clazz.getClassLoader().getName();
+//        return classLoaderName != null && classLoaderNamePattern.matcher(classLoaderName).matches();
+        ClassLoader classLoader = clazz.getClassLoader();
+        return classLoader instanceof ModularClassLoader;
     }
 
     enum LoadStatus {

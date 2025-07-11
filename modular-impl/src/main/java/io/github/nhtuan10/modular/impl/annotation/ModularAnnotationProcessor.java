@@ -7,7 +7,7 @@ import io.github.nhtuan10.modular.api.annotation.ModularSpringService;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
 import io.github.nhtuan10.modular.api.module.ExternalContainer;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
-import io.github.nhtuan10.modular.impl.classloader.ModularClassLoader;
+import io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader;
 import io.github.nhtuan10.modular.impl.model.ModularServiceHolder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,10 +30,10 @@ import java.util.stream.Stream;
 @Slf4j
 public class ModularAnnotationProcessor {
 
-    ModularClassLoader modularClassLoader;
+    DefaultModularClassLoader modularClassLoader;
     Map<Class<?>, Collection<ModularServiceHolder>> container;
 
-    public ModularAnnotationProcessor(ModularClassLoader modularClassLoader) {
+    public ModularAnnotationProcessor(DefaultModularClassLoader modularClassLoader) {
         this.modularClassLoader = modularClassLoader;
         this.container = new ConcurrentHashMap<>();
     }

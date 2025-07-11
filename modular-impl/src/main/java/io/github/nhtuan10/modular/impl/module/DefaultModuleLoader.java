@@ -9,11 +9,10 @@ import io.github.nhtuan10.modular.api.module.ExternalContainer;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.modular.impl.annotation.ModularAnnotationProcessor;
+import io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader;
 import io.github.nhtuan10.modular.impl.classloader.MavenArtifactsResolver;
-import io.github.nhtuan10.modular.impl.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.impl.model.ModularServiceHolder;
 import io.github.nhtuan10.modular.impl.proxy.ProxyCreator;
-import io.github.nhtuan10.modular.impl.serdeserializer.JacksonSmileSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
@@ -121,7 +120,7 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     private void loadModuleFromUrls(String name, ModuleLoadConfiguration moduleLoadConfiguration, List<URL> depUrls) {
-        ModularClassLoader moduleClassLoader = new ModularClassLoader(name, depUrls);
+        DefaultModularClassLoader moduleClassLoader = new DefaultModularClassLoader(name, depUrls);
         ModuleDetail moduleDetail = moduleDetailMap.get(name);
         moduleDetail.setClassLoader(moduleClassLoader);
 //        addAllOpens(ModuleLoaderImpl.class.getClassLoader());
