@@ -13,6 +13,7 @@ import io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader;
 import io.github.nhtuan10.modular.impl.classloader.MavenArtifactsResolver;
 import io.github.nhtuan10.modular.impl.model.ModularServiceHolder;
 import io.github.nhtuan10.modular.impl.proxy.ProxyCreator;
+import io.github.nhtuan10.modular.impl.serdeserializer.JacksonSmileSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
