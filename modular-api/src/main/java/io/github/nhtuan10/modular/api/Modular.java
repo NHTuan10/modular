@@ -1,10 +1,12 @@
 package io.github.nhtuan10.modular.api;
 
 import io.github.nhtuan10.modular.api.module.ExternalContainer;
+import io.github.nhtuan10.modular.api.module.ModuleIntegration;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 
 public interface Modular {
@@ -104,4 +106,7 @@ public interface Modular {
         return ModuleLoader.getInstance().getModularServices(name, clazz, moduleName, externalContainer);
     }
 
+    static <T> Queue<T> getQueue(String name, Class<T> clazz) {
+        return ModuleIntegration.getInstance().getQueue(name, clazz);
+    }
 }

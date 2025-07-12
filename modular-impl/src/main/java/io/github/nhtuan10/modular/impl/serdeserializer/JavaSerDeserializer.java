@@ -4,7 +4,7 @@ import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.*;
 
-public class JavaSerDeserializer implements SerDeserializer{
+public class JavaSerDeserializer implements SerDeserializer {
     @Override
     public Object castWithSerialization(Object obj, ClassLoader classLoader) throws IOException, ClassNotFoundException {
         byte[] b = SerializationUtils.serialize((Serializable) obj);
@@ -12,6 +12,21 @@ public class JavaSerDeserializer implements SerDeserializer{
         try (ObjectInputStream objectInputStream = new ObjectInputStreamWithClassLoader(is, classLoader)) {
             return objectInputStream.readObject();
         }
+    }
+
+    @Override
+    public <T> T deserialization(byte[] bytes, Class<T> type) throws Exception {
+        if (bytes == null)
+            return null;
+        InputStream is = new ByteArrayInputStream(bytes);
+        try (ObjectInputStream objectInputStream = new ObjectInputStreamWithClassLoader(is, type.getClassLoader())) {
+            return (T) objectInputStream.readObject();
+        }
+    }
+
+    @Override
+    public byte[] serialization(Object obj) {
+        return SerializationUtils.serialize((Serializable) obj);
     }
 
     public static class ObjectInputStreamWithClassLoader extends ObjectInputStream {

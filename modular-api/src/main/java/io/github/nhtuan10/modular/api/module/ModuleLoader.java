@@ -12,7 +12,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.regex.Pattern;
 
 public interface ModuleLoader {
 
@@ -111,7 +110,7 @@ public interface ModuleLoader {
     @Builder
     class ModuleLoaderConfiguration {
         public enum SerializeType {
-            JACKSON_SMILE,
+            //            JACKSON_SMILE,
             JAVA,
             KRYO
         }
