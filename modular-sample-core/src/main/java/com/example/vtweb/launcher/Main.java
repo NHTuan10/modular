@@ -8,10 +8,12 @@ import io.github.nhtuan10.sample.api.service.SomeData;
 import io.github.nhtuan10.sample.api.service.SomeInterface;
 
 import java.util.List;
+import java.util.Queue;
 
 public class Main {
     public static void main(String[] args) {
-        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
+//        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
+        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSyncWithMainClass("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), "io.github.nhtuan10.sample.service.ServiceImpl", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
         var plugin2Config = ModuleLoadConfiguration.builder()
                 .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
@@ -25,10 +27,22 @@ public class Main {
 //        m.startModuleSyncWithMainClass("my-kafka-tool", List.of(
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT.jar",
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT/my-kafka-tool-main-0.1.1-SNAPSHOT.jar" ), "io.github.nhtuan10.mykafkatool.MyKafkaToolLauncher", "");
+        System.out.println("Load from 1 module only ---");
+        Modular.getModularServices(SampleService.class, "modular-sample-plugin-2").forEach(SampleService::test);
+
+
         Modular.getModularServices(SomeInterface.class).forEach(SomeInterface::someInterfaceMethod);
 
+        Queue<SomeData> q = Modular.getQueue("testQueue", SomeData.class);
+        for (int i = 0; i < 2; i++) {
+            SomeData a = q.poll();
+            System.out.println("Main-class: Polling from testQueue: " + a);
+//            Thread.sleep(500);
+        }
+
+
 //        Modular.getModularServices(SampleService.class, false).parallelStream().forEach(s -> {
-        Modular.getModularServices(SampleService.class, false).parallelStream().forEach(s -> {
+        Modular.getModularServices(SampleService.class).parallelStream().forEach(s -> {
 
             System.out.println("Equals: " + s.equals(s));
             System.out.println("Equals: " + s.equals(new SampleService() {
@@ -69,7 +83,5 @@ public class Main {
             System.out.println("In list: " + list);
         });
 
-        System.out.println("Load from 1 module only ---");
-        Modular.getModularServices(SampleService.class, "modular-sample-plugin-2").forEach(SampleService::test);
     }
 }

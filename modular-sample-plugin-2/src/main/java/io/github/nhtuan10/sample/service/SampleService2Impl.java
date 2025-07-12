@@ -1,5 +1,6 @@
 package io.github.nhtuan10.sample.service;
 
+import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.annotation.ModularConfiguration;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
 import io.github.nhtuan10.sample.api.service.SampleService;
@@ -11,6 +12,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.Queue;
 
 @Slf4j
 @ToString
@@ -19,7 +21,10 @@ import java.util.List;
 public class SampleService2Impl implements SampleService2, SampleService {
     @Override
     public void test() {
-        log.info("Service 2 Impl: Invoke test");
+        log.info("Service 2 Impl: Invoke test and putting messages to testQueue");
+        Queue<SomeData> q = Modular.getQueue("testQueue", SomeData.class);
+        SomeData someData = new SomeData("testQueue - SomeData for SampleService2Impl");
+        q.offer(someData);
     }
 
     @Override

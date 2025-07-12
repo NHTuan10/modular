@@ -2,6 +2,7 @@ package io.github.nhtuan10.sample.service;
 
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
+import io.github.nhtuan10.modular.context.ModularContext;
 import io.github.nhtuan10.sample.api.service.SampleService;
 import io.github.nhtuan10.sample.api.service.SampleService2;
 import io.github.nhtuan10.sample.api.service.SomeData;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 
 @Slf4j
 @ToString
@@ -59,5 +61,15 @@ public class ServiceImpl extends BaseService implements SampleService {
     @Override
     public int hashCode() {
         return super.hashCode();
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        Queue<SomeData> q = Modular.getQueue("testQueue", SomeData.class);
+        ModularContext.notifyModuleReady();
+        while (true) {
+            SomeData a = q.poll();
+            log.info("Polling from testQueue: " + a);
+            Thread.sleep(500);
+        }
     }
 }
