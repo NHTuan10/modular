@@ -7,6 +7,7 @@ import io.github.nhtuan10.modular.api.module.ModuleLoader;
 
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 
 public interface Modular {
@@ -108,5 +109,17 @@ public interface Modular {
 
     static <T> Queue<T> getQueue(String name, Class<T> clazz) {
         return ModuleIntegration.getInstance().getQueue(name, clazz);
+    }
+
+    static <T> Queue<T> getQueue(String name, Class<T> clazz, Class<? extends Queue<T>> queueClass) {
+        return ModuleIntegration.getInstance().getQueue(name, clazz, queueClass);
+    }
+
+    static <T> BlockingQueue<T> getBlockingQueue(String name, Class<T> clazz) {
+        return ModuleIntegration.getInstance().getBlockingQueue(name, clazz);
+    }
+
+    static <T> BlockingQueue<T> getBlockingQueue(String name, Class<T> clazz, Class<? extends BlockingQueue> queueClass) {
+        return (BlockingQueue<T>) ModuleIntegration.getInstance().getQueue(name, clazz, queueClass);
     }
 }

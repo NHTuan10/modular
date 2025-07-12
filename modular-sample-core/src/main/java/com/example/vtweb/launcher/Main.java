@@ -8,10 +8,9 @@ import io.github.nhtuan10.sample.api.service.SomeData;
 import io.github.nhtuan10.sample.api.service.SomeInterface;
 
 import java.util.List;
-import java.util.Queue;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
         ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSyncWithMainClass("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), "io.github.nhtuan10.sample.service.ServiceImpl", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
@@ -33,12 +32,13 @@ public class Main {
 
         Modular.getModularServices(SomeInterface.class).forEach(SomeInterface::someInterfaceMethod);
 
-        Queue<SomeData> q = Modular.getQueue("testQueue", SomeData.class);
-        for (int i = 0; i < 2; i++) {
-            SomeData a = q.poll();
-            System.out.println("Main-class: Polling from testQueue: " + a);
-//            Thread.sleep(500);
-        }
+//        BlockingQueue<SomeData> q = Modular.getBlockingQueue("testBlockingQueue", SomeData.class);
+//        for (int i = 0; i < 2; i++) {
+////            SomeData a = q.poll();
+//            SomeData a = q.take();
+//            System.out.println("Main-class: Polling from testQueue: " + a);
+////            Thread.sleep(500);
+//        }
 
 
 //        Modular.getModularServices(SampleService.class, false).parallelStream().forEach(s -> {

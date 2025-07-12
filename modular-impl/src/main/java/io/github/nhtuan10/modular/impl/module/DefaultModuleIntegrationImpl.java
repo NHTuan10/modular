@@ -17,13 +17,16 @@ import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.matcher.ElementMatchers;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class DefaultModuleIntegrationImpl implements ModuleIntegration {
     private static Objenesis objenesis = new ObjenesisStd();
@@ -34,15 +37,27 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
         return INSTANCE;
     }
 
+    @Override
+    public <T> BlockingQueue<T> getBlockingQueue(String name, Class<T> type) {
+        return (BlockingQueue<T>) getQueue(name, type, LinkedBlockingQueue.class);
+    }
+
+    @Override
     public <T> Queue<T> getQueue(String name, Class<T> type) {
+        return getQueue(name, type, ConcurrentLinkedQueue.class);
+    }
+
+    @Override
+    public <T> Queue<T> getQueue(String name, Class<T> type, Class<? extends Queue> queueClass) {
         ClassLoader classLoader = type.getClassLoader();
         QueueHolder queueHolder = queues.computeIfAbsent(name, k -> {
             try {
-                final Queue<byte[]> queue = new ConcurrentLinkedQueue<>();
+                final Queue<byte[]> queue = queueClass.getConstructor().newInstance();
                 QueueHolder q = new QueueHolder(queue, k);
                 q.getQueues().put(classLoader, createProxyQueue(queue, type));
                 return q;
-            } catch (NoSuchFieldException | IllegalAccessException e) {
+            } catch (NoSuchFieldException | IllegalAccessException | InvocationTargetException |
+                     InstantiationException | NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -84,12 +99,12 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
         public Object intercept(@AllArguments Object[] allArguments,
                                 @Origin Method method) {
             Object[] convertedArgs = new Object[0];
-            if (allArguments.length == 1 && List.of("add", "offer").contains(method.getName())) {
+            if (allArguments.length == 1 && List.of("add", "offer", "put").contains(method.getName())) {
                 convertedArgs = Arrays.stream(allArguments).map(serDeserializer::serialization).toArray();
             }
             try {
                 Object result = method.invoke(queue, convertedArgs);
-                if (result instanceof byte[] bytes && List.of("poll", "remove", "element", "peek").contains(method.getName())) {
+                if (result instanceof byte[] bytes && List.of("poll", "remove", "take", "element", "peek").contains(method.getName())) {
                     return serDeserializer.deserialization(bytes, clazz);
                 } else {
                     return result;

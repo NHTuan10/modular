@@ -5,6 +5,7 @@ import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 
 public interface ModuleIntegration {
 
@@ -19,5 +20,9 @@ public interface ModuleIntegration {
         }
     }
 
+    <T> BlockingQueue<T> getBlockingQueue(String name, Class<T> type);
+
     <T> Queue<T> getQueue(String name, Class<T> type);
+
+    <T> Queue<T> getQueue(String name, Class<T> type, Class<? extends Queue> queueClass);
 }

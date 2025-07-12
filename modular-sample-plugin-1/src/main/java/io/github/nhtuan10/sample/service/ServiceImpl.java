@@ -11,7 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 @Slf4j
 @ToString
@@ -64,10 +65,13 @@ public class ServiceImpl extends BaseService implements SampleService {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        Queue<SomeData> q = Modular.getQueue("testQueue", SomeData.class);
+//        Queue<SomeData> q = Modular.getQueue("testQueue", SomeData.class, ConcurrentLinkedQueue.class);
+//        BlockingQueue<SomeData> q = Modular.getBlockingQueue("testBlockingQueue", SomeData.class);
+        BlockingQueue<SomeData> q = Modular.getBlockingQueue("testBlockingQueue", SomeData.class, LinkedBlockingQueue.class);
         ModularContext.notifyModuleReady();
         while (true) {
-            SomeData a = q.poll();
+//            SomeData a = q.poll();
+            SomeData a = q.take();
             log.info("Polling from testQueue: " + a);
             Thread.sleep(500);
         }
