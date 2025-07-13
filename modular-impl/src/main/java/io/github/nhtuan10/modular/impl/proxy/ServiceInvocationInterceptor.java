@@ -11,6 +11,7 @@ import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.This;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.IntStream;
@@ -25,7 +26,7 @@ public class ServiceInvocationInterceptor {
 
     @RuntimeType
     public Object intercept(@AllArguments Object[] allArguments,
-                            @Origin Method method) {
+                            @Origin Method method) throws InvocationTargetException {
         // intercept any method of any signature
         String serviceClassName = service.getClass().getName();
         Class<?>[] serviceClassLoaderParameterTypes = (Class<?>[]) Arrays.stream(method.getParameterTypes())
@@ -65,6 +66,8 @@ public class ServiceInvocationInterceptor {
 //            return copyTransClassLoaderObjects ? serDeserializer.castWithSerialization(result, this.getClass().getClassLoader())
 //                    : (result != null ? ProxyCreator.createProxyObject(method.getReturnType(), result, serDeserializer, false, this.getClass().getClassLoader()) : null);
             return cast(result, method.getReturnType(), targetClassLoader, sourceClassLoader);
+        } catch (InvocationTargetException e) {
+            throw e;
         } catch (Exception e) {
             throw new ServiceInvocationRuntimeException("Failed to invoke method '%s' in service class '%s'".formatted(method, serviceClassName), e);
         }

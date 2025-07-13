@@ -49,19 +49,18 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
 
     @Override
     public <T> Queue<T> getQueue(String name, Class<T> type, Class<? extends Queue> queueClass) {
-        ClassLoader classLoader = type.getClassLoader();
         QueueHolder queueHolder = queues.computeIfAbsent(name, k -> {
             try {
                 final Queue<byte[]> queue = queueClass.getConstructor().newInstance();
                 QueueHolder q = new QueueHolder(queue, k);
-                q.getQueues().put(classLoader, createProxyQueue(queue, type));
+                q.getQueues().put(type, createProxyQueue(queue, type));
                 return q;
             } catch (NoSuchFieldException | IllegalAccessException | InvocationTargetException |
                      InstantiationException | NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
         });
-        return (Queue<T>) queueHolder.getQueues().computeIfAbsent(classLoader, c -> {
+        return (Queue<T>) queueHolder.getQueues().computeIfAbsent(type, c -> {
             try {
                 return createProxyQueue(queueHolder.getQueue(), type);
             } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -121,6 +120,6 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
         private final Queue<byte[]> queue;
         private final String name;
         @Getter
-        private final Map<ClassLoader, Queue<?>> queues = new ConcurrentHashMap<>();
+        private final Map<Class<?>, Queue<?>> queues = new ConcurrentHashMap<>();
     }
 }
