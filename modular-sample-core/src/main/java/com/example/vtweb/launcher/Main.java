@@ -43,44 +43,47 @@ public class Main {
 
 //        Modular.getModularServices(SampleService.class, false).parallelStream().forEach(s -> {
         Modular.getModularServices(SampleService.class).parallelStream().forEach(s -> {
+            try {
+                System.out.println("Equals: " + s.equals(s));
+                System.out.println("Equals: " + s.equals(new SampleService() {
+                    @Override
+                    public void test() {
 
-            System.out.println("Equals: " + s.equals(s));
-            System.out.println("Equals: " + s.equals(new SampleService() {
-                @Override
-                public void test() {
+                    }
 
-                }
+                    @Override
+                    public String testObjectArray(SomeData[] in) {
+                        return "";
+                    }
 
-                @Override
-                public String testObjectArray(SomeData[] in) {
-                    return "";
-                }
+                    @Override
+                    public List<SomeData> testObjectList(List<SomeData> in) {
+                        return List.of();
+                    }
 
-                @Override
-                public List<SomeData> testObjectList(List<SomeData> in) {
-                    return List.of();
-                }
-
-                @Override
-                public SomeData testReturn(SomeData in) {
-                    return null;
-                }
-            }));
-            System.out.println("Hash code: " + s.hashCode());
-            s.test();
-            SomeData d = new SomeData("input testReturn");
-            Object result = s.testReturn(d);
-            System.out.println("testReturn: " + result);
-            System.out.println("d.getName(): " + d.getName());
-            var inArr = new SomeData[]{new SomeData("input testObjectArray")};
-            System.out.println("Return from testObjectArray: " + s.testObjectArray(inArr));
-            System.out.println("In array: " + inArr[0]);
+                    @Override
+                    public SomeData testReturn(SomeData in) {
+                        return null;
+                    }
+                }));
+                System.out.println("Hash code: " + s.hashCode());
+                s.test();
+                SomeData d = new SomeData("input testReturn");
+                Object result = s.testReturn(d);
+                System.out.println("testReturn: " + result);
+                System.out.println("d.getName(): " + d.getName());
+                var inArr = new SomeData[]{new SomeData("input testObjectArray")};
+                System.out.println("Return from testObjectArray: " + s.testObjectArray(inArr));
+                System.out.println("In array: " + inArr[0]);
 //            var list = new ArrayList<SomeData>();
 //            list.add(new SomeData("input testObjectList-1"));
 //            list.add(new SomeData("input testObjectList-2"));
-            var list = List.of(new SomeData("input testObjectList-1"), new SomeData("input testObjectList-2"));
-            System.out.println("Return from testObjectList: " + s.testObjectList(list));
-            System.out.println("In list: " + list);
+                var list = List.of(new SomeData("input testObjectList-1"), new SomeData("input testObjectList-2"));
+                System.out.println("Return from testObjectList: " + s.testObjectList(list));
+                System.out.println("In list: " + list);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
 
     }

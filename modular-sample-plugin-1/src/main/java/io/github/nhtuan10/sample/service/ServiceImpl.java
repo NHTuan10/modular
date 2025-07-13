@@ -5,6 +5,7 @@ import io.github.nhtuan10.modular.api.annotation.ModularService;
 import io.github.nhtuan10.modular.context.ModularContext;
 import io.github.nhtuan10.sample.api.service.SampleService;
 import io.github.nhtuan10.sample.api.service.SampleService2;
+import io.github.nhtuan10.sample.api.service.ServiceException;
 import io.github.nhtuan10.sample.api.service.SomeData;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ public class ServiceImpl extends BaseService implements SampleService {
             sampleService2.test();
         }
         baseMethod();
+        throw new ServiceException("some error");
     }
 
     @Override
