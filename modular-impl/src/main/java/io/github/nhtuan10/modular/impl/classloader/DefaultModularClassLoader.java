@@ -22,7 +22,7 @@ public class DefaultModularClassLoader extends URLClassLoader implements Modular
             , MODULAR_PARENT_PACKAGE + ".impl.classloader"
             , MODULAR_PARENT_PACKAGE + ".impl.model"
             , MODULAR_PARENT_PACKAGE + ".impl.module"
-//            , MODULAR_PARENT_PACKAGE + ".impl.proxy"
+            , MODULAR_PARENT_PACKAGE + ".impl.proxy"
             , MODULAR_PARENT_PACKAGE + ".impl.serdeserializer"
     );
 

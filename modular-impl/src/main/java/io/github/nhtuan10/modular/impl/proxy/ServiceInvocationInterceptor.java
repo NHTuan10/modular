@@ -26,7 +26,7 @@ public class ServiceInvocationInterceptor {
 
     @RuntimeType
     public Object intercept(@AllArguments Object[] allArguments,
-                            @Origin Method method) throws InvocationTargetException {
+                            @Origin Method method) throws Throwable {
         // intercept any method of any signature
         String serviceClassName = service.getClass().getName();
         Class<?>[] serviceClassLoaderParameterTypes = (Class<?>[]) Arrays.stream(method.getParameterTypes())
@@ -67,7 +67,7 @@ public class ServiceInvocationInterceptor {
 //                    : (result != null ? ProxyCreator.createProxyObject(method.getReturnType(), result, serDeserializer, false, this.getClass().getClassLoader()) : null);
             return cast(result, method.getReturnType(), targetClassLoader, sourceClassLoader);
         } catch (InvocationTargetException e) {
-            throw e;
+            throw e.getCause();
         } catch (Exception e) {
             throw new ServiceInvocationRuntimeException("Failed to invoke method '%s' in service class '%s'".formatted(method, serviceClassName), e);
         }
