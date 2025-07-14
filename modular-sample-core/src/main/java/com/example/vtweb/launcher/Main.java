@@ -4,13 +4,14 @@ import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.sample.api.service.SampleService;
+import io.github.nhtuan10.sample.api.service.ServiceException;
 import io.github.nhtuan10.sample.api.service.SomeData;
 import io.github.nhtuan10.sample.api.service.SomeInterface;
 
 import java.util.List;
 
 public class Main {
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
         ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSyncWithMainClass("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), "io.github.nhtuan10.sample.service.ServiceImpl", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
@@ -27,7 +28,13 @@ public class Main {
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT.jar",
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT/my-kafka-tool-main-0.1.1-SNAPSHOT.jar" ), "io.github.nhtuan10.mykafkatool.MyKafkaToolLauncher", "");
         System.out.println("Load from 1 module only ---");
-        Modular.getModularServices(SampleService.class, "modular-sample-plugin-2").forEach(SampleService::test);
+        Modular.getModularServices(SampleService.class, "modular-sample-plugin-2").forEach(sampleService -> {
+            try {
+                sampleService.test();
+            } catch (ServiceException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
 
         Modular.getModularServices(SomeInterface.class).forEach(SomeInterface::someInterfaceMethod);
@@ -81,7 +88,7 @@ public class Main {
                 var list = List.of(new SomeData("input testObjectList-1"), new SomeData("input testObjectList-2"));
                 System.out.println("Return from testObjectList: " + s.testObjectList(list));
                 System.out.println("In list: " + list);
-            } catch (Exception e) {
+            } catch (ServiceException e) {
                 e.printStackTrace();
             }
         });

@@ -20,7 +20,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 @ModularService
 public class ServiceImpl extends BaseService implements SampleService {
     @Override
-    public void test() {
+    public void test() throws ServiceException {
         log.info("Service Impl: Invoke test");
         List<SampleService2> sampleService2List = Modular.getModularServices(SampleService2.class);
         for (SampleService2 sampleService2 : sampleService2List) {
