@@ -4,10 +4,10 @@ import io.github.classgraph.*;
 import io.github.nhtuan10.modular.api.annotation.ModularConfiguration;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
 import io.github.nhtuan10.modular.api.annotation.ModularSpringService;
+import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
 import io.github.nhtuan10.modular.api.module.ExternalContainer;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
-import io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader;
 import io.github.nhtuan10.modular.impl.model.ModularServiceHolder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,10 +30,10 @@ import java.util.stream.Stream;
 @Slf4j
 public class ModularAnnotationProcessor {
 
-    DefaultModularClassLoader modularClassLoader;
+    ModularClassLoader modularClassLoader;
     Map<Class<?>, Collection<ModularServiceHolder>> container;
 
-    public ModularAnnotationProcessor(DefaultModularClassLoader modularClassLoader) {
+    public ModularAnnotationProcessor(ModularClassLoader modularClassLoader) {
         this.modularClassLoader = modularClassLoader;
         this.container = new ConcurrentHashMap<>();
     }
@@ -52,7 +52,7 @@ public class ModularAnnotationProcessor {
         if (packages != null && !packages.isEmpty()) {
             try (ScanResult scanResult =
                          new ClassGraph()
-                                 .overrideClasspath(this.modularClassLoader.getClassPathUrls())
+                                 .overrideClasspath((Object[]) this.modularClassLoader.getURLs())
                                  .overrideClassLoaders(this.modularClassLoader)
 //                             .verbose()               // may need to use some config to enable verbose to log to stderr
                                  .enableAllInfo()         // Scan classes, methods, fields, annotations

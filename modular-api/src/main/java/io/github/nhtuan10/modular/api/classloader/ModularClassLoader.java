@@ -1,4 +1,10 @@
 package io.github.nhtuan10.modular.api.classloader;
 
-public interface ModularClassLoader {
+import java.net.URL;
+import java.net.URLClassLoader;
+
+public abstract class ModularClassLoader extends URLClassLoader {
+    public ModularClassLoader(URL[] urls) {
+        super(urls);
+    }
 }

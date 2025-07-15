@@ -7,13 +7,12 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
-public class DefaultModularClassLoader extends URLClassLoader implements ModularClassLoader {
+public class DefaultModularClassLoader extends ModularClassLoader {
 
     public static final String MODULAR_PARENT_PACKAGE = "io.github.nhtuan10.modular";
 
