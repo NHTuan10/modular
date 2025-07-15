@@ -34,28 +34,46 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     @Getter
     private final String moduleName;
 
-    public DefaultModularClassLoader(String moduleName, List<URL> classPathUrls, Set<String> excludedClassPackages) {
-        this(moduleName, classPathUrls);
-        this.excludedClassPackages = Stream.concat(excludedClassPackages.stream(), this.getDefaultExcludedPackages().stream()).collect(Collectors.toUnmodifiableSet());
-    }
+    @Getter
+    private final String name;
 
-    public DefaultModularClassLoader(String moduleName, List<URL> classPathUrls) {
-        this(moduleName);
-        this.classPathUrls = Stream.concat(classPathUrls.stream(), this.classPathUrls.stream()).toList();
+    public DefaultModularClassLoader(String name, String moduleName, List<URL> classPathUrls, Set<String> excludedClassPackages) {
+        super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
+        this.moduleName = moduleName;
+        this.name = name;
+        this.excludedClassPackages = Stream.concat(excludedClassPackages.stream(), this.getDefaultExcludedPackages().stream()).collect(Collectors.toUnmodifiableSet());
+        this.classPathUrls = Stream.concat(classPathUrls.stream(), getJavaClassPath().stream()).toList();
         classPathUrls.forEach(this::addURL);
     }
 
+
+    public DefaultModularClassLoader(String moduleName, List<URL> classPathUrls, Set<String> excludedClassPackages) {
+        this(moduleName, moduleName, classPathUrls, excludedClassPackages);
+    }
+
+    public DefaultModularClassLoader(String moduleName, List<URL> classPathUrls) {
+        this(moduleName, moduleName, classPathUrls, Collections.emptySet());
+    }
+
     public DefaultModularClassLoader(String moduleName) {
-        super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
-//        super(moduleName, getSystemClassLoader());
-        this.moduleName = moduleName;
-        this.excludedClassPackages = Collections.unmodifiableSet(getDefaultExcludedPackages());
-        this.classPathUrls = Collections.unmodifiableList(getJavaClassPath());
+        this(moduleName, moduleName, Collections.emptyList(), Collections.emptySet());
+    }
+
+    public DefaultModularClassLoader(String name, String moduleName) {
+        this(name, moduleName, Collections.emptyList(), Collections.emptySet());
     }
 
     @Override
     public String getName() {
-        return this.getClass().getName() + "[" + moduleName + "]";
+        return this.name;
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultModularClassLoader{" +
+                "name='" + name + '\'' +
+                ", moduleName='" + moduleName + '\'' +
+                '}';
     }
 
     protected Set<String> getDefaultExcludedPackages() {
