@@ -43,6 +43,7 @@ public interface Modular {
         return ModuleLoader.getInstance().startSpringModuleAsyncWithMainClass(moduleName, locationUris, mainClass, packagesToScan);
     }
 
+    // Allow to pass a ModularClassLoader instance
     static ModuleLoader.ModuleDetail startModuleSync(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
         return ModuleLoader.getInstance().startModuleSync(moduleName, moduleLoadConfiguration);
     }

@@ -75,7 +75,7 @@ public class ServiceImpl extends BaseService implements SampleService {
 //            SomeData a = q.poll();
             SomeData a = q.take();
             log.info("Polling from testQueue: " + a);
-            Thread.sleep(500);
+//            Thread.sleep(500);
         }
     }
 }

@@ -2,6 +2,7 @@ package io.github.nhtuan10.modular.impl.classloader;
 
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import lombok.Getter;
+import lombok.Locked;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -34,28 +35,53 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     @Getter
     private final String moduleName;
 
-    public DefaultModularClassLoader(String moduleName, List<URL> classPathUrls, Set<String> excludedClassPackages) {
-        this(moduleName, classPathUrls);
+    @Getter
+    private final String name;
+
+    public DefaultModularClassLoader(String name, String moduleName, List<URL> classPathUrls, Set<String> excludedClassPackages) {
+        super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
+        this.moduleName = moduleName;
+        this.name = name;
         this.excludedClassPackages = Stream.concat(excludedClassPackages.stream(), this.getDefaultExcludedPackages().stream()).collect(Collectors.toUnmodifiableSet());
+        this.classPathUrls = Stream.concat(classPathUrls.stream(), getJavaClassPath().stream()).toList();
+        classPathUrls.forEach(this::addURL);
+    }
+
+
+    public DefaultModularClassLoader(String moduleName, List<URL> classPathUrls, Set<String> excludedClassPackages) {
+        this(moduleName, moduleName, classPathUrls, excludedClassPackages);
     }
 
     public DefaultModularClassLoader(String moduleName, List<URL> classPathUrls) {
-        this(moduleName);
+        this(moduleName, moduleName, classPathUrls, Collections.emptySet());
+    }
+
+    public DefaultModularClassLoader(String moduleName) {
+        this(moduleName, moduleName, Collections.emptyList(), Collections.emptySet());
+    }
+
+    public DefaultModularClassLoader(String name, String moduleName) {
+        this(name, moduleName, Collections.emptyList(), Collections.emptySet());
+    }
+
+    @Override
+    @Locked.Write
+    public void addClassPathUrls(List<URL> classPathUrls) {
         this.classPathUrls = Stream.concat(classPathUrls.stream(), this.classPathUrls.stream()).toList();
         classPathUrls.forEach(this::addURL);
     }
 
-    public DefaultModularClassLoader(String moduleName) {
-        super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
-//        super(moduleName, getSystemClassLoader());
-        this.moduleName = moduleName;
-        this.excludedClassPackages = Collections.unmodifiableSet(getDefaultExcludedPackages());
-        this.classPathUrls = Collections.unmodifiableList(getJavaClassPath());
+    @Override
+    public String getName() {
+        return this.name;
     }
 
     @Override
-    public String getName() {
-        return this.getClass().getName() + "[" + moduleName + "]";
+    public String toString() {
+        return "DefaultModularClassLoader{" +
+                "name='" + name + '\'' +
+                ", moduleName='" + moduleName + '\'' +
+                '}';
     }
 
     protected Set<String> getDefaultExcludedPackages() {
