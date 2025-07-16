@@ -42,9 +42,9 @@ public class DefaultModularClassLoader extends ModularClassLoader {
         super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
         this.moduleNames = Collections.synchronizedList(new ArrayList<>(moduleNames));
         this.name = name;
-        this.excludedClassPackages = Stream.concat(excludedClassPackages.stream(), this.getDefaultExcludedPackages().stream()).collect(Collectors.toUnmodifiableSet());
-        this.classPathUrls = Stream.concat(classPathUrls.stream(), getJavaClassPath().stream()).toList();
-        classPathUrls.forEach(this::addURL);
+        this.excludedClassPackages = Stream.concat(this.getDefaultExcludedPackages().stream(), excludedClassPackages.stream()).collect(Collectors.toUnmodifiableSet());
+        this.classPathUrls = getJavaClassPath();
+        addClassPathUrls(classPathUrls);
     }
 
 
