@@ -2,13 +2,10 @@ package com.example.vtweb.launcher;
 
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
-import io.github.nhtuan10.modular.api.module.ModuleLoader;
-import io.github.nhtuan10.sample.api.service.SampleService;
-import io.github.nhtuan10.sample.api.service.ServiceException;
-import io.github.nhtuan10.sample.api.service.SomeData;
-import io.github.nhtuan10.sample.api.service.SomeInterface;
+import io.github.nhtuan10.sample.api.service.*;
 
 import java.util.List;
+import java.util.Set;
 
 public class Main {
     public static void main(String[] args) {
@@ -24,6 +21,7 @@ public class Main {
                 .mainClass("io.github.nhtuan10.sample.service.ServiceImpl")
                 .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
+                .prefixesLoadedBySystemClassLoader(Set.of(ExcludedMe.class.getName()))
                 .build();
 
         var plugin2Config = ModuleLoadConfiguration.builder()
@@ -35,8 +33,8 @@ public class Main {
                 .build();
 
 
-        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-1", plugin1Config);
-        ModuleLoader.ModuleDetail moduleDetail4 = Modular.startModuleSync("modular-sample-plugin-2", plugin2Config);
+        var moduleDetail3 = Modular.startModuleASync("modular-sample-plugin-1", plugin1Config);
+        var moduleDetail4 = Modular.startModuleSync("modular-sample-plugin-2", plugin2Config);
         System.out.println("Finished with modular-sample-plugin");
 //        Modular.startModuleSyncWithMainClass("modular-sample-plugin2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin/0.0.1"), "MainClass", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        m.startModuleSyncWithMainClass("my-kafka-tool", List.of(

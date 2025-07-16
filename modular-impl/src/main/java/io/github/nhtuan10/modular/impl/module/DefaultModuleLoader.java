@@ -127,13 +127,13 @@ public class DefaultModuleLoader implements ModuleLoader {
         ModularClassLoader moduleClassLoader;
         String classLoaderNameFromConfig = moduleLoadConfiguration.modularClassLoaderName();
         if (StringUtils.isNotBlank(classLoaderNameFromConfig)) {
-            moduleClassLoader = modulerClassLoaderMap.computeIfAbsent(classLoaderNameFromConfig, classLoaderName -> new DefaultModularClassLoader(classLoaderNameFromConfig, List.of(moduleName)));
+            moduleClassLoader = modulerClassLoaderMap.computeIfAbsent(classLoaderNameFromConfig, classLoaderName -> new DefaultModularClassLoader(classLoaderNameFromConfig, List.of(moduleName), moduleLoadConfiguration.prefixesLoadedBySystemClassLoader()));
             moduleClassLoader.addClassPathUrls(depUrls);
             moduleClassLoader.addModule(moduleName);
         } else if (moduleLoadConfiguration.modularClassLoader() != null) {
             moduleClassLoader = moduleLoadConfiguration.modularClassLoader();
         } else {
-            moduleClassLoader = new DefaultModularClassLoader(List.of(moduleName), depUrls);
+            moduleClassLoader = new DefaultModularClassLoader(List.of(moduleName), depUrls, moduleLoadConfiguration.prefixesLoadedBySystemClassLoader());
             modulerClassLoaderMap.put(moduleName, moduleClassLoader);
         }
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
