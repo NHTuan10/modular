@@ -9,6 +9,7 @@ public abstract class ModularClassLoader extends URLClassLoader {
         super(urls);
     }
 
-    public abstract void addClassPathUrls(List<URL> classPathUrls);
+    public abstract void addModule(String moduleName);
 
+    public abstract void addClassPathUrls(List<URL> classPathUrls);
 }

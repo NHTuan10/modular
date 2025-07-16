@@ -84,6 +84,10 @@ public interface ModuleLoader {
         return classLoader instanceof ModularClassLoader;
     }
 
+    String getCurrentModuleName();
+
+    void notifyModuleReady(String moduleName);
+
     enum LoadStatus {
         NEW,
         LOADING,

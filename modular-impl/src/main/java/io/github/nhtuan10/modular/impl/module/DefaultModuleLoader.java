@@ -48,6 +48,7 @@ public class DefaultModuleLoader implements ModuleLoader {
     private volatile static ModuleLoader instance;
     private static final Object lock = new Object();
     final Map<String, ModularClassLoader> modulerClassLoaderMap = new ConcurrentHashMap<>();
+    final ThreadLocal<String> currentModuleNameThreadLocal = new ThreadLocal<>();
 
     public static ModuleLoader getInstance() {
         return DefaultModuleLoader.getInstance(ModuleLoaderConfiguration.DEFAULT);
@@ -122,16 +123,17 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     private void loadModuleFromUrls(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration, List<URL> depUrls) {
+        currentModuleNameThreadLocal.set(moduleName);
         ModularClassLoader moduleClassLoader;
         String classLoaderNameFromConfig = moduleLoadConfiguration.modularClassLoaderName();
         if (StringUtils.isNotBlank(classLoaderNameFromConfig)) {
-            moduleClassLoader = modulerClassLoaderMap.computeIfAbsent(classLoaderNameFromConfig, classLoaderName -> new DefaultModularClassLoader(classLoaderNameFromConfig, moduleName));
-
+            moduleClassLoader = modulerClassLoaderMap.computeIfAbsent(classLoaderNameFromConfig, classLoaderName -> new DefaultModularClassLoader(classLoaderNameFromConfig, List.of(moduleName)));
             moduleClassLoader.addClassPathUrls(depUrls);
+            moduleClassLoader.addModule(moduleName);
         } else if (moduleLoadConfiguration.modularClassLoader() != null) {
             moduleClassLoader = moduleLoadConfiguration.modularClassLoader();
         } else {
-            moduleClassLoader = new DefaultModularClassLoader(moduleName, depUrls);
+            moduleClassLoader = new DefaultModularClassLoader(List.of(moduleName), depUrls);
             modulerClassLoaderMap.put(moduleName, moduleClassLoader);
         }
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
@@ -428,6 +430,11 @@ public class DefaultModuleLoader implements ModuleLoader {
     @Override
     public boolean unloadModule(String moduleName) {
         return false;
+    }
+
+    @Override
+    public String getCurrentModuleName() {
+        return currentModuleNameThreadLocal.get();
     }
 
     private ModuleDetail awaitModuleReady(String moduleName, CompletableFuture<ModuleDetail> cf) {

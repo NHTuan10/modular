@@ -33,14 +33,14 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     private List<URL> classPathUrls;
 
     @Getter
-    private final String moduleName;
+    private final List<String> moduleNames;
 
     @Getter
     private final String name;
 
-    public DefaultModularClassLoader(String name, String moduleName, List<URL> classPathUrls, Set<String> excludedClassPackages) {
+    public DefaultModularClassLoader(String name, List<String> moduleNames, List<URL> classPathUrls, Set<String> excludedClassPackages) {
         super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
-        this.moduleName = moduleName;
+        this.moduleNames = Collections.synchronizedList(new ArrayList<>(moduleNames));
         this.name = name;
         this.excludedClassPackages = Stream.concat(excludedClassPackages.stream(), this.getDefaultExcludedPackages().stream()).collect(Collectors.toUnmodifiableSet());
         this.classPathUrls = Stream.concat(classPathUrls.stream(), getJavaClassPath().stream()).toList();
@@ -48,20 +48,24 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     }
 
 
-    public DefaultModularClassLoader(String moduleName, List<URL> classPathUrls, Set<String> excludedClassPackages) {
-        this(moduleName, moduleName, classPathUrls, excludedClassPackages);
+    public DefaultModularClassLoader(List<String> moduleNames, List<URL> classPathUrls, Set<String> excludedClassPackages) {
+        this(moduleNames.get(0), moduleNames, classPathUrls, excludedClassPackages);
     }
 
-    public DefaultModularClassLoader(String moduleName, List<URL> classPathUrls) {
-        this(moduleName, moduleName, classPathUrls, Collections.emptySet());
+    public DefaultModularClassLoader(List<String> moduleNames, List<URL> classPathUrls) {
+        this(moduleNames.get(0), moduleNames, classPathUrls, Collections.emptySet());
     }
 
-    public DefaultModularClassLoader(String moduleName) {
-        this(moduleName, moduleName, Collections.emptyList(), Collections.emptySet());
+    public DefaultModularClassLoader(List<String> moduleNames) {
+        this(moduleNames.get(0), moduleNames, Collections.emptyList(), Collections.emptySet());
     }
 
-    public DefaultModularClassLoader(String name, String moduleName) {
-        this(name, moduleName, Collections.emptyList(), Collections.emptySet());
+    public DefaultModularClassLoader(String name, List<String> moduleNames) {
+        this(name, moduleNames, Collections.emptyList(), Collections.emptySet());
+    }
+
+    public void addModule(String moduleName) {
+        this.moduleNames.add(moduleName);
     }
 
     @Override
@@ -80,7 +84,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     public String toString() {
         return "DefaultModularClassLoader{" +
                 "name='" + name + '\'' +
-                ", moduleName='" + moduleName + '\'' +
+                ", moduleName='" + moduleNames + '\'' +
                 '}';
     }
 
