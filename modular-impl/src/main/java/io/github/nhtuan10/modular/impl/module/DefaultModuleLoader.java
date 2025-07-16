@@ -1,5 +1,6 @@
 package io.github.nhtuan10.modular.impl.module;
 
+import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
 import io.github.nhtuan10.modular.api.exception.DuplicatedModuleLoadRuntimeException;
 import io.github.nhtuan10.modular.api.exception.ModuleLoadRuntimeException;
@@ -46,6 +47,8 @@ public class DefaultModuleLoader implements ModuleLoader {
     final ModuleLoaderConfiguration configuration;
     private volatile static ModuleLoader instance;
     private static final Object lock = new Object();
+    final Map<String, ModularClassLoader> modulerClassLoaderMap = new ConcurrentHashMap<>();
+    final ThreadLocal<String> currentModuleNameThreadLocal = new ThreadLocal<>();
 
     public static ModuleLoader getInstance() {
         return DefaultModuleLoader.getInstance(ModuleLoaderConfiguration.DEFAULT);
@@ -119,18 +122,30 @@ public class DefaultModuleLoader implements ModuleLoader {
         return new MavenArtifactsResolver<URL>().resolveDependencies(mvnArtifacts, URL.class);
     }
 
-    private void loadModuleFromUrls(String name, ModuleLoadConfiguration moduleLoadConfiguration, List<URL> depUrls) {
-        DefaultModularClassLoader moduleClassLoader = new DefaultModularClassLoader(name, depUrls);
-        ModuleDetail moduleDetail = moduleDetailMap.get(name);
+    private void loadModuleFromUrls(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration, List<URL> depUrls) {
+        currentModuleNameThreadLocal.set(moduleName);
+        ModularClassLoader moduleClassLoader;
+        String classLoaderNameFromConfig = moduleLoadConfiguration.modularClassLoaderName();
+        if (StringUtils.isNotBlank(classLoaderNameFromConfig)) {
+            moduleClassLoader = modulerClassLoaderMap.computeIfAbsent(classLoaderNameFromConfig, classLoaderName -> new DefaultModularClassLoader(classLoaderNameFromConfig, List.of(moduleName), moduleLoadConfiguration.prefixesLoadedBySystemClassLoader()));
+            moduleClassLoader.addClassPathUrls(depUrls);
+            moduleClassLoader.addModule(moduleName);
+        } else if (moduleLoadConfiguration.modularClassLoader() != null) {
+            moduleClassLoader = moduleLoadConfiguration.modularClassLoader();
+        } else {
+            moduleClassLoader = new DefaultModularClassLoader(List.of(moduleName), depUrls, moduleLoadConfiguration.prefixesLoadedBySystemClassLoader());
+            modulerClassLoaderMap.put(moduleName, moduleClassLoader);
+        }
+        ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
         moduleDetail.setClassLoader(moduleClassLoader);
 //        addAllOpens(ModuleLoaderImpl.class.getClassLoader());
 //        addAllOpens(moduleClassLoader);
         ModularAnnotationProcessor m = new ModularAnnotationProcessor(moduleClassLoader);
         try {
-            Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(name, moduleLoadConfiguration);
+            Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(moduleName, moduleLoadConfiguration);
             addModularServices(modularServices);
         } catch (Exception e) {
-            throw new AnnotationProcessingRuntimeException(name, "Fail during annotation processing", e);
+            throw new AnnotationProcessingRuntimeException(moduleName, "Fail during annotation processing", e);
         }
     }
 
@@ -415,6 +430,11 @@ public class DefaultModuleLoader implements ModuleLoader {
     @Override
     public boolean unloadModule(String moduleName) {
         return false;
+    }
+
+    @Override
+    public String getCurrentModuleName() {
+        return currentModuleNameThreadLocal.get();
     }
 
     private ModuleDetail awaitModuleReady(String moduleName, CompletableFuture<ModuleDetail> cf) {
