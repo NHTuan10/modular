@@ -12,7 +12,7 @@ import net.bytebuddy.matcher.ElementMatchers;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
-public class ProxyCreator {
+public class ServiceProxyCreator {
     private static Objenesis objenesis = new ObjenesisStd();
     public static <I> I createProxyObject(Class<I> apiClass, Object service, SerDeserializer serDeserializer, boolean copyTransClassLoaderObjects,
                                           ClassLoader sourceClassLoader, ClassLoader targetClassLoader) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchFieldException, NoSuchMethodException {
@@ -41,5 +41,20 @@ public class ProxyCreator {
         targetField.set(proxy, service);
         return proxy;
 
+    }
+
+    static boolean isBoxedPrimitive(Class<?> type) {
+        return type == Integer.class ||
+                type == Long.class ||
+                type == Short.class ||
+                type == Byte.class ||
+                type == Float.class ||
+                type == Double.class ||
+                type == Boolean.class ||
+                type == Character.class;
+    }
+
+    public static boolean isConversionNeeded(Object obj, Class<?> type, ClassLoader sourceClassLoader, ClassLoader targetClassLoader) {
+        return obj == null || targetClassLoader == sourceClassLoader || type.isPrimitive() || isBoxedPrimitive(type) || type.equals(String.class);
     }
 }

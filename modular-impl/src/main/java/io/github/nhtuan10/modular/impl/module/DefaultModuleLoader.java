@@ -13,7 +13,7 @@ import io.github.nhtuan10.modular.impl.annotation.ModularAnnotationProcessor;
 import io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader;
 import io.github.nhtuan10.modular.impl.classloader.MavenArtifactsResolver;
 import io.github.nhtuan10.modular.impl.model.ModularServiceHolder;
-import io.github.nhtuan10.modular.impl.proxy.ProxyCreator;
+import io.github.nhtuan10.modular.impl.proxy.ServiceProxyCreator;
 import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
@@ -282,7 +282,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                     if (service != null) {
                         return loadedProxyObjects.computeIfAbsent(new ProxyCacheKey(apiClass, service), proxyCacheKey -> {
                             try {
-                                return ProxyCreator.createProxyObject(apiClass, service, this.serDeserializer, copyTransClassLoaderObjects, apiClass.getClassLoader(), serviceHolder.getClassLoader());
+                                return ServiceProxyCreator.createProxyObject(apiClass, service, this.serDeserializer, copyTransClassLoaderObjects, apiClass.getClassLoader(), serviceHolder.getClassLoader());
                             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                      NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
                                 throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(apiClass.getName()), e);
