@@ -54,7 +54,6 @@ public class DefaultModuleLoader implements ModuleLoader {
         return DefaultModuleLoader.getInstance(ModuleLoaderConfiguration.DEFAULT);
     }
 
-
     public static ModuleLoader getInstance(ModuleLoaderConfiguration configuration) {
         if (instance == null) {
             synchronized (lock) {
@@ -442,7 +441,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         try {
             moduleDetail.getReadyLatch().await();
         } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted while waiting for module %s ready".formatted(moduleName), e);
+            throw new ModuleLoadRuntimeException("Interrupted while waiting for module %s ready".formatted(moduleName), e);
         }
         if (cf.isCompletedExceptionally()) {
             moduleDetail.setLoadStatus(LoadStatus.FAILED);
@@ -461,11 +460,15 @@ public class DefaultModuleLoader implements ModuleLoader {
 
     public void notifyModuleReady(String moduleName) {
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
-        CountDownLatch readyLatch = moduleDetail.getReadyLatch();
-        if (readyLatch != null && readyLatch.getCount() > 0) {
-            readyLatch.countDown();
+        if (moduleDetail != null) {
+            CountDownLatch readyLatch = moduleDetail.getReadyLatch();
+            if (readyLatch != null && readyLatch.getCount() > 0) {
+                readyLatch.countDown();
+            }
+            moduleDetail.setLoadStatus(LoadStatus.LOADED);
+        } else {
+            throw new ModuleLoadRuntimeException("Module " + moduleName + " not found");
         }
-        moduleDetail.setLoadStatus(LoadStatus.LOADED);
     }
 
 

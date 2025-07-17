@@ -25,4 +25,8 @@ public final class ModularContext {
     public static String getCurrentModuleName() {
         return INSTANCE.getCurrentModuleName();
     }
+
+    public static void notifyModuleReady(String moduleName) {
+        INSTANCE.notifyModuleReady(moduleName);
+    }
 }
