@@ -22,6 +22,13 @@ public class DefaultModuleContextImpl implements ModuleContext {
     }
 
     @Override
+    public void notifyModuleReady(String moduleName) {
+        if (this.getClass().getClassLoader() instanceof ModularClassLoader modularClassLoader && modularClassLoader.getModuleNames().contains(moduleName)) {
+            moduleLoader.notifyModuleReady(moduleName);
+        }
+    }
+
+    @Override
     public String getCurrentModuleName() {
         return moduleLoader.getCurrentModuleName();
     }
