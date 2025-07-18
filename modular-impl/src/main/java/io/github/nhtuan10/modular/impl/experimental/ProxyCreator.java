@@ -4,6 +4,7 @@ import io.github.nhtuan10.modular.impl.proxy.ServiceProxyCreator;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 public class ProxyCreator {
@@ -12,7 +13,7 @@ public class ProxyCreator {
         if (ServiceProxyCreator.isConversionNeeded(obj, type, sourceClassLoader, targetClassLoader)) {
             return obj;
         }
-        if (type.isEnum() || type.isRecord()) {
+        if (type.isEnum() || Modifier.isFinal(type.getModifiers())) {
             return serDeserializer.castWithSerialization(obj, targetClassLoader);
         } else if (type.isArray()) {
             Object[] array = (Object[]) obj;

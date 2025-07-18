@@ -17,7 +17,10 @@ import io.github.nhtuan10.modular.impl.proxy.ServiceProxyCreator;
 import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
+import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -32,6 +35,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class DefaultModuleLoader implements ModuleLoader {
@@ -66,10 +70,16 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     public DefaultModuleLoader(ModuleLoaderConfiguration configuration) {
-        serDeserializer = switch (configuration.getSerializeType()) {
-            case JAVA -> new JavaSerDeserializer();
+        switch (configuration.getSerializeType()) {
+            case JAVA:
+                serDeserializer = new JavaSerDeserializer();
+                break;
 //            case JACKSON_SMILE -> new JacksonSmileSerDeserializer();
-            case KRYO -> new KryoSerDeserializer();
+            case KRYO:
+            default:
+                serDeserializer = new KryoSerDeserializer();
+                break;
+
         };
         this.configuration = configuration;
     }
@@ -91,17 +101,17 @@ public class DefaultModuleLoader implements ModuleLoader {
                         if (path.toFile().exists()) {
                             urls.add(uri.toURL());
                         } else {
-                            throw new ModuleLoadRuntimeException(name, "Error loading module %s. File %s does not exist".formatted(name, path));
+                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s. File %s does not exist", name, path));
                         }
                     } catch (MalformedURLException e) {
-                        throw new ModuleLoadRuntimeException(name, "Error loading module %s from file %s with package %s".formatted(name, uri, moduleLoadConfiguration.packagesToScan()), e);
+                        throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
                     }
                     break;
                 case HTTP:
                     try {
                         urls.add(uri.toURL());
                     } catch (MalformedURLException e) {
-                        throw new ModuleLoadRuntimeException(name, "Error loading module %s from file %s with package %s".formatted(name, uri, moduleLoadConfiguration.packagesToScan()), e);
+                        throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
                     }
                     break;
                 default:
@@ -116,7 +126,7 @@ public class DefaultModuleLoader implements ModuleLoader {
 
     private List<URL> resolveMavenDeps(String moduleName, List<URI> uris) {
         // Load module from Maven
-        List<String> mvnArtifacts = uris.stream().map(uri -> uri.getHost() + uri.getPath().replace("/", ":")).toList();
+        List<String> mvnArtifacts = uris.stream().map(uri -> uri.getHost() + uri.getPath().replace("/", ":")).collect(Collectors.toList());
         log.info("Loading module {} from Maven artifacts: {}", moduleName, mvnArtifacts);
         return new MavenArtifactsResolver<URL>().resolveDependencies(mvnArtifacts, URL.class);
     }
@@ -269,7 +279,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                                 service = serviceAppContextProvide.getMethod("getBean", String.class).invoke(null, serviceHolder.getExternalBeanName());
                             }
                         } catch (Exception ex) {
-                            throw new ServiceLookUpRuntimeException("Error when getModularServices from Spring Application Context for class %s with name %s".formatted(apiClass.getName(), beanName), ex);
+                            throw new ServiceLookUpRuntimeException(String.format("Error when getModularServices from Spring Application Context for class %s with name %s", apiClass.getName(), beanName), ex);
                         }
                         serviceHolder.setExternalBeanName(beanName);
                         serviceHolder.setServiceClass(service.getClass());
@@ -285,24 +295,38 @@ public class DefaultModuleLoader implements ModuleLoader {
                                 return ServiceProxyCreator.createProxyObject(apiClass, service, this.serDeserializer, copyTransClassLoaderObjects, apiClass.getClassLoader(), serviceHolder.getClassLoader());
                             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                      NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
-                                throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(apiClass.getName()), e);
+                                throw new ServiceLookUpRuntimeException(String.format("Error when getModularServices for class %s", apiClass.getName()), e);
                             }
                         });
                     } else
                         return null;
                 } catch (
                         ClassNotFoundException e) {
-                    throw new ServiceLookUpRuntimeException("Error when getModularServices for class %s".formatted(apiClass.getName()), e);
+                    throw new ServiceLookUpRuntimeException(String.format("Error when getModularServices for class %s", apiClass.getName()), e);
                 }
-            }).filter(Objects::nonNull).toList();
+            }).filter(Objects::nonNull).collect(Collectors.toList());
 //            };
             return proxyObjects;
         } else {
-            throw new ServiceLookUpRuntimeException("Class '%s' is not registered as a Modular service. Please make sure this class is in the scanned packages and have @ModularService annotation".formatted(apiClass.getName()));
+            throw new ServiceLookUpRuntimeException(String.format("Class '%s' is not registered as a Modular service. Please make sure this class is in the scanned packages and have @ModularService annotation", apiClass.getName()));
         }
     }
 
-    public static record ProxyCacheKey(Class<?> apiClass, Object service) {
+    @RequiredArgsConstructor
+    @EqualsAndHashCode
+    @ToString
+    public static final class ProxyCacheKey {
+        private final Class<?> apiClass;
+        private final Object service;
+
+        public Class<?> apiClass() {
+            return apiClass;
+        }
+
+        public Object service() {
+            return service;
+        }
+
     }
 
     private CompletableFuture<ModuleDetail> startModule(String moduleName, List<String> locationUris, ExternalContainer externalContainer, String mainClass, List<String> packagesToScan, boolean awaitMainClass) {
@@ -342,7 +366,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                             }
                         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                                  ClassNotFoundException | InterruptedException e) {
-                            ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException(moduleName, "Error starting module '%s'".formatted(moduleName), e);
+                            ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException(moduleName, String.format("Error starting module '%s'", moduleName), e);
                             moduleDetailCompletableFuture.completeExceptionally(exception);
                             notifyModuleReady(moduleName);
                             throw exception;
@@ -441,7 +465,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         try {
             moduleDetail.getReadyLatch().await();
         } catch (InterruptedException e) {
-            throw new ModuleLoadRuntimeException("Interrupted while waiting for module %s ready".formatted(moduleName), e);
+            throw new ModuleLoadRuntimeException(String.format("Interrupted while waiting for module %s ready", moduleName), e);
         }
         if (cf.isCompletedExceptionally()) {
             moduleDetail.setLoadStatus(LoadStatus.FAILED);

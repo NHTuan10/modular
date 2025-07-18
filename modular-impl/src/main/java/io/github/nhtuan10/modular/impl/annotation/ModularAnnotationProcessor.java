@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -89,8 +90,7 @@ public class ModularAnnotationProcessor {
         for (ClassInfo classInfo : serviceClasses) {
             if (classInfo.isInterface()) {
                 Class<?> interfaceClass = classInfo.loadClass();
-                List<ClassInfo> implClassesInfo = scanResult.getClassesImplementing(interfaceClass.getName()).stream()
-                        .toList();
+                List<ClassInfo> implClassesInfo = new ArrayList<>(scanResult.getClassesImplementing(interfaceClass.getName()));
                 Set<ModularServiceHolder> serviceInfoSet = new LinkedHashSet<>();
                 for (ClassInfo implClassInfo : implClassesInfo) {
                     if (implClassInfo.hasAnnotation(serviceImplAnnotationName)) {
@@ -188,11 +188,11 @@ public class ModularAnnotationProcessor {
                     ModularServiceHolder modularServiceHolder;
                     if (externalContainer == null) {
                         method.setAccessible(true);
-                        var constructor = configClass.getDeclaredConstructor();
+                        Constructor<?> constructor = configClass.getDeclaredConstructor();
                         constructor.setAccessible(true);
                         Object object = method.invoke(constructor.newInstance());
                         if (object == null) {
-                            throw new AnnotationProcessingRuntimeException(moduleName, "Error processing module %s: Modular service creation method %s#%s returns null, which is not allowed".formatted(moduleName, configClassInfo.getName(), method.getName()));
+                            throw new AnnotationProcessingRuntimeException(moduleName, String.format("Error processing module %s: Modular service creation method %s#%s returns null, which is not allowed", moduleName, configClassInfo.getName(), method.getName()));
                         }
                         Class<?> serviceClass = object.getClass();
                         modularServiceHolder = new ModularServiceHolder(moduleName, serviceClass, buildServiceName(moduleName, serviceClass.getName(), method.getName(), null), object, interfaces, modularClassLoader);

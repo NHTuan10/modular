@@ -2,6 +2,7 @@ package com.example.vtweb.launcher;
 
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
+import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.sample.api.service.ExcludedMe;
 import io.github.nhtuan10.sample.api.service.SampleService;
 import io.github.nhtuan10.sample.api.service.SomeData;
@@ -17,7 +18,7 @@ public class Main {
 //                List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), "io.github.nhtuan10.sample.service.ServiceImpl", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
 
-        var plugin1Config = ModuleLoadConfiguration.builder()
+        ModuleLoadConfiguration plugin1Config = ModuleLoadConfiguration.builder()
                 .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"))
@@ -27,7 +28,7 @@ public class Main {
                 .prefixesLoadedBySystemClassLoader(Set.of(ExcludedMe.class.getName()))
                 .build();
 
-        var plugin2Config = ModuleLoadConfiguration.builder()
+        ModuleLoadConfiguration plugin2Config = ModuleLoadConfiguration.builder()
                 .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.service"))
@@ -36,8 +37,8 @@ public class Main {
                 .build();
 
 
-        var moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-1", plugin1Config);
-        var moduleDetail4 = Modular.startModuleSync("modular-sample-plugin-2", plugin2Config);
+        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-1", plugin1Config);
+        ModuleLoader.ModuleDetail moduleDetail4 = Modular.startModuleSync("modular-sample-plugin-2", plugin2Config);
 //        moduleDetail3.join();
         System.out.println("Finished with modular-sample-plugin");
 //        Modular.startModuleSyncWithMainClass("modular-sample-plugin2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin/0.0.1"), "MainClass", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
@@ -102,13 +103,13 @@ public class Main {
                     Object result = s.testReturn(d);
                     System.out.println("testReturn: " + result);
                     System.out.println("d.getName(): " + d.getName());
-                    var inArr = new SomeData[]{new SomeData("input testObjectArray")};
+                    SomeData[] inArr = new SomeData[]{new SomeData("input testObjectArray")};
                     System.out.println("Return from testObjectArray: " + s.testObjectArray(inArr));
                     System.out.println("In array: " + inArr[0]);
 //            var list = new ArrayList<SomeData>();
 //            list.add(new SomeData("input testObjectList-1"));
 //            list.add(new SomeData("input testObjectList-2"));
-                    var list = List.of(new SomeData("input testObjectList-1"), new SomeData("input testObjectList-2"));
+                    List<SomeData> list = List.of(new SomeData("input testObjectList-1"), new SomeData("input testObjectList-2"));
                     System.out.println("Return from testObjectList: " + s.testObjectList(list));
                     System.out.println("In list: " + list);
 

@@ -40,7 +40,7 @@ public class ServiceInvocationInterceptor {
 //                        throw new ServiceInvocationRuntimeException("Class not found for parameter type '%s' from class '%s', method '%s'".formatted(clazz, serviceClassName, method), e);
 //                    }
                     catch (Exception e) {
-                        throw new ServiceInvocationRuntimeException("Failed to serialize parameter type '%s' from class '%s', method '%s'".formatted(clazz, serviceClassName, method), e);
+                        throw new ServiceInvocationRuntimeException(String.format("Failed to serialize parameter type '%s' from class '%s', method '%s'", clazz, serviceClassName, method), e);
                     }
                 })
                 .toArray(Class[]::new);
@@ -49,7 +49,7 @@ public class ServiceInvocationInterceptor {
             serviceClassLoaderMethod = service.getClass().getMethod(method.getName(), serviceClassLoaderParameterTypes);
             serviceClassLoaderMethod.setAccessible(true);
         } catch (NoSuchMethodException e) {
-            throw new ServiceInvocationRuntimeException("No method found for method '%s' in service class '%s'".formatted(method, serviceClassName), e);
+            throw new ServiceInvocationRuntimeException(String.format("No method found for method '%s' in service class '%s'", method, serviceClassName), e);
         }
         Object[] convertedArgs = IntStream.range(0, serviceClassLoaderParameterTypes.length).mapToObj(i -> {
             try {
@@ -57,7 +57,7 @@ public class ServiceInvocationInterceptor {
 //                        : ProxyCreator.createProxyObject(serviceClassLoaderParameterTypes[i], allArguments[i], serDeserializer, false, service.getClass().getClassLoader());
                 return cast(allArguments[i], serviceClassLoaderParameterTypes[i], sourceClassLoader, targetClassLoader);
             } catch (Exception e) {
-                throw new SerializationRuntimeException("Failed to serialize argument type '%s' from class '%s', method '%s'".formatted(serviceClassLoaderParameterTypes[i], serviceClassName, method), e);
+                throw new SerializationRuntimeException(String.format("Failed to serialize argument type '%s' from class '%s', method '%s'", serviceClassLoaderParameterTypes[i], serviceClassName, method), e);
             }
 
         }).toArray();
@@ -69,7 +69,7 @@ public class ServiceInvocationInterceptor {
         } catch (InvocationTargetException e) {
             throw e;
         } catch (Exception e) {
-            throw new ServiceInvocationRuntimeException("Failed to invoke method '%s' in service class '%s'".formatted(method, serviceClassName), e);
+            throw new ServiceInvocationRuntimeException(String.format("Failed to invoke method '%s' in service class '%s'", method, serviceClassName), e);
         }
     }
 

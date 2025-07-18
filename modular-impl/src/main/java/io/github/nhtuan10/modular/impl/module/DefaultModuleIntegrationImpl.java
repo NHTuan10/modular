@@ -103,13 +103,14 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
             }
             try {
                 Object result = method.invoke(queue, convertedArgs);
-                if (result instanceof byte[] bytes && List.of("poll", "remove", "take", "element", "peek").contains(method.getName())) {
+                if (result instanceof byte[] && List.of("poll", "remove", "take", "element", "peek").contains(method.getName())) {
+                    byte[] bytes = (byte[]) result;
                     return serDeserializer.deserialization(bytes, clazz);
                 } else {
                     return result;
                 }
             } catch (Exception e) {
-                throw new ServiceInvocationRuntimeException("Failed to invoke method '%s' in class '%s'".formatted(method, clazz), e);
+                throw new ServiceInvocationRuntimeException(String.format("Failed to invoke method '%s' in class '%s'", method, clazz), e);
             }
         }
     }

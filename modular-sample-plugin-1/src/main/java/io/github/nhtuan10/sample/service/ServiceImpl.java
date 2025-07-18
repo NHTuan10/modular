@@ -45,7 +45,7 @@ public class ServiceImpl extends BaseService implements SampleService {
         for (SomeData d : in) {
             d.setName("set by sample-plugin-1 ServiceImpl#testObjectList");
         }
-        var r = new ArrayList<SomeData>();
+        ArrayList<SomeData> r = new ArrayList<SomeData>();
         for (SomeData d : in) {
             r.add(new SomeData(d.getName() + " result from ServiceImpl#testObjectList"));
         }

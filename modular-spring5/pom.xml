@@ -9,7 +9,7 @@
         <version>0.0.1</version>
     </parent>
 
-    <artifactId>modular-sample-core</artifactId>
+    <artifactId>modular-spring5</artifactId>
 
     <properties>
         <maven.compiler.source>9</maven.compiler.source>
@@ -20,23 +20,39 @@
     <dependencies>
         <dependency>
             <groupId>io.github.nhtuan10</groupId>
-            <artifactId>modular-spring</artifactId>
+            <artifactId>modular-impl</artifactId>
             <version>0.0.1</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>io.github.nhtuan10</groupId>
-            <artifactId>modular-sample-api</artifactId>
-            <version>0.0.1</version>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>5.3.39</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>5.3.39</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.16</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.5.16</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <version>1.18.38</version>
             <optional>true</optional>
-            <version>1.18.36</version>
-            <!--            <scope>annotationProcessor</scope>-->
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -47,7 +63,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.36</version>
+                            <version>1.18.38</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
