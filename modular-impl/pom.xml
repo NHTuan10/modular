@@ -12,8 +12,8 @@
     <artifactId>modular-impl</artifactId>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>9</maven.compiler.source>
+        <maven.compiler.target>9</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jandexVersion>3.2.6</jandexVersion>
         <classgraphVersion>4.8.179</classgraphVersion>

@@ -12,6 +12,7 @@
     <modules>
         <module>modular-impl</module>
         <module>modular-api</module>
+        <module>modular-spring5</module>
         <module>modular-spring</module>
         <module>modular-sample-core</module>
         <module>modular-sample-plugin-1</module>

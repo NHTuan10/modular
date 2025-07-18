@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -75,7 +76,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     @Override
     @Locked.Write
     public void addClassPathUrls(List<URL> classPathUrls) {
-        this.classPathUrls = Stream.concat(classPathUrls.stream(), this.classPathUrls.stream()).toList();
+        this.classPathUrls = Stream.concat(classPathUrls.stream(), this.classPathUrls.stream()).collect(Collectors.toList());
         classPathUrls.forEach(this::addURL);
     }
 
@@ -154,6 +155,6 @@ public class DefaultModularClassLoader extends ModularClassLoader {
                         throw new RuntimeException(e);
                     }
                 })
-                .toList();
+                .collect(Collectors.toList());
     }
 }
