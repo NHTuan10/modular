@@ -1,5 +1,6 @@
 package io.github.nhtuan10.modular.context;
 
+import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
 import io.github.nhtuan10.modular.api.module.ModuleContext;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
@@ -19,7 +20,9 @@ public final class ModularContext {
     }
 
     public static void notifyModuleReady(){
-        INSTANCE.notifyModuleReady();
+        if (ModularContext.class.getClassLoader() instanceof ModularClassLoader) {
+            INSTANCE.notifyModuleReady();
+        }
     }
 
     public static String getCurrentModuleName() {
