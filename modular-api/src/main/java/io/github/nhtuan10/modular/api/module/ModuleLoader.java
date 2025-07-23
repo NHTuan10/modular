@@ -1,5 +1,6 @@
 package io.github.nhtuan10.modular.api.module;
 
+import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,11 +12,10 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.regex.Pattern;
 
 public interface ModuleLoader {
 
-    Pattern classLoaderNamePattern = Pattern.compile("^io.github.nhtuan10.modular.impl.module.ModularClassLoader\\[.+\\]$");
+//    Pattern classLoaderNamePattern = Pattern.compile("^io.github.nhtuan10.modular.impl.classloader.ModularClassLoader\\[.+\\]$");
 
     static ModuleLoader getInstance() {
         try {
@@ -50,7 +50,17 @@ public interface ModuleLoader {
 
     <I> List<I> getModularServices(Class<I> clazz);
 
+    <I> List<I> getModularServices(Class<I> clazz, String moduleName);
+
     <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects);
+
+    <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer);
+
+    <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer);
+
+    <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer, boolean copyTransClassLoaderObjects);
+
+    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName);
 
     <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz);
 
@@ -58,14 +68,25 @@ public interface ModuleLoader {
 
     boolean unloadModule(String moduleName);
 
+    //    <I> List<I> getModularServices(String name, Class<I> clazz,ExternalContainer externalContainer, boolean copyTransClassLoaderObjects);
+
+    //    <I> List<I> getModularServices(Class<I> clazz, String moduleName, boolean copyTransClassLoaderObjects);
+
+
     static boolean isManaged(Object object) {
         return isManaged(object.getClass());
     }
 
     static boolean isManaged(Class<?> clazz) {
-        String classLoaderName = clazz.getClassLoader().getName();
-        return classLoaderName != null && classLoaderNamePattern.matcher(classLoaderName).matches();
+//        String classLoaderName = clazz.getClassLoader().getName();
+//        return classLoaderName != null && classLoaderNamePattern.matcher(classLoaderName).matches();
+        ClassLoader classLoader = clazz.getClassLoader();
+        return classLoader instanceof ModularClassLoader;
     }
+
+    String getCurrentModuleName();
+
+    void notifyModuleReady(String moduleName);
 
     enum LoadStatus {
         NEW,
@@ -93,7 +114,7 @@ public interface ModuleLoader {
     @Builder
     class ModuleLoaderConfiguration {
         public enum SerializeType {
-            JACKSON_SMILE,
+            //            JACKSON_SMILE,
             JAVA,
             KRYO
         }

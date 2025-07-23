@@ -1,5 +1,6 @@
 package io.github.nhtuan10.modular.impl.classloader;
 
+import io.github.nhtuan10.modular.api.classloader.ArtifactsResolver;
 import lombok.extern.slf4j.Slf4j;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 
