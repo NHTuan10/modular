@@ -53,7 +53,7 @@
                     </annotationProcessorPaths>
                     <compilerArgs>
                         <arg>--add-reads</arg>
-                        <arg>io.github.nhtuan10.sample=ALL-UNNAMED</arg>
+                        <arg>io.github.nhtuan10.sample.plugin1=ALL-UNNAMED</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

@@ -12,5 +12,5 @@ module io.github.nhtuan10.sample.plugin2 {
 //    requires static kafka.schema.registry.client;
 
     opens io.github.nhtuan10.sample.plugin2 to io.github.nhtuan10.modular, io.github.nhtuan10.modular.impl;
-
+    exports io.github.nhtuan10.sample.plugin2;
 }

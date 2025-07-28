@@ -15,7 +15,7 @@ public final class ModularContext {
             Class<ModuleContext> implementationClass = Utils.getImplementationClass(ModuleContext.class, ModularContext.class);
             INSTANCE = implementationClass.getConstructor(ModuleLoader.class).newInstance(ModuleLoader.getInstance());
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
-            throw new ModularRuntimeException("Couldn't find any ModuleLoader implementation instance", e);
+            throw new ModularRuntimeException("Couldn't create any ModuleContext implementation instance", e);
         }
     }
 

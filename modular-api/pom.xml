@@ -37,6 +37,10 @@
                             <version>1.18.38</version>
                         </path>
                     </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>--add-reads</arg>
+                        <arg>io.github.nhtuan10.modular=ALL-UNNAMED</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>

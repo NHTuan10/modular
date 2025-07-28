@@ -147,8 +147,12 @@ public class DefaultModuleLoader implements ModuleLoader {
         }
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
         moduleDetail.setClassLoader(moduleClassLoader);
-//        addAllOpens(ModuleLoaderImpl.class.getClassLoader());
+//        addAllOpens(this.getClass().getClassLoader());
 //        addAllOpens(moduleClassLoader);
+        String jpmsModuleName = moduleLoadConfiguration.jpmsModuleName();
+        if (jpmsModuleName != null) {
+            moduleClassLoader.setModuleLayer(moduleName, jpmsModuleName);
+        }
         ModularAnnotationProcessor m = new ModularAnnotationProcessor(moduleClassLoader);
         try {
             Map<Class<?>, Collection<ModularServiceHolder>> modularServices = m.annotationProcess(moduleName, moduleLoadConfiguration);
@@ -184,8 +188,14 @@ public class DefaultModuleLoader implements ModuleLoader {
         });
     }
 
-    public Class<?> loadClass(String module, String name) throws ClassNotFoundException {
-        return moduleDetailMap.get(module).getClassLoader().loadClass(name);
+    public Class<?> loadMainClass(String module, ModuleLoadConfiguration moduleLoadConfiguration) throws ClassNotFoundException {
+        ModularClassLoader modularClassLoader = moduleDetailMap.get(module).getClassLoader();
+        String mainClassName = moduleLoadConfiguration.mainClass();
+        if (moduleLoadConfiguration.jpmsModuleName() != null) {
+            return modularClassLoader.loadClass(module, moduleLoadConfiguration.jpmsModuleName(), mainClassName);
+        } else {
+            return modularClassLoader.loadClass(mainClassName);
+        }
     }
 
     public ClassLoader getClassLoader(String module) {
@@ -356,7 +366,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                     Thread.currentThread().setContextClassLoader(getClassLoader(moduleName));
                     if (moduleLoadConfiguration.mainClass() != null) {
                         try {
-                            loadClass(moduleName, moduleLoadConfiguration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) new String[]{});
+                            loadMainClass(moduleName, moduleLoadConfiguration).getDeclaredMethod("main", String[].class).invoke(null, (Object) new String[]{});
                             moduleDetailCompletableFuture.complete(moduleDetail);
                             notifyModuleReady(moduleName);
                             log.info(FINISH_LOADING_MSG, moduleName);

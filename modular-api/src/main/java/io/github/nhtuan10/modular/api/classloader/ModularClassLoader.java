@@ -18,4 +18,9 @@ public abstract class ModularClassLoader extends URLClassLoader {
 
     public abstract List<String> getModuleNames();
 
+    public abstract void setModuleLayer(String moduleName, String jpmsModuleName);
+
+    public abstract ModuleLayer getModuleLayer(String moduleName, String jpmsModuleName);
+
+    public abstract Class<?> loadClass(String moduleName, String jpmsModuleName, String className) throws ClassNotFoundException;
 }

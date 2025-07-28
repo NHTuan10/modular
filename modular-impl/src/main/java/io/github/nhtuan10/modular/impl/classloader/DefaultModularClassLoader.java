@@ -4,10 +4,17 @@ import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import lombok.Getter;
 import lombok.Locked;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 
 import java.io.File;
+import java.lang.module.Configuration;
+import java.lang.module.ModuleFinder;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -24,6 +31,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
             , MODULAR_PARENT_PACKAGE + ".impl.model"
             , MODULAR_PARENT_PACKAGE + ".impl.module"
             , MODULAR_PARENT_PACKAGE + ".impl.proxy"
+            , MODULAR_PARENT_PACKAGE + ".impl.experimental"
             , MODULAR_PARENT_PACKAGE + ".impl.serdeserializer"
     );
 
@@ -38,6 +46,8 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 
     @Getter
     private final String name;
+
+    private final Map<Pair<String, String>, ModuleLayer> jpmsModuleLayers = new ConcurrentHashMap<>();
 
     public DefaultModularClassLoader(String name, List<String> moduleNames, List<URL> classPathUrls, Set<String> prefixesLoadedBySystemClassLoader) {
         super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
@@ -85,6 +95,40 @@ public class DefaultModularClassLoader extends ModularClassLoader {
         this.prefixesLoadedBySystemClassLoader.addAll(prefixesLoadedBySystemClassLoader);
     }
 
+
+    @Override
+    public ModuleLayer getModuleLayer(String moduleName, String jpmsModuleName) {
+        return jpmsModuleLayers.get(Pair.of(moduleName, jpmsModuleName));
+    }
+
+    @Override
+    @Locked.Write
+    public void setModuleLayer(String moduleName, String jpmsModuleName) {
+//        Path pth = FileSystems.getDefault().getPath("C:\\Users\\archd\\Desktop");
+        Path[] paths = classPathUrls.stream().filter(url -> !url.toString().contains("shrinkwrap")).map(url -> {
+            try {
+                return Paths.get(url.toURI());
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+        }).toArray(Path[]::new);
+        ModuleFinder mf = ModuleFinder.of(paths);
+        //Create a new Configuration for a new module layer deriving from the boot configuration, and resolving
+        //the JPMS module.
+        Configuration cfg = ModuleLayer.boot().configuration().resolve(mf, ModuleFinder.of(), Set.of(jpmsModuleName));
+        Module unnamed = Maven.class.getClassLoader().getUnnamedModule();
+        //make the module layer, using the configuration and classloader.
+        ModuleLayer ml = ModuleLayer.boot().defineModulesWithOneLoader(cfg, this);
+        ml.modules().forEach(module -> {
+            final Set<String> packages = unnamed.getPackages();
+            for (String eachPackage : packages) {
+                unnamed.addOpens(eachPackage, module);
+                log.debug("--add-open " + eachPackage + " from " + unnamed + " to " + module);
+            }
+        });
+        jpmsModuleLayers.put(Pair.of(moduleName, jpmsModuleName), ml);
+    }
+
     @Override
     public String getName() {
         return this.name;
@@ -107,6 +151,19 @@ public class DefaultModularClassLoader extends ModularClassLoader {
         return platformClassLoaderPackages;
     }
 
+//    @Override
+//    public Class<?> findClass(String moduleName, String name)  {
+//        try {
+//            return   jpmsModuleLayers.get(moduleName).findLoader(moduleName).loadClass(name);
+//        } catch (ClassNotFoundException e) {
+//            return null;
+//        }
+//    }
+
+    @Override
+    public Class<?> loadClass(String moduleName, String jpmsModuleName, String className) throws ClassNotFoundException {
+        return getModuleLayer(moduleName, jpmsModuleName).findLoader(jpmsModuleName).loadClass(className);
+    }
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
 //        log.trace("Loading class: ", name);

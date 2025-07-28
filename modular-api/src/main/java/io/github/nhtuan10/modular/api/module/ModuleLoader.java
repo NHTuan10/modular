@@ -104,7 +104,7 @@ public interface ModuleLoader {
         private ModuleLoader.LoadStatus loadStatus;
         @Getter
         @Setter
-        private ClassLoader classLoader;
+        private ModularClassLoader classLoader;
         @Getter
         private CountDownLatch readyLatch;
         @Getter

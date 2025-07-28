@@ -23,6 +23,7 @@ public final class ModuleLoadConfiguration {
     private final String modularClassLoaderName;
     private final Set<String> prefixesLoadedBySystemClassLoader;
     private final ModularClassLoader modularClassLoader;
+    private final String jpmsModuleName;
 
 
     public List<String> locationUris() {
@@ -61,4 +62,7 @@ public final class ModuleLoadConfiguration {
         return modularClassLoader;
     }
 
+    public String jpmsModuleName() {
+        return jpmsModuleName;
+    }
 }
