@@ -1,4 +1,4 @@
-package io.github.nhtuan10.sample.service;
+package io.github.nhtuan10.sample.plugin2;
 
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.annotation.ModularConfiguration;

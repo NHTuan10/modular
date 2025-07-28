@@ -1,4 +1,4 @@
-package com.example.vtweb.launcher;
+package io.github.nhtuan10.sample.launcher;
 
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
@@ -21,8 +21,8 @@ public class Main {
         ModuleLoadConfiguration plugin1Config = ModuleLoadConfiguration.builder()
                 .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
-                .packagesToScan(List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"))
-                .mainClass("io.github.nhtuan10.sample.service.ServiceImpl")
+                .packagesToScan(List.of("io.github.nhtuan10.sample.plugin1", "io.github.nhtuan10.sample.util"))
+                .mainClass("io.github.nhtuan10.sample.plugin1.ServiceImpl")
                 .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
                 .prefixesLoadedBySystemClassLoader(Set.of(ExcludedMe.class.getName()))
@@ -31,7 +31,7 @@ public class Main {
         ModuleLoadConfiguration plugin2Config = ModuleLoadConfiguration.builder()
                 .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
-                .packagesToScan(List.of("io.github.nhtuan10.sample.service"))
+                .packagesToScan(List.of("io.github.nhtuan10.sample.plugin2"))
                 .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
                 .build();
