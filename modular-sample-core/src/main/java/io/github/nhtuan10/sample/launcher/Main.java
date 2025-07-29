@@ -7,10 +7,12 @@ import io.github.nhtuan10.sample.api.service.ExcludedMe;
 import io.github.nhtuan10.sample.api.service.SampleService;
 import io.github.nhtuan10.sample.api.service.SomeData;
 import io.github.nhtuan10.sample.api.service.SomeInterface;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 public class Main {
     public static void main(String[] args) {
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
@@ -21,7 +23,7 @@ public class Main {
         ModuleLoadConfiguration plugin1Config = ModuleLoadConfiguration.builder()
                 .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
-                .packagesToScan(List.of("io.github.nhtuan10.sample", "io.github.nhtuan10.sample.util"))
+                .packagesToScan(List.of("io.github.nhtuan10.sample.plugin1", "io.github.nhtuan10.sample.util"))
                 .mainClass("io.github.nhtuan10.sample.plugin1.ServiceImpl")
                 .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
@@ -32,7 +34,7 @@ public class Main {
         ModuleLoadConfiguration plugin2Config = ModuleLoadConfiguration.builder()
                 .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
-                .packagesToScan(List.of("io.github.nhtuan10.sample"))
+                .packagesToScan(List.of("io.github.nhtuan10.sample.plugin2"))
                 .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
                 .jpmsModuleName("io.github.nhtuan10.sample.plugin2")
@@ -42,12 +44,12 @@ public class Main {
         ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-1", plugin1Config);
         ModuleLoader.ModuleDetail moduleDetail4 = Modular.startModuleSync("modular-sample-plugin-2", plugin2Config);
 //        moduleDetail3.join();
-        System.out.println("Finished with modular-sample-plugin");
+        log.info("Finished with modular-sample-plugin");
 //        Modular.startModuleSyncWithMainClass("modular-sample-plugin2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin/0.0.1"), "MainClass", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        m.startModuleSyncWithMainClass("my-kafka-tool", List.of(
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT.jar",
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT/my-kafka-tool-main-0.1.1-SNAPSHOT.jar" ), "io.github.nhtuan10.mykafkatool.MyKafkaToolLauncher", "");
-        System.out.println("Load from 1 module only ---");
+        log.info("Load from 1 module only ---");
         Modular.getModularServices(SampleService.class, "modular-sample-plugin-2").forEach(sampleService -> {
             try {
                 sampleService.test();
@@ -63,7 +65,7 @@ public class Main {
 //        for (int i = 0; i < 2; i++) {
 ////            SomeData a = q.poll();
 //            SomeData a = q.take();
-//            System.out.println("Main-class: Polling from testQueue: " + a);
+//            log.info("Main-class: Polling from testQueue: " + a);
 ////            Thread.sleep(500);
 //        }
 
@@ -73,8 +75,8 @@ public class Main {
         Modular.getModularServices(SampleService.class)
 //                .parallelStream()
                 .forEach(s -> {
-                    System.out.println("Equals: " + s.equals(s));
-                    System.out.println("Equals: " + s.equals(new SampleService() {
+                    log.info("Equals: " + s.equals(s));
+                    log.info("Equals: " + s.equals(new SampleService() {
                         @Override
                         public void test() {
 
@@ -95,7 +97,7 @@ public class Main {
                             return null;
                         }
                     }));
-                    System.out.println("Hash code: " + s.hashCode());
+                    log.info("Hash code: " + s.hashCode());
 
                     try {
                         s.test();
@@ -104,17 +106,17 @@ public class Main {
                     }
                     SomeData d = new SomeData("input testReturn");
                     Object result = s.testReturn(d);
-                    System.out.println("testReturn: " + result);
-                    System.out.println("d.getName(): " + d.getName());
+                    log.info("testReturn: " + result);
+                    log.info("d.getName(): " + d.getName());
                     SomeData[] inArr = new SomeData[]{new SomeData("input testObjectArray")};
-                    System.out.println("Return from testObjectArray: " + s.testObjectArray(inArr));
-                    System.out.println("In array: " + inArr[0]);
+                    log.info("Return from testObjectArray: " + s.testObjectArray(inArr));
+                    log.info("In array: " + inArr[0]);
 //            var list = new ArrayList<SomeData>();
 //            list.add(new SomeData("input testObjectList-1"));
 //            list.add(new SomeData("input testObjectList-2"));
                     List<SomeData> list = List.of(new SomeData("input testObjectList-1"), new SomeData("input testObjectList-2"));
-                    System.out.println("Return from testObjectList: " + s.testObjectList(list));
-                    System.out.println("In list: " + list);
+                    log.info("Return from testObjectList: " + s.testObjectList(list));
+                    log.info("In list: " + list);
 
         });
 

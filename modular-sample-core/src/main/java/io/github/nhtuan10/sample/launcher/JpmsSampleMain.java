@@ -4,6 +4,7 @@ import io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader;
 import io.github.nhtuan10.sample.api.service.ServiceException;
 import io.github.nhtuan10.sample.plugin1.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 
 import java.lang.module.Configuration;
@@ -18,16 +19,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
+@Slf4j
 public class JpmsSampleMain {
     public static void main(String[] args) throws ServiceException, ClassNotFoundException {
 //        ServiceImpl service = new ServiceImpl();
 //        service.baseMethod();
-        System.out.println("Hello World!");
+        log.info("Hello World!");
         List<URL> dependencyLocations = Maven.resolver()
 //                .resolve("io.github.nhtuan10:modular-sample-api:0.0.1")
                 .resolve("io.github.nhtuan10:modular-sample-plugin-1:0.0.1")
                 .withTransitivity().asList(URL.class);
-        System.out.println("Dependency locations: " + dependencyLocations);
+        log.info("Dependency locations: " + dependencyLocations);
         ModuleFinder mf = ModuleFinder.of(dependencyLocations.stream().filter(url -> !url.toString().contains("shrinkwrap")).map(url -> {
             try {
 
@@ -48,11 +50,11 @@ public class JpmsSampleMain {
             final Set<String> packages = unnamed.getPackages();
             for (String eachPackage : packages) {
                 unnamed.addOpens(eachPackage, module);
-                System.out.println("--add-open " + eachPackage + " from " + unnamed + " to " + module);
+                log.info("--add-open " + eachPackage + " from " + unnamed + " to " + module);
             }
         });
 //        Class<?> c = ml.findLoader("io.github.nhtuan10.sample.api.service").loadClass(SampleService2.class.getName());
         Class<?> c = ml.findLoader("io.github.nhtuan10.sample.plugin1").loadClass(ServiceImpl.class.getName());
-        System.out.println("Class: " + c);
+        log.info("Class: " + c);
     }
 }
