@@ -6,6 +6,7 @@ import io.github.nhtuan10.modular.impl.experimental.ProxyCreator;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
@@ -14,8 +15,10 @@ import net.bytebuddy.implementation.bind.annotation.This;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.stream.IntStream;
 
+@Slf4j
 @RequiredArgsConstructor
 public class ServiceInvocationInterceptor {
     private final Object service;
@@ -23,17 +26,20 @@ public class ServiceInvocationInterceptor {
     private final boolean copyTransClassLoaderObjects;
     private final ClassLoader sourceClassLoader;
     private final ClassLoader targetClassLoader;
-
     @RuntimeType
     public Object intercept(@AllArguments Object[] allArguments,
                             @Origin Method method) throws Exception {
+        // TODO: need to exclude packages having issues when open
         // intercept any method of any signature
         String serviceClassName = service.getClass().getName();
         Class<?>[] serviceClassLoaderParameterTypes = (Class<?>[]) Arrays.stream(method.getParameterTypes())
 //                .map(Class::getName)
                 .map(clazz -> {
                     try {
-                        return sourceClassLoader == targetClassLoader ? clazz : serDeserializer.castWithSerialization(clazz, targetClassLoader);
+                        addOpenToJpmsSerDeserializerModule(clazz);
+                        Class<?> targetClass = sourceClassLoader == targetClassLoader ? clazz : (Class<?>) serDeserializer.castWithSerialization(clazz, targetClassLoader);
+                        addOpenToJpmsSerDeserializerModule(targetClass);
+                        return targetClass;
 //                        return service.getClass().getClassLoader().loadClass(clazz);
                     }
 //                    catch (ClassNotFoundException e) {
@@ -63,6 +69,9 @@ public class ServiceInvocationInterceptor {
         }).toArray();
         try {
             Object result = serviceClassLoaderMethod.invoke(service, convertedArgs);
+            if (result != null) {
+                addOpenToJpmsSerDeserializerModule(result.getClass());
+            }
 //            return copyTransClassLoaderObjects ? serDeserializer.castWithSerialization(result, this.getClass().getClassLoader())
 //                    : (result != null ? ProxyCreator.createProxyObject(method.getReturnType(), result, serDeserializer, false, this.getClass().getClassLoader()) : null);
             return cast(result, method.getReturnType(), targetClassLoader, sourceClassLoader);
@@ -70,6 +79,20 @@ public class ServiceInvocationInterceptor {
             throw e;
         } catch (Exception e) {
             throw new ServiceInvocationRuntimeException(String.format("Failed to invoke method '%s' in service class '%s'", method, serviceClassName), e);
+        }
+    }
+
+    private void addOpenToJpmsSerDeserializerModule(Class<?> clazz) {
+        Module module = clazz.getModule();
+        Module serdesModule = serDeserializer.getJpmsModule();
+        final Set<String> modulePackages = module.getPackages();
+        for (String eachPackage : modulePackages) {
+            try {
+                module.addOpens(eachPackage, serdesModule);
+                log.debug("--add-open " + eachPackage + " from " + module + " to " + serdesModule);
+            } catch (Exception e) {
+                log.debug("Cannot add opens package {} from module {} to module {}", eachPackage, module, serdesModule, e);
+            }
         }
     }
 

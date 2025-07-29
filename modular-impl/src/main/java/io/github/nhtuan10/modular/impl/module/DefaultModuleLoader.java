@@ -302,7 +302,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                     if (service != null) {
                         return loadedProxyObjects.computeIfAbsent(new ProxyCacheKey(apiClass, service), proxyCacheKey -> {
                             try {
-                                return ServiceProxyCreator.createProxyObject(apiClass, service, this.serDeserializer, copyTransClassLoaderObjects, apiClass.getClassLoader(), serviceHolder.getClassLoader());
+                                return ServiceProxyCreator.createProxyObject(apiClass, service, this.serDeserializer, copyTransClassLoaderObjects, apiClass.getClassLoader(), service.getClass().getClassLoader());
                             } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                                      NoSuchMethodException | ClassNotFoundException | NoSuchFieldException e) {
                                 throw new ServiceLookUpRuntimeException(String.format("Error when getModularServices for class %s", apiClass.getName()), e);

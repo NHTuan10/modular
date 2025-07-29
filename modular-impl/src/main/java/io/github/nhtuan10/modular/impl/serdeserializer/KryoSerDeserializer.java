@@ -78,4 +78,9 @@ public class KryoSerDeserializer implements SerDeserializer {
         output.close();
         return bos.toByteArray();
     }
+
+    @Override
+    public Module getJpmsModule() {
+        return Kryo.class.getModule();
+    }
 }

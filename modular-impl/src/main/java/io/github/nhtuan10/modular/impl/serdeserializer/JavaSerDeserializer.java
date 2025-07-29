@@ -29,6 +29,11 @@ public class JavaSerDeserializer implements SerDeserializer {
         return SerializationUtils.serialize((Serializable) obj);
     }
 
+    @Override
+    public Module getJpmsModule() {
+        return SerializationUtils.class.getModule();
+    }
+
     public static class ObjectInputStreamWithClassLoader extends ObjectInputStream {
 
         ClassLoader classLoader;

@@ -7,4 +7,6 @@ public interface SerDeserializer {
     <T> T deserialization(byte[] bytes, Class<T> type) throws Exception;
 
     byte[] serialization(Object obj);
+
+    Module getJpmsModule();
 }

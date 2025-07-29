@@ -25,14 +25,16 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 
     public static final String MODULAR_PARENT_PACKAGE = "io.github.nhtuan10.modular";
 
+    public static final String MODULAR_IMPL_PACKAGE = MODULAR_PARENT_PACKAGE + ".impl";
+
     public static final Set<String> MODULAR_PACKAGES = Set.of(MODULAR_PARENT_PACKAGE + ".api"
-            , MODULAR_PARENT_PACKAGE + ".impl.annotation"
-            , MODULAR_PARENT_PACKAGE + ".impl.classloader"
-            , MODULAR_PARENT_PACKAGE + ".impl.model"
-            , MODULAR_PARENT_PACKAGE + ".impl.module"
-            , MODULAR_PARENT_PACKAGE + ".impl.proxy"
-            , MODULAR_PARENT_PACKAGE + ".impl.experimental"
-            , MODULAR_PARENT_PACKAGE + ".impl.serdeserializer"
+            , MODULAR_IMPL_PACKAGE + ".annotation"
+            , MODULAR_IMPL_PACKAGE + ".classloader"
+            , MODULAR_IMPL_PACKAGE + ".model"
+            , MODULAR_IMPL_PACKAGE + ".module"
+            , MODULAR_IMPL_PACKAGE + ".proxy"
+            , MODULAR_IMPL_PACKAGE + ".experimental"
+            , MODULAR_IMPL_PACKAGE + ".serdeserializer"
     );
 
     @Getter
@@ -119,13 +121,37 @@ public class DefaultModularClassLoader extends ModularClassLoader {
         Module unnamed = Maven.class.getClassLoader().getUnnamedModule();
         //make the module layer, using the configuration and classloader.
         ModuleLayer ml = ModuleLayer.boot().defineModulesWithOneLoader(cfg, this);
+        Set<String> openUnnamedToModules = Set.of(MODULAR_PARENT_PACKAGE, MODULAR_PARENT_PACKAGE + ".impl");
+//        ml.modules().stream().filter(m -> openUnnamedToModules.contains(m.getName())).forEach(module -> {
+        // TODO: need to exclude packages having issues when open
         ml.modules().forEach(module -> {
             final Set<String> packages = unnamed.getPackages();
             for (String eachPackage : packages) {
-                unnamed.addOpens(eachPackage, module);
-                log.debug("--add-open " + eachPackage + " from " + unnamed + " to " + module);
+                try {
+                    unnamed.addOpens(eachPackage, module);
+                    log.debug("--add-open " + eachPackage + " from " + unnamed + " to " + module);
+                } catch (Exception e) {
+                    log.debug("Cannot add opens package {} from  un-named module {} to module {}", eachPackage, unnamed, module, e);
+                }
+            }
+            if (!module.getName().startsWith(MODULAR_PARENT_PACKAGE)) {
+                final Set<String> modulePackages = module.getPackages();
+                for (String eachPackage : modulePackages) {
+                    try {
+                        module.addOpens(eachPackage, unnamed);
+                        log.debug("--add-open " + eachPackage + " from " + module + " to " + unnamed);
+                    } catch (Exception e) {
+                        log.debug("Cannot add opens package {} from module {} to module {}", eachPackage, module, unnamed, e);
+                    }
+                }
             }
         });
+//        ml.findModule(jpmsModuleName).ifPresent(module -> {
+//            final Set<String> packages = module.getPackages();
+//            for (String eachPackage : packages) {
+//                module.addOpens(eachPackage, unnamed);
+//            }
+//        });
         jpmsModuleLayers.put(Pair.of(moduleName, jpmsModuleName), ml);
     }
 
