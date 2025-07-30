@@ -21,5 +21,5 @@ module io.github.nhtuan10.modular.impl {
     opens io.github.nhtuan10.modular.impl.context to io.github.nhtuan10.modular;
     exports io.github.nhtuan10.modular.impl.classloader;
     exports io.github.nhtuan10.modular.impl.proxy;
-    exports io.github.nhtuan10.modular.impl.module;
+//    exports io.github.nhtuan10.modular.impl.module;
 }

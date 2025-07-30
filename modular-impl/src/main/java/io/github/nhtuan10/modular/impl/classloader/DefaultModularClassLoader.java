@@ -125,15 +125,15 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 //        ml.modules().stream().filter(m -> openUnnamedToModules.contains(m.getName())).forEach(module -> {
         // TODO: need to exclude packages having issues when open
         ml.modules().forEach(module -> {
-            final Set<String> packages = unnamed.getPackages();
-            for (String eachPackage : packages) {
-                try {
-                    unnamed.addOpens(eachPackage, module);
-                    log.debug("--add-open " + eachPackage + " from " + unnamed + " to " + module);
-                } catch (Exception e) {
-                    log.debug("Cannot add opens package {} from  un-named module {} to module {}", eachPackage, unnamed, module, e);
-                }
-            }
+//            final Set<String> packages = unnamed.getPackages();
+//            for (String eachPackage : packages) {
+//                try {
+//                    unnamed.addOpens(eachPackage, module);
+//                    log.debug("--add-open " + eachPackage + " from " + unnamed + " to " + module);
+//                } catch (Exception e) {
+//                    log.debug("Cannot add opens package {} from  un-named module {} to module {}", eachPackage, unnamed, module, e);
+//                }
+//            }
             if (!module.getName().startsWith(MODULAR_PARENT_PACKAGE)) {
                 final Set<String> modulePackages = module.getPackages();
                 for (String eachPackage : modulePackages) {
