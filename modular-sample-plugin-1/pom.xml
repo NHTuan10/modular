@@ -51,10 +51,10 @@
                             <version>1.18.36</version>
                         </path>
                     </annotationProcessorPaths>
-                    <compilerArgs>
-                        <arg>--add-reads</arg>
-                        <arg>io.github.nhtuan10.sample.plugin1=ALL-UNNAMED</arg>
-                    </compilerArgs>
+                    <!--                    <compilerArgs>-->
+                    <!--                        <arg>&#45;&#45;add-reads</arg>-->
+                    <!--                        <arg>io.github.nhtuan10.sample.plugin1=ALL-UNNAMED</arg>-->
+                    <!--                    </compilerArgs>-->
                 </configuration>
             </plugin>
         </plugins>

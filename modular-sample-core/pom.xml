@@ -28,11 +28,11 @@
             <artifactId>modular-sample-api</artifactId>
             <version>0.0.1</version>
         </dependency>
-        <dependency>
-            <groupId>io.github.nhtuan10</groupId>
-            <artifactId>modular-sample-plugin-1</artifactId>
-            <version>0.0.1</version>
-        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>io.github.nhtuan10</groupId>-->
+        <!--            <artifactId>modular-sample-plugin-1</artifactId>-->
+        <!--            <version>0.0.1</version>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -55,10 +55,10 @@
                             <version>1.18.36</version>
                         </path>
                     </annotationProcessorPaths>
-                    <compilerArgs>
-                        <arg>--add-reads</arg>
-                        <arg>io.github.nhtuan10.sample.launcher=ALL-UNNAMED</arg>
-                    </compilerArgs>
+                    <!--                    <compilerArgs>-->
+                    <!--                        <arg>&#45;&#45;add-reads</arg>-->
+                    <!--                        <arg>io.github.nhtuan10.sample.launcher=ALL-UNNAMED</arg>-->
+                    <!--                    </compilerArgs>-->
                 </configuration>
             </plugin>
         </plugins>
