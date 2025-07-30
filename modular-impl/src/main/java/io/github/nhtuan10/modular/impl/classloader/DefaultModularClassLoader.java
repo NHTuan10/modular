@@ -121,9 +121,10 @@ public class DefaultModularClassLoader extends ModularClassLoader {
         Module unnamed = Maven.class.getClassLoader().getUnnamedModule();
         //make the module layer, using the configuration and classloader.
         ModuleLayer ml = ModuleLayer.boot().defineModulesWithOneLoader(cfg, this);
-        Set<String> openUnnamedToModules = Set.of(MODULAR_PARENT_PACKAGE, MODULAR_PARENT_PACKAGE + ".impl");
+//        Set<String> openUnnamedToModules = Set.of(MODULAR_PARENT_PACKAGE, MODULAR_PARENT_PACKAGE + ".impl");
 //        ml.modules().stream().filter(m -> openUnnamedToModules.contains(m.getName())).forEach(module -> {
         // TODO: need to exclude packages having issues when open
+//        Optional<Module> modularImplOptional = ml.findModule(MODULAR_IMPL_PACKAGE);
         ml.modules().forEach(module -> {
 //            final Set<String> packages = unnamed.getPackages();
 //            for (String eachPackage : packages) {
@@ -135,15 +136,15 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 //                }
 //            }
             if (!module.getName().startsWith(MODULAR_PARENT_PACKAGE)) {
-                final Set<String> modulePackages = module.getPackages();
-                for (String eachPackage : modulePackages) {
+                Module modularImpl = this.getClass().getModule();
+                module.getPackages().stream().filter(pkg -> module.isOpen(pkg, modularImpl)).forEach((eachPackage) -> {
                     try {
                         module.addOpens(eachPackage, unnamed);
                         log.debug("--add-open " + eachPackage + " from " + module + " to " + unnamed);
                     } catch (Exception e) {
                         log.debug("Cannot add opens package {} from module {} to module {}", eachPackage, module, unnamed, e);
                     }
-                }
+                });
             }
         });
 //        ml.findModule(jpmsModuleName).ifPresent(module -> {

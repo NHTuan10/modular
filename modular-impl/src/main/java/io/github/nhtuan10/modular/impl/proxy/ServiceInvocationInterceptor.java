@@ -15,7 +15,6 @@ import net.bytebuddy.implementation.bind.annotation.This;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.stream.IntStream;
 
 @Slf4j
@@ -85,15 +84,15 @@ public class ServiceInvocationInterceptor {
     private void addOpenToJpmsSerDeserializerModule(Class<?> clazz) {
         Module module = clazz.getModule();
         Module serdesModule = serDeserializer.getJpmsModule();
-        final Set<String> modulePackages = module.getPackages();
-        for (String eachPackage : modulePackages) {
+        Module modularImpl = this.getClass().getModule();
+        module.getPackages().stream().filter(pkg -> module.isOpen(pkg, modularImpl)).forEach((eachPackage) -> {
             try {
                 module.addOpens(eachPackage, serdesModule);
                 log.debug("--add-open " + eachPackage + " from " + module + " to " + serdesModule);
             } catch (Exception e) {
                 log.debug("Cannot add opens package {} from module {} to module {}", eachPackage, module, serdesModule, e);
             }
-        }
+        });
     }
 
     @SuppressWarnings("unchecked")
