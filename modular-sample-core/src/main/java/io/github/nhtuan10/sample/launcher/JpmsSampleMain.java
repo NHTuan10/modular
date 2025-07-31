@@ -14,8 +14,8 @@ public class JpmsSampleMain {
 //        service.baseMethod();
         log.info("Hello World!");
 //        List<URL> dependencyLocations = Maven.resolver()
-//                .resolve("io.github.nhtuan10:modular-sample-api:0.0.1")
-//                .resolve("io.github.nhtuan10:modular-sample-plugin-1:0.0.1")
+//                .resolve("io.github.nhtuan10:modular-sample-api:0.0.2")
+//                .resolve("io.github.nhtuan10:modular-sample-plugin-1:0.0.2")
 //                .withTransitivity().asList(URL.class);
 //        log.info("Dependency locations: " + dependencyLocations);
 //        ModuleFinder mf = ModuleFinder.of(dependencyLocations.stream().filter(url -> !url.toString().contains("shrinkwrap")).map(url -> {

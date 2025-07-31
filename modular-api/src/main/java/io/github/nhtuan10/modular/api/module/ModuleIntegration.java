@@ -11,7 +11,7 @@ public interface ModuleIntegration {
 
     static ModuleIntegration getInstance() {
         try {
-            Class<ModuleIntegration> implementationClass = Utils.getImplementationClass(ModuleIntegration.class, ModuleIntegration.class);
+            Class<ModuleIntegration> implementationClass = Utils.getImplementationClass(ModuleIntegration.class, ModuleIntegration.class.getClassLoader());
             Method method = implementationClass.getDeclaredMethod("getInstance");
             method.setAccessible(true);
             return (ModuleIntegration) method.invoke(null);

@@ -6,6 +6,7 @@ module io.github.nhtuan10.sample.plugin1 {
     requires org.slf4j;
     requires io.github.nhtuan10.modular;
     requires io.github.nhtuan10.sample.api.service;
+//    requires io.github.nhtuan10.modular.impl;
 //    requires kafka.clients;
 //    requires kafka.clients;
 //    requires static kafka.schema.serializer;

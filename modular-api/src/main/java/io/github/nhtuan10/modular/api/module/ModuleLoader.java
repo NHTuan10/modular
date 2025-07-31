@@ -19,7 +19,7 @@ public interface ModuleLoader {
 
     static ModuleLoader getInstance() {
         try {
-            Class<ModuleLoader> implementationClass = Utils.getImplementationClass(ModuleLoader.class, ModuleLoader.class);
+            Class<ModuleLoader> implementationClass = Utils.getImplementationClass(ModuleLoader.class, ModuleLoader.class.getClassLoader());
             Method method = implementationClass.getDeclaredMethod("getInstance");
             method.setAccessible(true);
             return (ModuleLoader) method.invoke(null);

@@ -18,7 +18,8 @@ module io.github.nhtuan10.modular.impl {
 //    opens io.github.nhtuan10.modular.impl.model;
 //    opens io.github.nhtuan10.modular.impl.serdeserializer;
 //    opens io.github.nhtuan10.modular.impl.classloader;
-    opens io.github.nhtuan10.modular.impl.context to io.github.nhtuan10.modular;
+//    opens io.github.nhtuan10.modular.impl.context to io.github.nhtuan10.modular;
+    opens io.github.nhtuan10.modular.impl.context;
     exports io.github.nhtuan10.modular.impl.classloader;
     exports io.github.nhtuan10.modular.impl.proxy;
 //    exports io.github.nhtuan10.modular.impl.module;

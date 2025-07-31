@@ -12,14 +12,18 @@ public final class ModularContext {
     private static final ModuleContext INSTANCE ;
     static {
         try {
-            Class<ModuleContext> implementationClass = Utils.getImplementationClass(ModuleContext.class, ModularContext.class);
-            INSTANCE = implementationClass.getConstructor(ModuleLoader.class).newInstance(ModuleLoader.getInstance());
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
+            Class<ModuleContext> implementationClass = Utils.getImplementationClass(ModuleContext.class, ModularContext.class.getClassLoader());
+//            INSTANCE = implementationClass.getConstructor(ModuleLoader.class).newInstance(ModuleLoader.getInstance());
+            Class<?> moduleLoaderClass = ClassLoader.getSystemClassLoader().loadClass(ModuleLoader.class.getName());
+            Object moduleLoaderInstance = moduleLoaderClass.getMethod("getInstance").invoke(null);
+            INSTANCE = implementationClass.getConstructor(moduleLoaderClass).newInstance(moduleLoaderInstance);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException |
+                 ClassNotFoundException e) {
             throw new ModularRuntimeException("Couldn't create any ModuleContext implementation instance", e);
         }
     }
 
-    public static void notifyModuleReady(){
+    public static void notifyModuleReady() {
         if (ModularContext.class.getClassLoader() instanceof ModularClassLoader) {
             INSTANCE.notifyModuleReady();
         }

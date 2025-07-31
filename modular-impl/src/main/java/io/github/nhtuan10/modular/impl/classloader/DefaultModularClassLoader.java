@@ -27,7 +27,10 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 
     public static final String MODULAR_IMPL_PACKAGE = MODULAR_PARENT_PACKAGE + ".impl";
 
-    public static final Set<String> MODULAR_PACKAGES = Set.of(MODULAR_PARENT_PACKAGE + ".api"
+    public static final Set<String> MODULAR_PACKAGES = Set.of(
+            MODULAR_PARENT_PACKAGE + ".api"
+//            , MODULAR_PARENT_PACKAGE + ".context"
+//            , MODULAR_IMPL_PACKAGE
             , MODULAR_IMPL_PACKAGE + ".annotation"
             , MODULAR_IMPL_PACKAGE + ".classloader"
             , MODULAR_IMPL_PACKAGE + ".model"
@@ -117,6 +120,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
         ModuleFinder mf = ModuleFinder.of(paths);
         //Create a new Configuration for a new module layer deriving from the boot configuration, and resolving
         //the JPMS module.
+//        Configuration cfg = ModuleLayer.boot().configuration().resolve(mf, ModuleFinder.of(), Set.of(jpmsModuleName, MODULAR_IMPL_PACKAGE));
         Configuration cfg = ModuleLayer.boot().configuration().resolve(mf, ModuleFinder.of(), Set.of(jpmsModuleName));
         Module unnamed = Maven.class.getClassLoader().getUnnamedModule();
         //make the module layer, using the configuration and classloader.
@@ -125,6 +129,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 //        ml.modules().stream().filter(m -> openUnnamedToModules.contains(m.getName())).forEach(module -> {
         // TODO: need to exclude packages having issues when open
 //        Optional<Module> modularImplOptional = ml.findModule(MODULAR_IMPL_PACKAGE);
+        Module modularImpl = this.getClass().getModule();
         ml.modules().forEach(module -> {
 //            final Set<String> packages = unnamed.getPackages();
 //            for (String eachPackage : packages) {
@@ -136,7 +141,6 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 //                }
 //            }
             if (!module.getName().startsWith(MODULAR_PARENT_PACKAGE)) {
-                Module modularImpl = this.getClass().getModule();
                 module.getPackages().stream().filter(pkg -> module.isOpen(pkg, modularImpl)).forEach((eachPackage) -> {
                     try {
                         module.addOpens(eachPackage, unnamed);
@@ -191,6 +195,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     public Class<?> loadClass(String moduleName, String jpmsModuleName, String className) throws ClassNotFoundException {
         return getModuleLayer(moduleName, jpmsModuleName).findLoader(jpmsModuleName).loadClass(className);
     }
+
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
 //        log.trace("Loading class: ", name);

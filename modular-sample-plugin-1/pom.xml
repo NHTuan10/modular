@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.nhtuan10</groupId>
         <artifactId>modular</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
     </parent>
 
     <artifactId>modular-sample-plugin-1</artifactId>
@@ -22,12 +22,12 @@
         <dependency>
             <groupId>io.github.nhtuan10</groupId>
             <artifactId>modular-impl</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
         <dependency>
             <groupId>io.github.nhtuan10</groupId>
             <artifactId>modular-sample-api</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

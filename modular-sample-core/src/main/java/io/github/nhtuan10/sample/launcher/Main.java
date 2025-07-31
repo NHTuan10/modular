@@ -15,14 +15,14 @@ import java.util.Set;
 @Slf4j
 public class Main {
     public static void main(String[] args) {
-//        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
+//        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.2"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSyncWithMainClass("modular-sample-plugin-1",
-//                List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), "io.github.nhtuan10.sample.service.ServiceImpl", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
-//        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
+//                List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.2"), "io.github.nhtuan10.sample.service.ServiceImpl", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
+//        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.2"), List.of("io.github.nhtuan10.sample.service"));
 
         ModuleLoadConfiguration plugin1Config = ModuleLoadConfiguration.builder()
-                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"))
-//                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
+                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.2"))
+//                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.2", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.2"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin1", "io.github.nhtuan10.sample.util"))
                 .mainClass("io.github.nhtuan10.sample.plugin1.ServiceImpl")
                 .modularClassLoaderName("commonCL")
@@ -32,8 +32,8 @@ public class Main {
                 .build();
 
         ModuleLoadConfiguration plugin2Config = ModuleLoadConfiguration.builder()
-                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
-//                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
+                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.2"))
+//                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.2", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.2"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin2"))
                 .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
@@ -45,7 +45,7 @@ public class Main {
         ModuleLoader.ModuleDetail moduleDetail4 = Modular.startModuleSync("modular-sample-plugin-2", plugin2Config);
 //        moduleDetail3.join();
         log.info("Finished with modular-sample-plugin");
-//        Modular.startModuleSyncWithMainClass("modular-sample-plugin2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin/0.0.1"), "MainClass", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
+//        Modular.startModuleSyncWithMainClass("modular-sample-plugin2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin/0.0.2"), "MainClass", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        m.startModuleSyncWithMainClass("my-kafka-tool", List.of(
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT.jar",
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT/my-kafka-tool-main-0.1.1-SNAPSHOT.jar" ), "io.github.nhtuan10.mykafkatool.MyKafkaToolLauncher", "");
@@ -70,9 +70,10 @@ public class Main {
 //        }
 
 
-//        Modular.getModularServices(SampleService.class, false).parallelStream().forEach(s -> {
+        Modular.getModularServices(SampleService.class, false).parallelStream()
+//                .forEach(s -> {
 //        Modular.getModularServices(SampleService.class, false)
-        Modular.getModularServices(SampleService.class)
+//        Modular.getModularServices(SampleService.class)
 //                .parallelStream()
                 .forEach(s -> {
                     log.info("Equals: " + s.equals(s));

@@ -2,6 +2,7 @@ package io.github.nhtuan10.sample.plugin1;
 
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
+import io.github.nhtuan10.modular.context.ModularContext;
 import io.github.nhtuan10.sample.api.service.SampleService;
 import io.github.nhtuan10.sample.api.service.SampleService2;
 import io.github.nhtuan10.sample.api.service.ServiceException;
@@ -70,7 +71,7 @@ public class ServiceImpl extends BaseService implements SampleService {
 //        BlockingQueue<SomeData> q = Modular.getBlockingQueue("testBlockingQueue", SomeData.class);
 //        ExcludedMe excludedMe = new ExcludedMe();
 //        BlockingQueue<SomeData> q = Modular.getBlockingQueue("testBlockingQueue", SomeData.class, LinkedBlockingQueue.class);
-//        ModularContext.notifyModuleReady();
+        ModularContext.notifyModuleReady();
 //        while (true) {
 //            SomeData a = q.poll();
 //            SomeData a = q.take();
