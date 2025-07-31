@@ -5,11 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.github.nhtuan10</groupId>
-        <artifactId>modular</artifactId>
+        <artifactId>modular-parent</artifactId>
         <version>0.0.2</version>
     </parent>
 
-    <artifactId>modular-impl</artifactId>
+    <artifactId>modular</artifactId>
 
     <properties>
         <maven.compiler.source>9</maven.compiler.source>
@@ -19,12 +19,12 @@
         <classgraphVersion>4.8.179</classgraphVersion>
     </properties>
     <dependencies>
-        <dependency>
-            <groupId>io.github.nhtuan10</groupId>
-            <artifactId>modular-api</artifactId>
-            <version>0.0.2</version>
-            <scope>compile</scope>
-        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>io.github.nhtuan10</groupId>-->
+        <!--            <artifactId>modular-api</artifactId>-->
+        <!--            <version>0.0.2</version>-->
+        <!--            <scope>compile</scope>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
@@ -100,7 +100,7 @@
                     <!--                    </compilerArgs>-->
                     <compilerArgs>
                         <arg>--add-reads</arg>
-                        <arg>io.github.nhtuan10.modular.impl=ALL-UNNAMED</arg>
+                        <arg>io.github.nhtuan10.modular=ALL-UNNAMED</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

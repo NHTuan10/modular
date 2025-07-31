@@ -1,0 +1,10 @@
+module io.github.nhtuan10.modular {
+    exports io.github.nhtuan10.modular.impl.api;
+    exports io.github.nhtuan10.modular.context;
+    exports io.github.nhtuan10.modular.impl.api.annotation;
+    exports io.github.nhtuan10.modular.impl.api.exception;
+    exports io.github.nhtuan10.modular.impl.api.module;
+    exports io.github.nhtuan10.modular.impl.api.model;
+    exports io.github.nhtuan10.modular.impl.api.classloader;
+    requires static lombok;
+}

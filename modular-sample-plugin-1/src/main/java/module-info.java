@@ -12,6 +12,6 @@ module io.github.nhtuan10.sample.plugin1 {
 //    requires static kafka.schema.serializer;
 //    requires static kafka.schema.registry.client;
 
-    opens io.github.nhtuan10.sample.plugin1 to io.github.nhtuan10.modular, io.github.nhtuan10.modular.impl;
-    exports io.github.nhtuan10.sample.plugin1 to io.github.nhtuan10.modular, io.github.nhtuan10.modular.impl;
+    opens io.github.nhtuan10.sample.plugin1 to io.github.nhtuan10.modular;
+    exports io.github.nhtuan10.sample.plugin1 to io.github.nhtuan10.modular;
 }

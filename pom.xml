@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.nhtuan10</groupId>
-    <artifactId>modular</artifactId>
+    <artifactId>modular-parent</artifactId>
     <version>0.0.2</version>
     <packaging>pom</packaging>
 
     <modules>
-        <module>modular-impl</module>
-        <module>modular-api</module>
+        <module>modular</module>
+        <!--        <module>modular-api</module>-->
         <module>modular-spring5</module>
         <module>modular-spring</module>
         <module>modular-sample-core</module>
