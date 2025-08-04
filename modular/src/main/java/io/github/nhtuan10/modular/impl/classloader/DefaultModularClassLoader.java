@@ -10,6 +10,7 @@ import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import java.io.File;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -121,7 +122,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
         //Create a new Configuration for a new module layer deriving from the boot configuration, and resolving
         //the JPMS module.
 //        Configuration cfg = ModuleLayer.boot().configuration().resolve(mf, ModuleFinder.of(), Set.of(jpmsModuleName, MODULAR_IMPL_PACKAGE));
-        Configuration cfg = ModuleLayer.boot().configuration().resolve(mf, ModuleFinder.of(), Set.of(jpmsModuleName));
+        Configuration cfg = ModuleLayer.boot().configuration().resolveAndBind(mf, ModuleFinder.of(), Set.of(jpmsModuleName));
         Module unnamed = Maven.class.getClassLoader().getUnnamedModule();
         //make the module layer, using the configuration and classloader.
         ModuleLayer ml = ModuleLayer.boot().defineModulesWithOneLoader(cfg, this);
@@ -140,16 +141,19 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 //                    log.debug("Cannot add opens package {} from  un-named module {} to module {}", eachPackage, unnamed, module, e);
 //                }
 //            }
-            if (!module.getName().startsWith(MODULAR_PARENT_PACKAGE)) {
-                module.getPackages().stream().filter(pkg -> module.isOpen(pkg, modularImpl)).forEach((eachPackage) -> {
-                    try {
-                        module.addOpens(eachPackage, unnamed);
-                        log.debug("--add-open " + eachPackage + " from " + module + " to " + unnamed);
-                    } catch (Exception e) {
-                        log.debug("Cannot add opens package {} from module {} to module {}", eachPackage, module, unnamed, e);
-                    }
-                });
-            }
+//            if (!module.getName().startsWith(MODULAR_PARENT_PACKAGE)) {
+            module.getPackages()
+//                        .filter(pkg -> module.isOpen(pkg, modularImpl))
+                    .forEach((eachPackage) -> {
+                        try {
+                            addAllOpens(module, eachPackage, modularImpl);
+                            module.addOpens(eachPackage, unnamed);
+                            log.debug("--add-open " + eachPackage + " from " + module + " to " + unnamed);
+                        } catch (Exception e) {
+                            log.debug("Cannot add opens package {} from module {} to module {}", eachPackage, module, unnamed, e);
+                        }
+                    });
+//            }
         });
 //        ml.findModule(jpmsModuleName).ifPresent(module -> {
 //            final Set<String> packages = module.getPackages();
@@ -158,6 +162,19 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 //            }
 //        });
         jpmsModuleLayers.put(Pair.of(moduleName, jpmsModuleName), ml);
+    }
+
+    private void addAllOpens(Module fromModule, String eachPackage, Module toModule) throws NoSuchMethodException {
+        final Method method = Module.class.getDeclaredMethod("implAddExportsOrOpens", String.class, Module.class, boolean.class, boolean.class);
+        method.setAccessible(true);
+        try {
+            method.invoke(fromModule, eachPackage, toModule, false, true); // add exports
+            method.invoke(fromModule, eachPackage, toModule, true, true); // add open
+        } catch (Exception e) {
+            log.debug("Error when add-opens {}/{}={}", fromModule.getName(), eachPackage, toModule.toString(), e);
+        }
+        log.info("--add-open " + fromModule.getName() + "/" + eachPackage + "=" + toModule.toString());
+
     }
 
     @Override

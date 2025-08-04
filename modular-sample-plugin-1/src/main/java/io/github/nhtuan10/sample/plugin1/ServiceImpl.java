@@ -71,6 +71,7 @@ public class ServiceImpl extends BaseService implements SampleService {
 //        BlockingQueue<SomeData> q = Modular.getBlockingQueue("testBlockingQueue", SomeData.class);
 //        ExcludedMe excludedMe = new ExcludedMe();
 //        BlockingQueue<SomeData> q = Modular.getBlockingQueue("testBlockingQueue", SomeData.class, LinkedBlockingQueue.class);
+        Modular.getModularServices(SampleService.class);
         ModularContext.notifyModuleReady();
 //        while (true) {
 //            SomeData a = q.poll();
