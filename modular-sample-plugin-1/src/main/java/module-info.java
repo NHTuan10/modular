@@ -1,11 +1,12 @@
 module io.github.nhtuan10.sample.plugin1 {
-    requires com.fasterxml.jackson.databind;
+//    requires com.fasterxml.jackson.databind;
     requires io.github.classgraph;
     requires static lombok;
     requires org.apache.commons.lang3;
     requires org.slf4j;
     requires io.github.nhtuan10.modular;
     requires io.github.nhtuan10.sample.api.service;
+//    requires com.esotericsoftware.kryo.kryo5;
 //    requires io.github.nhtuan10.modular.impl;
 //    requires kafka.clients;
 //    requires kafka.clients;

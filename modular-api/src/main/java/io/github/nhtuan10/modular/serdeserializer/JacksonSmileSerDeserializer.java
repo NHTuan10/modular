@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.impl.serdeserializer;
+package io.github.nhtuan10.modular.serdeserializer;
 
 /**
  * Currently not support collection class with generic type,

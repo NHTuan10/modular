@@ -2,12 +2,14 @@ package io.github.nhtuan10.modular.api.module;
 
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
+import io.github.nhtuan10.modular.proxy.ServiceProxyCreator;
+import io.github.nhtuan10.modular.serdeserializer.JavaSerDeserializer;
+import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -16,15 +18,20 @@ import java.util.concurrent.CountDownLatch;
 public interface ModuleLoader {
 
 //    Pattern classLoaderNamePattern = Pattern.compile("^io.github.nhtuan10.modular.impl.classloader.ModularClassLoader\\[.+\\]$");
+public static final String PROXY_TARGET_FIELD_NAME = "target";
 
     static ModuleLoader getInstance() {
         try {
             Class<ModuleLoader> implementationClass = Utils.getImplementationClass(ModuleLoader.class, ModuleLoader.class.getClassLoader());
             Method method = implementationClass.getDeclaredMethod("getInstance");
             method.setAccessible(true);
-            return (ModuleLoader) method.invoke(null);
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            throw new ModularRuntimeException("Couldn't find any ModuleLoader implementation instance", e);
+            Object target = method.invoke(null);
+//            Kryo.class.getClassLoader();
+//            Objenesis.class.getClassLoader();
+            SerDeserializer serDeserializer = new JavaSerDeserializer();
+            return ServiceProxyCreator.createProxyObject(ModuleLoader.class, target, serDeserializer, true, implementationClass.getClassLoader(), ModuleLoader.class.getClassLoader());
+        } catch (Exception e) {
+            throw new ModularRuntimeException("Couldn't find or create any ModuleLoader implementation instance", e);
         }
     }
 
@@ -48,23 +55,25 @@ public interface ModuleLoader {
 
     CompletableFuture<ModuleDetail> startModuleASync(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration);
 
-    <I> List<I> getModularServices(Class<I> clazz);
-
-    <I> List<I> getModularServices(Class<I> clazz, String moduleName);
-
-    <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects);
-
-    <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer);
-
-    <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer);
+//    <I> List<I> getModularServices(Class<I> clazz);
+//
+//    <I> List<I> getModularServices(Class<I> clazz, String moduleName);
+//
+//    <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects);
+//
+//    <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer);
+//
+//    <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer);
 
     <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer, boolean copyTransClassLoaderObjects);
+//
+//    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName);
+//
+//    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz);
+//
+//    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, boolean copyTransClassLoaderObjects);
 
-    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName);
-
-    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz);
-
-    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, boolean copyTransClassLoaderObjects);
+    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName, boolean copyTransClassLoaderObjects);
 
     boolean unloadModule(String moduleName);
 
@@ -80,8 +89,9 @@ public interface ModuleLoader {
     static boolean isManaged(Class<?> clazz) {
 //        String classLoaderName = clazz.getClassLoader().getName();
 //        return classLoaderName != null && classLoaderNamePattern.matcher(classLoaderName).matches();
+        // TODO: check if current class loader is modular class loader or not in a better way
         ClassLoader classLoader = clazz.getClassLoader();
-        return classLoader instanceof ModularClassLoader;
+        return (classLoader instanceof ModularClassLoader || "io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader".equals(classLoader.getParent().getClass().getName()));
     }
 
     String getCurrentModuleName();

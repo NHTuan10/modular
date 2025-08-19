@@ -1,19 +1,21 @@
-package io.github.nhtuan10.modular.impl.proxy;
+package io.github.nhtuan10.modular.proxy;
 
-import com.esotericsoftware.kryo.kryo5.objenesis.Objenesis;
-import com.esotericsoftware.kryo.kryo5.objenesis.ObjenesisStd;
-import io.github.nhtuan10.modular.impl.module.DefaultModuleLoader;
+
+import io.github.nhtuan10.modular.api.module.ModuleLoader;
 import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 public class ServiceProxyCreator {
     private static Objenesis objenesis = new ObjenesisStd();
+
     public static <I> I createProxyObject(Class<I> apiClass, Object service, SerDeserializer serDeserializer, boolean copyTransClassLoaderObjects,
                                           ClassLoader sourceClassLoader, ClassLoader targetClassLoader) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchFieldException, NoSuchMethodException {
 //        ClassLoader sourceClassLoader = apiClass.getClassLoader();
@@ -31,12 +33,12 @@ public class ServiceProxyCreator {
                 .intercept(MethodDelegation.to(equalsMethodInterceptor))
                 .method(ElementMatchers.any().and(ElementMatchers.not(ElementMatchers.isEquals())))
                 .intercept(MethodDelegation.to(svcInvocationInterceptor))
-                .defineField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME, Object.class, Visibility.PRIVATE)
+                .defineField(ModuleLoader.PROXY_TARGET_FIELD_NAME, Object.class, Visibility.PRIVATE)
                 .make()
                 .load(sourceClassLoader)
                 .getLoaded();
         I proxy = objenesis.getInstantiatorOf(c).newInstance();
-        Field targetField = c.getDeclaredField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME);
+        Field targetField = c.getDeclaredField(ModuleLoader.PROXY_TARGET_FIELD_NAME);
         targetField.setAccessible(true);
         targetField.set(proxy, service);
         return proxy;

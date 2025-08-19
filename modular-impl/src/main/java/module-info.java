@@ -11,6 +11,9 @@ module io.github.nhtuan10.modular.impl {
 //    requires shrinkwrap.resolver.spi;
     requires io.github.nhtuan10.modular;
     requires org.slf4j;
+//    requires com.esotericsoftware.kryo.kryo5;
+//    requires com.esotericsoftware.kryo.kryo5;
+//    requires com.esotericsoftware.kryo.kryo5;
 //    requires shrinkwrap.resolver.api.maven;
 //    opens io.github.nhtuan10.modular.impl.proxy;
 //    opens io.github.nhtuan10.modular.impl.annotation;

@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.impl.proxy;
+package io.github.nhtuan10.modular.proxy;
 
 import io.github.nhtuan10.modular.api.exception.SerializationRuntimeException;
 import io.github.nhtuan10.modular.api.exception.ServiceInvocationRuntimeException;
@@ -25,6 +25,7 @@ public class ServiceInvocationInterceptor {
     private final boolean copyTransClassLoaderObjects;
     private final ClassLoader sourceClassLoader;
     private final ClassLoader targetClassLoader;
+
     @RuntimeType
     public Object intercept(@AllArguments Object[] allArguments,
                             @Origin Method method) throws Exception {
@@ -88,7 +89,6 @@ public class ServiceInvocationInterceptor {
         module.getPackages().stream().filter(pkg -> module.isOpen(pkg, modularImpl)).forEach((eachPackage) -> {
             try {
                 module.addOpens(eachPackage, serdesModule);
-//                module.addExports(eachPackage, serdesModule);
                 log.debug("--add-open " + eachPackage + " from " + module + " to " + serdesModule);
             } catch (Exception e) {
                 log.debug("Cannot add opens package {} from module {} to module {}", eachPackage, module, serdesModule, e);

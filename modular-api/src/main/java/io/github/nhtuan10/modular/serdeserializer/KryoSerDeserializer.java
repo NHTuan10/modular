@@ -1,4 +1,4 @@
-package io.github.nhtuan10.modular.impl.serdeserializer;
+package io.github.nhtuan10.modular.serdeserializer;
 
 import com.esotericsoftware.kryo.kryo5.Kryo;
 import com.esotericsoftware.kryo.kryo5.io.Input;

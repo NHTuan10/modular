@@ -14,9 +14,9 @@ import io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader;
 import io.github.nhtuan10.modular.impl.classloader.MavenArtifactsResolver;
 import io.github.nhtuan10.modular.impl.model.ModularServiceHolder;
 import io.github.nhtuan10.modular.impl.proxy.ServiceProxyCreator;
-import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
-import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
-import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
+import io.github.nhtuan10.modular.serdeserializer.JavaSerDeserializer;
+import io.github.nhtuan10.modular.serdeserializer.KryoSerDeserializer;
+import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -40,7 +40,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DefaultModuleLoader implements ModuleLoader {
     public static final String APPLICATION_CONTEXT_PROVIDER = "io.github.nhtuan10.modular.spring.ApplicationContextProvider";
-    public static final String PROXY_TARGET_FIELD_NAME = "target";
 
     final Map<String, Collection<ModularServiceHolder>> loadedModularServices2 = new ConcurrentHashMap<>();
     //    final Map<Class<?>, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
@@ -202,54 +201,59 @@ public class DefaultModuleLoader implements ModuleLoader {
         return moduleDetailMap.get(module).getClassLoader();
     }
 
-    @Override
-    public <I> List<I> getModularServices(Class<I> clazz) {
-        return getModularServices(clazz, true);
-    }
-
-    @Override
-    public <I> List<I> getModularServices(Class<I> clazz, String moduleName) {
-        return getModularServices(clazz, moduleName, null, null, true);
-    }
-
-    @Override
-    public <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects) {
-        return getModularServices(clazz, null, null, copyTransClassLoaderObjects);
-    }
-
-    @Override
-    public <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer) {
-        return getModularServices(clazz, null, externalContainer, name, true);
-    }
-
-    @Override
-    public <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer) {
-        return getModularServices(clazz, moduleName, externalContainer, name, true);
-    }
+//    @Override
+//    public <I> List<I> getModularServices(Class<I> clazz) {
+//        return getModularServices(clazz, true);
+//    }
+//
+//    @Override
+//    public <I> List<I> getModularServices(Class<I> clazz, String moduleName) {
+//        return getModularServices(clazz, moduleName, null, null, true);
+//    }
+//
+//    @Override
+//    public <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects) {
+//        return getModularServices(clazz, null, null, copyTransClassLoaderObjects);
+//    }
+//
+//    @Override
+//    public <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer) {
+//        return getModularServices(clazz, null, externalContainer, name, true);
+//    }
+//
+//    @Override
+//    public <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer) {
+//        return getModularServices(clazz, moduleName, externalContainer, name, true);
+//    }
 
     @Override
     public <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer, boolean copyTransClassLoaderObjects) {
         return getModularServices(clazz, moduleName, externalContainer, name, copyTransClassLoaderObjects);
     }
+//
+//    @Override
+//    public <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName) {
+//        return getModularServices(clazz, ExternalContainer.SPRING, name, false);
+//    }
+
+//    @Override
+//    public <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz) {
+//        return getModularServicesFromSpring(name, clazz, true);
+//    }
+
+//    @Override
+//    public <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, boolean copyTransClassLoaderObjects) {
+//        return getModularServices(clazz, ExternalContainer.SPRING, name, copyTransClassLoaderObjects);
+//    }
 
     @Override
-    public <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName) {
-        return getModularServices(clazz, ExternalContainer.SPRING, name, false);
+    public <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName, boolean copyTransClassLoaderObjects) {
+        return getModularServices(clazz, moduleName, ExternalContainer.SPRING, name, copyTransClassLoaderObjects);
     }
 
-    @Override
-    public <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz) {
-        return getModularServicesFromSpring(name, clazz, true);
-    }
-
-    @Override
-    public <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, boolean copyTransClassLoaderObjects) {
-        return getModularServices(clazz, ExternalContainer.SPRING, name, copyTransClassLoaderObjects);
-    }
-
-    public <I> List<I> getModularServices(Class<I> apiClass, ExternalContainer externalContainer, String beanName, boolean copyTransClassLoaderObjects) {
-        return getModularServices(apiClass, null, externalContainer, beanName, copyTransClassLoaderObjects);
-    }
+//    public <I> List<I> getModularServices(Class<I> apiClass, ExternalContainer externalContainer, String beanName, boolean copyTransClassLoaderObjects) {
+//        return getModularServices(apiClass, null, externalContainer, beanName, copyTransClassLoaderObjects);
+//    }
 
     <I> List<I> getModularServices(Class<I> apiClass, String moduleName, ExternalContainer externalContainer, String beanName, boolean copyTransClassLoaderObjects) {
         //TODO: need to refactor this code to support another DI or external container rather than Spring
