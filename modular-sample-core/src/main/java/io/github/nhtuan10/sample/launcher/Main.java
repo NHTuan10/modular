@@ -50,7 +50,8 @@ public class Main {
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT.jar",
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT/my-kafka-tool-main-0.1.1-SNAPSHOT.jar" ), "io.github.nhtuan10.mykafkatool.MyKafkaToolLauncher", "");
         log.info("Load from 1 module only ---");
-        Modular.getModularServices(SampleService.class, "modular-sample-plugin-2").forEach(sampleService -> {
+//        Modular.getModularServices(SampleService.class, "modular-sample-plugin-2").forEach(sampleService -> {
+        Modular.getModularServices(SampleService.class).forEach(sampleService -> {
             try {
                 sampleService.test();
             } catch (Exception e) {
@@ -70,7 +71,9 @@ public class Main {
 //        }
 
 
-        Modular.getModularServices(SampleService.class, false).parallelStream()
+//        Modular.getModularServices(SampleService.class, false).parallelStream()
+        Modular.getModularServices(SampleService.class)
+//                .parallelStream()
 //                .forEach(s -> {
 //        Modular.getModularServices(SampleService.class, false)
 //        Modular.getModularServices(SampleService.class)

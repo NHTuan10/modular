@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 public interface ModuleLoader {
+    public static String PROXY_TARGET_FIELD_NAME = "target";
 
 //    Pattern classLoaderNamePattern = Pattern.compile("^io.github.nhtuan10.modular.impl.classloader.ModularClassLoader\\[.+\\]$");
 
@@ -22,8 +24,10 @@ public interface ModuleLoader {
             Class<ModuleLoader> implementationClass = Utils.getImplementationClass(ModuleLoader.class, ModuleLoader.class.getClassLoader());
             Method method = implementationClass.getDeclaredMethod("getInstance");
             method.setAccessible(true);
-            return (ModuleLoader) method.invoke(null);
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            Object target = method.invoke(null);
+            return Utils.createProxyObject(ModuleLoader.class, target);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException |
+                 ClassNotFoundException | InstantiationException e) {
             throw new ModularRuntimeException("Couldn't find any ModuleLoader implementation instance", e);
         }
     }
@@ -48,23 +52,25 @@ public interface ModuleLoader {
 
     CompletableFuture<ModuleDetail> startModuleASync(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration);
 
-    <I> List<I> getModularServices(Class<I> clazz);
-
-    <I> List<I> getModularServices(Class<I> clazz, String moduleName);
-
-    <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects);
-
-    <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer);
-
-    <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer);
+//    <I> List<I> getModularServices(Class<I> clazz);
+//
+//    <I> List<I> getModularServices(Class<I> clazz, String moduleName);
+//
+//    <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects);
+//
+//    <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer);
+//
+//    <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer);
 
     <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer, boolean copyTransClassLoaderObjects);
+//
+//    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName);
+//
+//    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz);
+//
+//    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, boolean copyTransClassLoaderObjects);
 
-    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName);
-
-    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz);
-
-    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, boolean copyTransClassLoaderObjects);
+    <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName, boolean copyTransClassLoaderObjects);
 
     boolean unloadModule(String moduleName);
 
@@ -80,15 +86,16 @@ public interface ModuleLoader {
     static boolean isManaged(Class<?> clazz) {
 //        String classLoaderName = clazz.getClassLoader().getName();
 //        return classLoaderName != null && classLoaderNamePattern.matcher(classLoaderName).matches();
+        // TODO: check if current class loader is modular class loader or not in a better way
         ClassLoader classLoader = clazz.getClassLoader();
-        return classLoader instanceof ModularClassLoader;
+        return (classLoader instanceof ModularClassLoader || "io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader".equals(classLoader.getParent().getClass().getName()));
     }
 
     String getCurrentModuleName();
 
     void notifyModuleReady(String moduleName);
 
-    enum LoadStatus {
+    enum LoadStatus implements Serializable {
         NEW,
         LOADING,
         LOADED,
@@ -96,7 +103,7 @@ public interface ModuleLoader {
     }
 
     @AllArgsConstructor
-    class ModuleDetail {
+    class ModuleDetail implements Serializable {
         @Getter
         private final String moduleName;
         @Getter
@@ -104,11 +111,11 @@ public interface ModuleLoader {
         private ModuleLoader.LoadStatus loadStatus;
         @Getter
         @Setter
-        private ModularClassLoader classLoader;
+        private transient ModularClassLoader classLoader;
         @Getter
-        private CountDownLatch readyLatch;
+        private transient CountDownLatch readyLatch;
         @Getter
-        private CountDownLatch awaitMainClassLatch;
+        private transient CountDownLatch awaitMainClassLatch;
     }
 
     @Builder

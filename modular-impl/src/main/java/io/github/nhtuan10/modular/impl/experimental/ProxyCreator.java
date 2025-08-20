@@ -1,7 +1,7 @@
 package io.github.nhtuan10.modular.impl.experimental;
 
+import io.github.nhtuan10.modular.api.serdeserializer.SerDeserializer;
 import io.github.nhtuan10.modular.impl.proxy.ServiceProxyCreator;
-import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;

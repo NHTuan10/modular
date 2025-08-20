@@ -11,31 +11,31 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 
 public interface Modular {
-    static ModuleLoader.ModuleDetail startModuleSync(String moduleName, List<String> locationUris, List<String> packagesToScan){
+    static ModuleLoader.ModuleDetail startModuleSync(String moduleName, List<String> locationUris, List<String> packagesToScan) {
         return ModuleLoader.getInstance().startModuleSync(moduleName, locationUris, packagesToScan);
     }
 
-    static ModuleLoader.ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan){
+    static ModuleLoader.ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan) {
         return ModuleLoader.getInstance().startModuleSyncWithMainClass(moduleName, locationUris, mainClass, packagesToScan);
     }
 
-    static CompletableFuture<ModuleLoader.ModuleDetail> startModuleAsync(String moduleName, List<String> locationUris, List<String> packagesToScan){
+    static CompletableFuture<ModuleLoader.ModuleDetail> startModuleAsync(String moduleName, List<String> locationUris, List<String> packagesToScan) {
         return ModuleLoader.getInstance().startModuleAsync(moduleName, locationUris, packagesToScan);
     }
 
-    static CompletableFuture<ModuleLoader.ModuleDetail> startModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan){
+    static CompletableFuture<ModuleLoader.ModuleDetail> startModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan) {
         return ModuleLoader.getInstance().startModuleAsyncWithMainClass(moduleName, locationUris, mainClass, packagesToScan);
     }
 
-    static ModuleLoader.ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan){
+    static ModuleLoader.ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan) {
         return ModuleLoader.getInstance().startSpringModuleSyncWithMainClassLoop(moduleName, locationUris, mainClass, packagesToScan);
     }
 
-    static ModuleLoader.ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan){
+    static ModuleLoader.ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan) {
         return ModuleLoader.getInstance().startSpringModuleSyncWithMainClass(moduleName, locationUris, mainClass, packagesToScan);
     }
 
-    static CompletableFuture<ModuleLoader.ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan){
+    static CompletableFuture<ModuleLoader.ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan) {
         return ModuleLoader.getInstance().startSpringModuleAsyncWithMainClassLoop(moduleName, locationUris, mainClass, packagesToScan);
     }
 
@@ -44,6 +44,7 @@ public interface Modular {
     }
 
     // Allow to pass a ModularClassLoader instance
+    // TODO: fix issues because of ModularClassLoader instance is transient
     static ModuleLoader.ModuleDetail startModuleSync(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
         return ModuleLoader.getInstance().startModuleSync(moduleName, moduleLoadConfiguration);
     }
@@ -56,57 +57,84 @@ public interface Modular {
         return ModuleLoader.getInstance().unloadModule(moduleName);
     }
 
-    static boolean isManaged(Object object){
+    static boolean isManaged(Object object) {
         return ModuleLoader.isManaged(object);
     }
 
-    static boolean isManaged(Class<?> clazz){
+    static boolean isManaged(Class<?> clazz) {
         return ModuleLoader.isManaged(clazz);
     }
 
-    static <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz) {
-        return ModuleLoader.getInstance().getModularServicesFromSpring(name, clazz);
-    }
+//    static  <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName) {
+//        return getModularServices(clazz, ExternalContainer.SPRING, name, false);
+//    }
 
     static <I> List<I> getModularServicesFromSpring(Class<I> clazz) {
-        return Modular.getModularServicesFromSpring(null, clazz);
+        return getModularServicesFromSpring(null, clazz);
     }
 
-    static <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName) {
-        return ModuleLoader.getInstance().getModularServicesFromSpring(name, clazz, moduleName);
-    }
-
-    static <I> List<I> getModularServices(Class<I> clazz) {
-        return ModuleLoader.getInstance().getModularServices(clazz);
-    }
-
-    static <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, boolean copyTransClassLoaderObjects) {
-        return ModuleLoader.getInstance().getModularServicesFromSpring(name, clazz, copyTransClassLoaderObjects);
+    static <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz) {
+        return getModularServicesFromSpring(name, clazz, true);
     }
 
     static <I> List<I> getModularServicesFromSpring(Class<I> clazz, boolean copyTransClassLoaderObjects) {
-        return Modular.getModularServicesFromSpring(null, clazz, copyTransClassLoaderObjects);
+        return getModularServicesFromSpring(null, clazz, copyTransClassLoaderObjects);
     }
 
-    static <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects) {
-        return ModuleLoader.getInstance().getModularServices(clazz, copyTransClassLoaderObjects);
+    static <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName) {
+        return getModularServicesFromSpring(name, clazz, moduleName, true);
+    }
+
+    //    static <I> List<I> getModularServices(Class<I> clazz) {
+//        return ModuleLoader.getInstance().getModularServices(clazz);
+//    }
+    static <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, boolean copyTransClassLoaderObjects) {
+        return getModularServicesFromSpring(name, clazz, null, copyTransClassLoaderObjects);
+    }
+
+    static <I> List<I> getModularServicesFromSpring(String name, Class<I> clazz, String moduleName, boolean copyTransClassLoaderObjects) {
+        return ModuleLoader.getInstance().getModularServicesFromSpring(name, clazz, moduleName, copyTransClassLoaderObjects);
+    }
+
+    static <I> List<I> getModularServices(Class<I> clazz) {
+        return getModularServices(clazz, true);
     }
 
     static <I> List<I> getModularServices(Class<I> clazz, String moduleName) {
-        return ModuleLoader.getInstance().getModularServices(clazz, moduleName);
+        return getModularServices(null, clazz, moduleName, null, true);
     }
+
+    static <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects) {
+        return getModularServices(null, clazz, null, null, copyTransClassLoaderObjects);
+    }
+
+    static <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer) {
+        return getModularServices(name, clazz, null, externalContainer, true);
+    }
+
+    static <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer) {
+        return getModularServices(name, clazz, moduleName, externalContainer, true);
+    }
+
+//    static <I> List<I> getModularServices(Class<I> clazz, boolean copyTransClassLoaderObjects) {
+//        return ModuleLoader.getInstance().getModularServices(clazz, copyTransClassLoaderObjects);
+//    }
+//
+//    static <I> List<I> getModularServices(Class<I> clazz, String moduleName) {
+//        return ModuleLoader.getInstance().getModularServices(clazz, moduleName);
+//    }
 
     static <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer, boolean copyTransClassLoaderObjects) {
         return ModuleLoader.getInstance().getModularServices(name, clazz, moduleName, externalContainer, copyTransClassLoaderObjects);
     }
 
-    static <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer) {
-        return ModuleLoader.getInstance().getModularServices(name, clazz, externalContainer);
-    }
-
-    static <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer) {
-        return ModuleLoader.getInstance().getModularServices(name, clazz, moduleName, externalContainer);
-    }
+//    static <I> List<I> getModularServices(String name, Class<I> clazz, ExternalContainer externalContainer) {
+//        return ModuleLoader.getInstance().getModularServices(name, clazz, externalContainer);
+//    }
+//
+//    static <I> List<I> getModularServices(String name, Class<I> clazz, String moduleName, ExternalContainer externalContainer) {
+//        return ModuleLoader.getInstance().getModularServices(name, clazz, moduleName, externalContainer);
+//    }
 
     static <T> Queue<T> getQueue(String name, Class<T> clazz) {
         return ModuleIntegration.getInstance().getQueue(name, clazz);

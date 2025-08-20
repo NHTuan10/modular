@@ -1,5 +1,7 @@
 package io.github.nhtuan10.modular.api.module;
 
-public enum ExternalContainer {
+import java.io.Serializable;
+
+public enum ExternalContainer implements Serializable {
     SPRING
 }

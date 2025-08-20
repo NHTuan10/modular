@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.kryo5.Kryo;
 import com.esotericsoftware.kryo.kryo5.io.Input;
 import com.esotericsoftware.kryo.kryo5.io.Output;
 import com.esotericsoftware.kryo.kryo5.objenesis.strategy.StdInstantiatorStrategy;
+import io.github.nhtuan10.modular.api.serdeserializer.SerDeserializer;
 
 import java.io.ByteArrayOutputStream;
 

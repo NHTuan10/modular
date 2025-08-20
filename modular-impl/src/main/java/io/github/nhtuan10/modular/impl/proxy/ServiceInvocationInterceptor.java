@@ -2,8 +2,8 @@ package io.github.nhtuan10.modular.impl.proxy;
 
 import io.github.nhtuan10.modular.api.exception.SerializationRuntimeException;
 import io.github.nhtuan10.modular.api.exception.ServiceInvocationRuntimeException;
+import io.github.nhtuan10.modular.api.serdeserializer.SerDeserializer;
 import io.github.nhtuan10.modular.impl.experimental.ProxyCreator;
-import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,7 +85,9 @@ public class ServiceInvocationInterceptor {
         Module module = clazz.getModule();
         Module serdesModule = serDeserializer.getJpmsModule();
         Module modularImpl = this.getClass().getModule();
-        module.getPackages().stream().filter(pkg -> module.isOpen(pkg, modularImpl)).forEach((eachPackage) -> {
+        module.getPackages().stream()
+//                .filter(pkg -> module.isOpen(pkg, modularImpl))
+                .forEach((eachPackage) -> {
             try {
                 module.addOpens(eachPackage, serdesModule);
                 log.debug("--add-open " + eachPackage + " from " + module + " to " + serdesModule);

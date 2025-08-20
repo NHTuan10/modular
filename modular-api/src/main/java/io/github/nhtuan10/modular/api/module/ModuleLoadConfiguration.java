@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
@@ -13,7 +14,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 @EqualsAndHashCode
 @ToString
-public final class ModuleLoadConfiguration {
+public final class ModuleLoadConfiguration implements Serializable {
     private final List<String> locationUris;
     private final String mainClass;
     private final List<String> packagesToScan;
@@ -22,7 +23,7 @@ public final class ModuleLoadConfiguration {
     private final boolean allowNonAnnotatedServices;
     private final String modularClassLoaderName;
     private final Set<String> prefixesLoadedBySystemClassLoader;
-    private final ModularClassLoader modularClassLoader;
+    private final transient ModularClassLoader modularClassLoader;
     private final String jpmsModuleName;
 
 
