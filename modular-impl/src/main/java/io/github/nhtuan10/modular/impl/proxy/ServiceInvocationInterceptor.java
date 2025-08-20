@@ -86,7 +86,7 @@ public class ServiceInvocationInterceptor {
         Module serdesModule = serDeserializer.getJpmsModule();
         Module modularImpl = this.getClass().getModule();
         module.getPackages().stream()
-//                .filter(pkg -> module.isOpen(pkg, modularImpl))
+                .filter(pkg -> module.isOpen(pkg, modularImpl))
                 .forEach((eachPackage) -> {
             try {
                 module.addOpens(eachPackage, serdesModule);

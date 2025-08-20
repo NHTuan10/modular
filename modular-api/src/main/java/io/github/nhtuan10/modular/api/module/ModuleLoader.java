@@ -25,7 +25,10 @@ public interface ModuleLoader {
             Method method = implementationClass.getDeclaredMethod("getInstance");
             method.setAccessible(true);
             Object target = method.invoke(null);
-            return Utils.createProxyObject(ModuleLoader.class, target);
+            if (target instanceof ModuleLoader) {
+                return (ModuleLoader) target;
+            } else
+                return Utils.createProxyObject(ModuleLoader.class, target);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | NoSuchFieldException |
                  ClassNotFoundException | InstantiationException e) {
             throw new ModularRuntimeException("Couldn't find any ModuleLoader implementation instance", e);

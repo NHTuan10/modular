@@ -163,7 +163,8 @@ public class DefaultModularClassLoader extends ModularClassLoader {
                             .forEach((eachPackage) -> {
                                 try {
                                     addAllOpens(module, eachPackage, modularImpl);
-                                    module.addExports(eachPackage, unnamed);
+                                    // TODO: need to review about add export
+//                                    module.addExports(eachPackage, unnamed);
                                     module.addOpens(eachPackage, unnamed);
                                     log.debug("--add-open " + eachPackage + " from " + module + " to " + unnamed);
                                 } catch (Exception e) {
