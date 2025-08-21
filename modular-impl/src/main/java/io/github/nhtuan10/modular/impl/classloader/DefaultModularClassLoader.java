@@ -166,8 +166,9 @@ public class DefaultModularClassLoader extends ModularClassLoader {
                             .forEach((eachPackage) -> {
                                 try {
                                     addAllOpens(module, eachPackage, modularImpl);
-                                    module.addOpens(eachPackage, unnamed);
-                                    module.addExports(eachPackage, unnamed);
+//                                    module.addOpens(eachPackage, unnamed);
+                                    addAllOpens(module, eachPackage, unnamed);
+//                                    module.addExports(eachPackage, unnamed);
                                     log.debug("--add-open " + eachPackage + " from " + module + " to " + unnamed);
                                 } catch (Exception e) {
                                     log.debug("Cannot add opens package {} from module {} to module {}", eachPackage, module, unnamed, e);

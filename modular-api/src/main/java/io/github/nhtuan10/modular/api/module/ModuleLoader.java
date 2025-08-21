@@ -3,7 +3,7 @@ package io.github.nhtuan10.modular.api.module;
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
 import io.github.nhtuan10.modular.proxy.ServiceProxyCreator;
-import io.github.nhtuan10.modular.serdeserializer.JavaSerDeserializer;
+import io.github.nhtuan10.modular.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.serdeserializer.SerDeserializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,10 +26,12 @@ public static final String PROXY_TARGET_FIELD_NAME = "target";
             Method method = implementationClass.getDeclaredMethod("getInstance");
             method.setAccessible(true);
             Object target = method.invoke(null);
-//            Kryo.class.getClassLoader();
-//            Objenesis.class.getClassLoader();
-            SerDeserializer serDeserializer = new JavaSerDeserializer();
-            return ServiceProxyCreator.createProxyObject(ModuleLoader.class, target, serDeserializer, true, implementationClass.getClassLoader(), ModuleLoader.class.getClassLoader());
+            if (target instanceof ModuleLoader) {
+                return (ModuleLoader) target;
+            } else {
+                SerDeserializer serDeserializer = new KryoSerDeserializer();
+                return ServiceProxyCreator.createProxyObject(ModuleLoader.class, target, serDeserializer, true, implementationClass.getClassLoader(), ModuleLoader.class.getClassLoader());
+            }
         } catch (Exception e) {
             throw new ModularRuntimeException("Couldn't find or create any ModuleLoader implementation instance", e);
         }
