@@ -23,6 +23,7 @@ public final class ModuleLoadConfiguration implements Serializable {
     private final boolean allowNonAnnotatedServices;
     private final String modularClassLoaderName;
     private final Set<String> prefixesLoadedBySystemClassLoader;
+    // TODO: Need to fix this transient
     private final transient ModularClassLoader modularClassLoader;
     private final String jpmsModuleName;
 

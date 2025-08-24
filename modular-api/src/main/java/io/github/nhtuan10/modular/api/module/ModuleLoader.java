@@ -112,6 +112,7 @@ public interface ModuleLoader {
         @Getter
         @Setter
         private ModuleLoader.LoadStatus loadStatus;
+        // TODO: Need to fix this transient
         @Getter
         @Setter
         private transient ModularClassLoader classLoader;
