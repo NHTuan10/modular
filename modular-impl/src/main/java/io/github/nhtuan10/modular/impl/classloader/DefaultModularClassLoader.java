@@ -168,7 +168,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
                                     module.addOpens(eachPackage, unnamed);
                                     log.debug("--add-open " + eachPackage + " from " + module + " to " + unnamed);
                                 } catch (Exception e) {
-                                    log.debug("Cannot add opens package {} from module {} to module {}", eachPackage, module, unnamed, e);
+                                    log.warn("Cannot add opens package {} from module {} to module {}", eachPackage, module, unnamed, e);
                                 }
                             });
                 }
@@ -192,9 +192,9 @@ public class DefaultModularClassLoader extends ModularClassLoader {
             method.invoke(fromModule, eachPackage, toModule, false, true); // add exports
             method.invoke(fromModule, eachPackage, toModule, true, true); // add open
         } catch (Exception e) {
-            log.debug("Error when add-opens {}/{}={}", fromModule.getName(), eachPackage, toModule.toString(), e);
+            log.warn("Error when add-opens {}/{}={}", fromModule.getName(), eachPackage, toModule.toString(), e);
         }
-        log.info("--add-open " + fromModule.getName() + "/" + eachPackage + "=" + toModule.toString());
+        log.debug("--add-open " + fromModule.getName() + "/" + eachPackage + "=" + toModule.toString());
     }
 
     @Override

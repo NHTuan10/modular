@@ -180,9 +180,9 @@ public class DefaultModuleLoader implements ModuleLoader {
                 try {
                     method.invoke(module, eachPackage, unnamedModule, true, true);
                 } catch (Exception e) {
-                    log.error("Error when add-opens {}/{}={}", module.getName(), eachPackage, unnamedModule.toString(), e);
+                    log.warn("Error when add-opens {}/{}={}", module.getName(), eachPackage, unnamedModule.toString(), e);
                 }
-                log.info("--add-open " + module.getName() + "/" + eachPackage + "=" + unnamedModule.toString());
+                log.debug("--add-open " + module.getName() + "/" + eachPackage + "=" + unnamedModule.toString());
             }
         });
     }

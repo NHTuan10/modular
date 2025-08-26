@@ -92,7 +92,7 @@ public class ServiceInvocationInterceptor {
                 module.addOpens(eachPackage, serdesModule);
                 log.debug("--add-open " + eachPackage + " from " + module + " to " + serdesModule);
             } catch (Exception e) {
-                log.debug("Cannot add opens package {} from module {} to module {}", eachPackage, module, serdesModule, e);
+                log.warn("Cannot add opens package {} from module {} to module {}", eachPackage, module, serdesModule, e);
             }
         });
     }
