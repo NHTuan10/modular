@@ -14,6 +14,8 @@ public abstract class ModularClassLoader extends URLClassLoader {
 
     public abstract void addClassPathUrls(List<URL> classPathUrls);
 
+    public abstract String getClassPath();
+
     public abstract void addPrefixesLoadedBySystemClassLoader(Set<String> prefixesLoadedBySystemClassLoader);
 
     public abstract List<String> getModuleNames();

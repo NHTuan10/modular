@@ -81,6 +81,11 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     }
 
     @Override
+    public String getClassPath() {
+        return this.classPathUrls.stream().map(URL::toString).collect(Collectors.joining(File.pathSeparator));
+    }
+
+    @Override
     public void addPrefixesLoadedBySystemClassLoader(Set<String> prefixesLoadedBySystemClassLoader) {
         this.prefixesLoadedBySystemClassLoader.addAll(prefixesLoadedBySystemClassLoader);
     }
