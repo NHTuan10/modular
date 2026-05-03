@@ -65,13 +65,13 @@ public class DefaultModularClassLoader extends ModularClassLoader {
         this(moduleNames.get(0), moduleNames, classPathUrls, parentClassLoader, prefixesLoadedBySystemClassLoader, doesIncludeSystemClasspath);
     }
 
-    public DefaultModularClassLoader(List<String> moduleNames, List<URL> classPathUrls) {
-        this(moduleNames.get(0), moduleNames, classPathUrls, null, Collections.emptySet(), false);
-    }
-
-    public DefaultModularClassLoader(List<String> moduleNames) {
-        this(moduleNames.get(0), moduleNames, Collections.emptyList(), null, Collections.emptySet(), false);
-    }
+//    public DefaultModularClassLoader(List<String> moduleNames, List<URL> classPathUrls) {
+//        this(moduleNames.get(0), moduleNames, classPathUrls, null, Collections.emptySet(), false);
+//    }
+//
+//    public DefaultModularClassLoader(List<String> moduleNames) {
+//        this(moduleNames.get(0), moduleNames, Collections.emptyList(), null, Collections.emptySet(), false);
+//    }
 
     public DefaultModularClassLoader(String name, List<String> moduleNames, ClassLoader parentClassLoader, Set<String> prefixesLoadedBySystemClassLoader, boolean doesIncludeSystemClasspath) {
         this(name, moduleNames, Collections.emptyList(), parentClassLoader, prefixesLoadedBySystemClassLoader, doesIncludeSystemClasspath);

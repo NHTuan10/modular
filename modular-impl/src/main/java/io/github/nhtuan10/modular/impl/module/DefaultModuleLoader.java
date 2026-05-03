@@ -339,7 +339,6 @@ public class DefaultModuleLoader implements ModuleLoader {
                 .allowNonAnnotatedServices(false)
                 .awaitMainClass(awaitMainClass)
                 .doesIncludeSystemClasspath(false)
-                .parentClassLoader(null)
                 .build();
         return startModule(moduleName, config);
     }

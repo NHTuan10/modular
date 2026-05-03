@@ -24,7 +24,8 @@ public final class ModuleLoadConfiguration {
     private final Set<String> prefixesLoadedBySystemClassLoader;
     private final ModularClassLoader modularClassLoader;
     private final boolean doesIncludeSystemClasspath;
-    private final ClassLoader parentClassLoader;
+    @Builder.Default
+    private final ClassLoader parentClassLoader = ClassLoader.getPlatformClassLoader();
 
     public List<String> locationUris() {
         return locationUris;
