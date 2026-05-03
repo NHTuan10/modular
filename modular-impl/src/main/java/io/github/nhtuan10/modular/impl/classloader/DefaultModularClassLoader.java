@@ -39,34 +39,42 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     @Getter
     private final String name;
 
-    public DefaultModularClassLoader(String name, List<String> moduleNames, List<URL> classPathUrls, Set<String> prefixesLoadedBySystemClassLoader) {
-        super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
+    @Getter
+    private final boolean doesIncludeSystemClasspath;
+
+    private DefaultModularClassLoader(String name, List<String> moduleNames, List<URL> classPathUrls, ClassLoader parentClassLoader, Set<String> prefixesLoadedBySystemClassLoader, boolean doesIncludeSystemClasspath) {
+//        super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
+        super(new URL[0], parentClassLoader);
         this.moduleNames = Collections.synchronizedList(new ArrayList<>(moduleNames));
         this.name = name;
         this.prefixesLoadedBySystemClassLoader = ConcurrentHashMap.newKeySet();
+        this.doesIncludeSystemClasspath = doesIncludeSystemClasspath;
         addPrefixesLoadedBySystemClassLoader(getDefaultExcludedPackages());
         if (prefixesLoadedBySystemClassLoader != null) {
             addPrefixesLoadedBySystemClassLoader(prefixesLoadedBySystemClassLoader);
         }
-        this.classPathUrls = getJavaClassPath();
+        this.classPathUrls = new ArrayList<>();
+        if (doesIncludeSystemClasspath) {
+            this.classPathUrls = getJavaClassPath();
+        }
         addClassPathUrls(classPathUrls);
     }
 
 
-    public DefaultModularClassLoader(List<String> moduleNames, List<URL> classPathUrls, Set<String> prefixesLoadedBySystemClassLoader) {
-        this(moduleNames.get(0), moduleNames, classPathUrls, prefixesLoadedBySystemClassLoader);
+    public DefaultModularClassLoader(List<String> moduleNames, List<URL> classPathUrls, ClassLoader parentClassLoader, Set<String> prefixesLoadedBySystemClassLoader, boolean doesIncludeSystemClasspath) {
+        this(moduleNames.get(0), moduleNames, classPathUrls, parentClassLoader, prefixesLoadedBySystemClassLoader, doesIncludeSystemClasspath);
     }
 
     public DefaultModularClassLoader(List<String> moduleNames, List<URL> classPathUrls) {
-        this(moduleNames.get(0), moduleNames, classPathUrls, Collections.emptySet());
+        this(moduleNames.get(0), moduleNames, classPathUrls, null, Collections.emptySet(), false);
     }
 
     public DefaultModularClassLoader(List<String> moduleNames) {
-        this(moduleNames.get(0), moduleNames, Collections.emptyList(), Collections.emptySet());
+        this(moduleNames.get(0), moduleNames, Collections.emptyList(), null, Collections.emptySet(), false);
     }
 
-    public DefaultModularClassLoader(String name, List<String> moduleNames, Set<String> prefixesLoadedBySystemClassLoader) {
-        this(name, moduleNames, Collections.emptyList(), prefixesLoadedBySystemClassLoader);
+    public DefaultModularClassLoader(String name, List<String> moduleNames, ClassLoader parentClassLoader, Set<String> prefixesLoadedBySystemClassLoader, boolean doesIncludeSystemClasspath) {
+        this(name, moduleNames, Collections.emptyList(), parentClassLoader, prefixesLoadedBySystemClassLoader, doesIncludeSystemClasspath);
     }
 
     public void addModule(String moduleName) {
@@ -76,7 +84,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     @Override
     @Locked.Write
     public void addClassPathUrls(List<URL> classPathUrls) {
-        this.classPathUrls = Stream.concat(this.classPathUrls.stream(), classPathUrls.stream()).collect(Collectors.toList());
+        this.classPathUrls = Stream.concat(classPathUrls.stream(), this.classPathUrls.stream()).collect(Collectors.toList());
         classPathUrls.forEach(this::addURL);
     }
 

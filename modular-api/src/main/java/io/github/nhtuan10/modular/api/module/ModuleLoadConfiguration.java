@@ -23,7 +23,8 @@ public final class ModuleLoadConfiguration {
     private final String modularClassLoaderName;
     private final Set<String> prefixesLoadedBySystemClassLoader;
     private final ModularClassLoader modularClassLoader;
-
+    private final boolean doesIncludeSystemClasspath;
+    private final ClassLoader parentClassLoader;
 
     public List<String> locationUris() {
         return locationUris;
@@ -61,4 +62,11 @@ public final class ModuleLoadConfiguration {
         return modularClassLoader;
     }
 
+    public boolean doesIncludeSystemClasspath() {
+        return doesIncludeSystemClasspath;
+    }
+
+    public ClassLoader parentClassLoader() {
+        return parentClassLoader;
+    }
 }
