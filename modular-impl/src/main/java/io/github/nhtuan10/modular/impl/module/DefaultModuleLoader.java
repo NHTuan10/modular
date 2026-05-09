@@ -17,6 +17,7 @@ import io.github.nhtuan10.modular.impl.proxy.ServiceProxyCreator;
 import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
+import io.github.nhtuan10.modular.impl.util.Utils;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -28,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -79,8 +81,7 @@ public class DefaultModuleLoader implements ModuleLoader {
             default:
                 serDeserializer = new KryoSerDeserializer();
                 break;
-
-        };
+        }
         this.configuration = configuration;
     }
 
@@ -96,32 +97,77 @@ public class DefaultModuleLoader implements ModuleLoader {
                     mavenUris.add(uri);
                     break;
                 case FILE:
-                    try {
-                        Path path = Paths.get(uri);
-                        if (path.toFile().exists()) {
-                            urls.add(uri.toURL());
-                        } else {
-                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s. File %s does not exist", name, path));
+                    urls.addAll(buildUris(name, uri, moduleLoadConfiguration.packagesToScan(), null).stream().map(uri2 -> {
+                        try {
+                            return uri2.toURL();
+                        } catch (MalformedURLException e) {
+                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
                         }
-                    } catch (MalformedURLException e) {
-                        throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
+                    }).collect(Collectors.toList()));
+                    break;
+                case JAR:
+                    try {
+                        String[] s = uri.getSchemeSpecificPart().split("!", 2);
+                        if (s.length >= 1) {
+                            URI fileUri = new URI(s[0]);
+                            String suffix = (s.length > 1) ? ("!" + s[1]) : null;
+                            List<URL> scannedUrls = buildUris(name, fileUri, moduleLoadConfiguration.packagesToScan(), suffix).stream()
+                                    .map(uri1 ->
+                                    {
+                                        try {
+                                            return new URI("jar", uri1.toString(), null).toURL();
+                                        } catch (MalformedURLException | URISyntaxException e) {
+                                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
+                                        }
+                                    }).collect(Collectors.toList());
+                            urls.addAll(scannedUrls);
+                        }
+                    } catch (URISyntaxException e) {
+                        throw new RuntimeException(e);
                     }
                     break;
                 case HTTP:
+                default:
                     try {
                         urls.add(uri.toURL());
                     } catch (MalformedURLException e) {
                         throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
                     }
                     break;
-                default:
-                    throw new ModuleLoadRuntimeException(name, "Unsupported artifact location type: " + uri.getScheme());
             }
         }
         if (!mavenUris.isEmpty()) {
             urls.addAll(resolveMavenDeps(name, mavenUris));
         }
         loadModuleFromUrls(name, moduleLoadConfiguration, urls);
+    }
+
+    private List<URI> buildUris(String name, URI parentUri, List<String> packages, String suffix) {
+        List<URI> uris = new ArrayList<>();
+        Path path = Paths.get(parentUri);
+        if (path.toFile().exists()) {
+            try {
+                uris.add(new URI(parentUri.toString() + (suffix != null ? suffix : "")));
+            } catch (URISyntaxException e) {
+                throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, parentUri, packages), e);
+            }
+        } else {
+            List<String> scannedList = Utils.listFiles(parentUri);
+            if (scannedList.isEmpty()) {
+                log.warn("Loading module {}. File {} does not exist", name, parentUri);
+            } else {
+                List<URI> scannedUriList = scannedList.stream().map(u -> {
+                    try {
+                        String f = suffix != null ? u + suffix : u;
+                        return new URI("file", f, null);
+                    } catch (URISyntaxException e) {
+                        throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, u, packages), e);
+                    }
+                }).collect(Collectors.toList());
+                uris.addAll(scannedUriList);
+            }
+        }
+        return uris;
     }
 
     private List<URL> resolveMavenDeps(String moduleName, List<URI> uris) {

@@ -54,10 +54,10 @@ public class DefaultModularClassLoader extends ModularClassLoader {
             addPrefixesLoadedBySystemClassLoader(prefixesLoadedBySystemClassLoader);
         }
         this.classPathUrls = new ArrayList<>();
+        addClassPathUrls(classPathUrls);
         if (doesIncludeSystemClasspath) {
             this.classPathUrls = getJavaClassPath();
         }
-        addClassPathUrls(classPathUrls);
     }
 
 
@@ -84,7 +84,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     @Override
     @Locked.Write
     public void addClassPathUrls(List<URL> classPathUrls) {
-        this.classPathUrls = Stream.concat(classPathUrls.stream(), this.classPathUrls.stream()).collect(Collectors.toList());
+        this.classPathUrls = Stream.concat(this.classPathUrls.stream(), classPathUrls.stream()).collect(Collectors.toList());
         classPathUrls.forEach(this::addURL);
     }
 
