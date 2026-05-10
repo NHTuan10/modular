@@ -26,6 +26,8 @@ public final class ModuleLoadConfiguration {
     private final boolean doesIncludeSystemClasspath;
     @Builder.Default
     private final ClassLoader parentClassLoader = ClassLoader.getPlatformClassLoader();
+    @Builder.Default
+    private final String workingDir = System.getProperty("java.io.tmpdir") + "/modular";
 
     public List<String> locationUris() {
         return locationUris;
@@ -69,5 +71,9 @@ public final class ModuleLoadConfiguration {
 
     public ClassLoader parentClassLoader() {
         return parentClassLoader;
+    }
+
+    public String workingDir() {
+        return workingDir;
     }
 }

@@ -25,6 +25,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -38,11 +39,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 public class DefaultModuleLoader implements ModuleLoader {
     public static final String APPLICATION_CONTEXT_PROVIDER = "io.github.nhtuan10.modular.spring.ApplicationContextProvider";
     public static final String PROXY_TARGET_FIELD_NAME = "target";
+    public static final String WEB_INF = "WEB-INF";
 
     final Map<String, Collection<ModularServiceHolder>> loadedModularServices2 = new ConcurrentHashMap<>();
     //    final Map<Class<?>, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
@@ -97,11 +100,28 @@ public class DefaultModuleLoader implements ModuleLoader {
                     mavenUris.add(uri);
                     break;
                 case FILE:
-                    urls.addAll(buildUris(name, uri, moduleLoadConfiguration.packagesToScan(), null).stream().map(uri2 -> {
+                    urls.addAll(buildUris(name, uri, moduleLoadConfiguration.packagesToScan(), null).stream().flatMap(innerUri -> {
                         try {
-                            return uri2.toURL();
+                            if (innerUri.getPath().endsWith(".war")) {
+                                Path warFile = Paths.get(innerUri.getPath());
+                                Path targetDir = Paths.get(moduleLoadConfiguration.workingDir()).resolve(warFile.getFileName().toString().replace(".war", ""));
+                                Utils.extractWarFile(warFile, targetDir);
+                                List<URI> dependencies = buildUris(name, targetDir.resolve(WEB_INF + "/lib/*").toUri(), moduleLoadConfiguration.packagesToScan(), null);
+                                dependencies.add(0, targetDir.resolve(WEB_INF + "/classes/").toUri());
+                                return dependencies.stream().map(u -> {
+                                    try {
+                                        return u.toURL();
+                                    } catch (MalformedURLException e) {
+                                        throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, u, moduleLoadConfiguration.packagesToScan()), e);
+                                    }
+                                });
+                            } else {
+                                return Stream.of(innerUri.toURL());
+                            }
                         } catch (MalformedURLException e) {
-                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
+                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, innerUri, moduleLoadConfiguration.packagesToScan()), e);
+                        } catch (IOException e) {
+                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from WAR file %s with package %s", name, innerUri, moduleLoadConfiguration.packagesToScan()), e);
                         }
                     }).collect(Collectors.toList()));
                     break;
@@ -112,10 +132,10 @@ public class DefaultModuleLoader implements ModuleLoader {
                             URI fileUri = new URI(s[0]);
                             String suffix = (s.length > 1) ? ("!" + s[1]) : null;
                             List<URL> scannedUrls = buildUris(name, fileUri, moduleLoadConfiguration.packagesToScan(), suffix).stream()
-                                    .map(uri1 ->
+                                    .map(innerUri ->
                                     {
                                         try {
-                                            return new URI("jar", uri1.toString(), null).toURL();
+                                            return new URI("jar", innerUri.toString(), null).toURL();
                                         } catch (MalformedURLException | URISyntaxException e) {
                                             throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
                                         }
