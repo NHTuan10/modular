@@ -17,6 +17,7 @@ import io.github.nhtuan10.modular.impl.proxy.ServiceProxyCreator;
 import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
+import io.github.nhtuan10.modular.impl.util.Utils;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -24,10 +25,12 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,11 +39,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 public class DefaultModuleLoader implements ModuleLoader {
     public static final String APPLICATION_CONTEXT_PROVIDER = "io.github.nhtuan10.modular.spring.ApplicationContextProvider";
     public static final String PROXY_TARGET_FIELD_NAME = "target";
+    public static final String WEB_INF = "WEB-INF";
 
     final Map<String, Collection<ModularServiceHolder>> loadedModularServices2 = new ConcurrentHashMap<>();
     //    final Map<Class<?>, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
@@ -79,8 +84,7 @@ public class DefaultModuleLoader implements ModuleLoader {
             default:
                 serDeserializer = new KryoSerDeserializer();
                 break;
-
-        };
+        }
         this.configuration = configuration;
     }
 
@@ -96,32 +100,94 @@ public class DefaultModuleLoader implements ModuleLoader {
                     mavenUris.add(uri);
                     break;
                 case FILE:
-                    try {
-                        Path path = Paths.get(uri);
-                        if (path.toFile().exists()) {
-                            urls.add(uri.toURL());
-                        } else {
-                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s. File %s does not exist", name, path));
+                    urls.addAll(buildUris(name, uri, moduleLoadConfiguration.packagesToScan(), null).stream().flatMap(innerUri -> {
+                        try {
+                            if (innerUri.getPath().endsWith(".war")) {
+                                Path warFile = Paths.get(innerUri.getPath());
+                                Path targetDir = Paths.get(moduleLoadConfiguration.workingDir()).resolve(warFile.getFileName().toString().replace(".war", ""));
+                                Utils.extractWarFile(warFile, targetDir);
+                                List<URI> dependencies = buildUris(name, targetDir.resolve(WEB_INF + "/lib/*").toUri(), moduleLoadConfiguration.packagesToScan(), null);
+                                dependencies.add(0, targetDir.resolve(WEB_INF + "/classes/").toUri());
+                                return dependencies.stream().map(u -> {
+                                    try {
+                                        return u.toURL();
+                                    } catch (MalformedURLException e) {
+                                        throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, u, moduleLoadConfiguration.packagesToScan()), e);
+                                    }
+                                });
+                            } else {
+                                return Stream.of(innerUri.toURL());
+                            }
+                        } catch (MalformedURLException e) {
+                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, innerUri, moduleLoadConfiguration.packagesToScan()), e);
+                        } catch (IOException e) {
+                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from WAR file %s with package %s", name, innerUri, moduleLoadConfiguration.packagesToScan()), e);
                         }
-                    } catch (MalformedURLException e) {
-                        throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
+                    }).collect(Collectors.toList()));
+                    break;
+                case JAR:
+                    try {
+                        String[] s = uri.getSchemeSpecificPart().split("!", 2);
+                        if (s.length >= 1) {
+                            URI fileUri = new URI(s[0]);
+                            String suffix = (s.length > 1) ? ("!" + s[1]) : null;
+                            List<URL> scannedUrls = buildUris(name, fileUri, moduleLoadConfiguration.packagesToScan(), suffix).stream()
+                                    .map(innerUri ->
+                                    {
+                                        try {
+                                            return new URI("jar", innerUri.toString(), null).toURL();
+                                        } catch (MalformedURLException | URISyntaxException e) {
+                                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
+                                        }
+                                    }).collect(Collectors.toList());
+                            urls.addAll(scannedUrls);
+                        }
+                    } catch (URISyntaxException e) {
+                        throw new RuntimeException(e);
                     }
                     break;
                 case HTTP:
+                default:
                     try {
                         urls.add(uri.toURL());
                     } catch (MalformedURLException e) {
                         throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
                     }
                     break;
-                default:
-                    throw new ModuleLoadRuntimeException(name, "Unsupported artifact location type: " + uri.getScheme());
             }
         }
         if (!mavenUris.isEmpty()) {
             urls.addAll(resolveMavenDeps(name, mavenUris));
         }
         loadModuleFromUrls(name, moduleLoadConfiguration, urls);
+    }
+
+    private List<URI> buildUris(String name, URI parentUri, List<String> packages, String suffix) {
+        List<URI> uris = new ArrayList<>();
+        Path path = Paths.get(parentUri);
+        if (path.toFile().exists()) {
+            try {
+                uris.add(new URI(parentUri.toString() + (suffix != null ? suffix : "")));
+            } catch (URISyntaxException e) {
+                throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, parentUri, packages), e);
+            }
+        } else {
+            List<String> scannedList = Utils.listFiles(parentUri);
+            if (scannedList.isEmpty()) {
+                log.warn("Loading module {}. File {} does not exist", name, parentUri);
+            } else {
+                List<URI> scannedUriList = scannedList.stream().map(u -> {
+                    try {
+                        String f = suffix != null ? u + suffix : u;
+                        return new URI("file", f, null);
+                    } catch (URISyntaxException e) {
+                        throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, u, packages), e);
+                    }
+                }).collect(Collectors.toList());
+                uris.addAll(scannedUriList);
+            }
+        }
+        return uris;
     }
 
     private List<URL> resolveMavenDeps(String moduleName, List<URI> uris) {
@@ -136,13 +202,14 @@ public class DefaultModuleLoader implements ModuleLoader {
         ModularClassLoader moduleClassLoader;
         String classLoaderNameFromConfig = moduleLoadConfiguration.modularClassLoaderName();
         if (StringUtils.isNotBlank(classLoaderNameFromConfig)) {
-            moduleClassLoader = modulerClassLoaderMap.computeIfAbsent(classLoaderNameFromConfig, classLoaderName -> new DefaultModularClassLoader(classLoaderNameFromConfig, List.of(moduleName), moduleLoadConfiguration.prefixesLoadedBySystemClassLoader()));
+            moduleClassLoader = modulerClassLoaderMap.computeIfAbsent(classLoaderNameFromConfig, classLoaderName ->
+                    new DefaultModularClassLoader(classLoaderNameFromConfig, List.of(moduleName), moduleLoadConfiguration.parentClassLoader(), moduleLoadConfiguration.prefixesLoadedBySystemClassLoader(), moduleLoadConfiguration.doesIncludeSystemClasspath()));
             moduleClassLoader.addClassPathUrls(depUrls);
             moduleClassLoader.addModule(moduleName);
         } else if (moduleLoadConfiguration.modularClassLoader() != null) {
             moduleClassLoader = moduleLoadConfiguration.modularClassLoader();
         } else {
-            moduleClassLoader = new DefaultModularClassLoader(List.of(moduleName), depUrls, moduleLoadConfiguration.prefixesLoadedBySystemClassLoader());
+            moduleClassLoader = new DefaultModularClassLoader(List.of(moduleName), depUrls, moduleLoadConfiguration.parentClassLoader(), moduleLoadConfiguration.prefixesLoadedBySystemClassLoader(), moduleLoadConfiguration.doesIncludeSystemClasspath());
             modulerClassLoaderMap.put(moduleName, moduleClassLoader);
         }
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
@@ -337,6 +404,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                 .packagesToScan(packagesToScan)
                 .allowNonAnnotatedServices(false)
                 .awaitMainClass(awaitMainClass)
+                .doesIncludeSystemClasspath(false)
                 .build();
         return startModule(moduleName, config);
     }

@@ -7,9 +7,12 @@ import java.util.Set;
 
 public abstract class ModularClassLoader extends URLClassLoader {
     public ModularClassLoader(URL[] urls) {
-        super(urls);
+        super(urls, null);
     }
 
+    public ModularClassLoader(URL[] urls, ClassLoader parent) {
+        super(urls, parent);
+    }
     public abstract void addModule(String moduleName);
 
     public abstract void addClassPathUrls(List<URL> classPathUrls);
