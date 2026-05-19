@@ -18,13 +18,24 @@ public class Main {
 //                List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), "io.github.nhtuan10.sample.service.ServiceImpl", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
 
+        ModuleLoadConfiguration apiCconfig = ModuleLoadConfiguration.builder()
+                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-api/0.0.1"))
+                .packagesToScan(List.of("io.github.nhtuan10.sample.api.service"))
+//                .modularClassLoaderName("commonCL")
+                .allowNonAnnotatedServices(true)
+                .prefixesLoadedBySystemClassLoader(Set.of(ExcludedMe.class.getName()))
+                .build();
+
+        ModuleLoader.ModuleDetail moduleDetail1 = Modular.startModuleSync("modular-sample-api", apiCconfig);
+
         ModuleLoadConfiguration plugin1Config = ModuleLoadConfiguration.builder()
                 .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin1", "io.github.nhtuan10.sample.util"))
                 .mainClass("io.github.nhtuan10.sample.plugin1.ServiceImpl")
-                .modularClassLoaderName("commonCL")
+//                .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
+                .parentClassLoader(moduleDetail1.getClassLoader())
                 .prefixesLoadedBySystemClassLoader(Set.of(ExcludedMe.class.getName()))
                 .build();
 
@@ -32,7 +43,8 @@ public class Main {
                 .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin2"))
-                .modularClassLoaderName("commonCL")
+//                .modularClassLoaderName("commonCL")
+                .parentClassLoader(moduleDetail1.getClassLoader())
                 .allowNonAnnotatedServices(true)
                 .build();
 
