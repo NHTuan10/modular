@@ -6,7 +6,7 @@
 
     <groupId>io.github.nhtuan10</groupId>
     <artifactId>modular</artifactId>
-    <version>${version}</version>
+    <version>0.0.2</version>
     <packaging>pom</packaging>
 
     <modules>
