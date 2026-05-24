@@ -88,6 +88,8 @@ public interface ModuleLoader {
 
     void notifyModuleReady(String moduleName);
 
+    ModuleDetail getCurrentModuleDetail();
+
     enum LoadStatus {
         NEW,
         LOADING,
@@ -100,6 +102,8 @@ public interface ModuleLoader {
         @Getter
         private final String moduleName;
         @Getter
+        private final ModuleLoadConfiguration moduleLoadConfiguration;
+        @Getter
         @Setter
         private ModuleLoader.LoadStatus loadStatus;
         @Getter
@@ -109,6 +113,9 @@ public interface ModuleLoader {
         private CountDownLatch readyLatch;
         @Getter
         private CountDownLatch awaitMainClassLatch;
+        @Getter
+        @Setter
+        private Object entryPointResult;
     }
 
     @Builder

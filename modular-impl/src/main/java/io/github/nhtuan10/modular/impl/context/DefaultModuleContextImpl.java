@@ -35,4 +35,9 @@ public class DefaultModuleContextImpl implements ModuleContext {
     public String getCurrentModuleName() {
         return moduleLoader.getCurrentModuleName();
     }
+
+    @Override
+    public ModuleLoader.ModuleDetail getCurrentModuleDetail() {
+        return moduleLoader.getCurrentModuleDetail();
+    }
 }

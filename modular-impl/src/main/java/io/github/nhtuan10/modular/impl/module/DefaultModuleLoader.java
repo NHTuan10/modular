@@ -1,5 +1,6 @@
 package io.github.nhtuan10.modular.impl.module;
 
+import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
 import io.github.nhtuan10.modular.api.exception.DuplicatedModuleLoadRuntimeException;
@@ -9,6 +10,7 @@ import io.github.nhtuan10.modular.api.model.ArtifactLocationType;
 import io.github.nhtuan10.modular.api.module.ExternalContainer;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
+import io.github.nhtuan10.modular.entry.ModularEntryPoint;
 import io.github.nhtuan10.modular.impl.annotation.ModularAnnotationProcessor;
 import io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader;
 import io.github.nhtuan10.modular.impl.classloader.MavenArtifactsResolver;
@@ -403,7 +405,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                 .mainClass(mainClass)
                 .packagesToScan(packagesToScan)
                 .allowNonAnnotatedServices(false)
-                .awaitMainClass(awaitMainClass)
+                .awaitModule(awaitMainClass)
                 .doesIncludeSystemClasspath(false)
                 .build();
         return startModule(moduleName, config);
@@ -415,20 +417,29 @@ public class DefaultModuleLoader implements ModuleLoader {
         CompletableFuture<ModuleDetail> moduleDetailCompletableFuture = new CompletableFuture<>();
         if (!moduleDetailMap.containsKey(moduleName)) {
             CountDownLatch await = new CountDownLatch(1);
-            ModuleDetail moduleDetail = new ModuleDetail(moduleName, LoadStatus.LOADING, null, new CountDownLatch(1), await);
+            ModuleDetail moduleDetail = new ModuleDetail(moduleName, moduleLoadConfiguration, LoadStatus.LOADING, null, new CountDownLatch(1), await, null);
             moduleDetailMap.put(moduleName, moduleDetail);
 
             Thread t = new Thread(() -> {
                 try {
                     loadModule(moduleName, moduleLoadConfiguration);
                     Thread.currentThread().setContextClassLoader(getClassLoader(moduleName));
-                    if (moduleLoadConfiguration.mainClass() != null) {
+                    List<ModularEntryPoint> entryPoints = Modular.getModularServices(ModularEntryPoint.class);
+                    if (moduleLoadConfiguration.mainClass() != null || (entryPoints != null && !entryPoints.isEmpty())) {
                         try {
-                            loadClass(moduleName, moduleLoadConfiguration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) new String[]{});
-                            moduleDetailCompletableFuture.complete(moduleDetail);
-                            notifyModuleReady(moduleName);
-                            log.info(FINISH_LOADING_MSG, moduleName);
-                            if (moduleLoadConfiguration.awaitMainClass()) {
+                            if (moduleLoadConfiguration.mainClass() != null) {
+                                loadClass(moduleName, moduleLoadConfiguration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) moduleLoadConfiguration.mainMethodArguments());
+                            }
+                            if (entryPoints != null && !entryPoints.isEmpty()) {
+//                                for (ModularEntryPoint modularEntryPoint : entryPoints) {
+                                if (entryPoints.size() == 1) {
+                                    moduleDetail.setEntryPointResult(entryPoints.get(0).run(moduleLoadConfiguration.entryPointArgument()));
+                                } else {
+                                    throw new ModuleLoadRuntimeException("There are more than one entry point");
+                                }
+                            }
+                            finishLoading(moduleName, moduleDetailCompletableFuture, moduleDetail);
+                            if (moduleLoadConfiguration.awaitModule()) {
                                 Runtime.getRuntime().addShutdownHook(new Thread(await::countDown));
                                 await.await();
                             }
@@ -440,9 +451,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                             throw exception;
                         }
                     } else {
-                        moduleDetailCompletableFuture.complete(moduleDetail);
-                        notifyModuleReady(moduleName);
-                        log.info(FINISH_LOADING_MSG, moduleName);
+                        finishLoading(moduleName, moduleDetailCompletableFuture, moduleDetail);
                     }
                 } catch (Exception e) {
                     ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName, e);
@@ -459,6 +468,12 @@ public class DefaultModuleLoader implements ModuleLoader {
             notifyModuleReady(moduleName);
             throw exception;
         }
+    }
+
+    private void finishLoading(String moduleName, CompletableFuture<ModuleDetail> moduleDetailCompletableFuture, ModuleDetail moduleDetail) {
+        moduleDetailCompletableFuture.complete(moduleDetail);
+        notifyModuleReady(moduleName);
+        log.info("Finish loading module '{}'", moduleName);
     }
 
     @Override
@@ -563,5 +578,8 @@ public class DefaultModuleLoader implements ModuleLoader {
         }
     }
 
-
+    @Override
+    public ModuleDetail getCurrentModuleDetail() {
+        return this.moduleDetailMap.get(this.getCurrentModuleName());
+    }
 }

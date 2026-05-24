@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.github.nhtuan10.modular.impl.classloader.DefaultModularClassLoader.MODULAR_PARENT_PACKAGE;
+
 /**
  * This class is not a thread safe
  */
@@ -49,7 +51,7 @@ public class ModularAnnotationProcessor {
 
 
     public Map<Class<?>, Collection<ModularServiceHolder>> annotationProcess(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
-        List<String> packages = moduleLoadConfiguration.packagesToScan();
+        List<String> packages = Stream.concat(List.of(MODULAR_PARENT_PACKAGE).stream(), moduleLoadConfiguration.packagesToScan().stream()).collect(Collectors.toList());
         if (packages != null && !packages.isEmpty()) {
             try (ScanResult scanResult =
                          new ClassGraph()

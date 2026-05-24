@@ -6,4 +6,6 @@ public interface ModuleContext {
     void notifyModuleReady(String moduleName);
 
     String getCurrentModuleName();
+
+    ModuleLoader.ModuleDetail getCurrentModuleDetail();
 }

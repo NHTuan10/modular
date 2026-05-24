@@ -16,10 +16,17 @@ import java.util.Set;
 public final class ModuleLoadConfiguration {
     private final List<String> locationUris;
     private final String mainClass;
+    //    @Builder.Default
+//    private final String mainMethodName = "main";
+    @Builder.Default
+    private final String[] mainMethodArguments = new String[]{};
+    @Builder.Default
+    private final Object entryPointArgument = null;
+    private final boolean awaitModule;
     private final List<String> packagesToScan;
     private final ExternalContainer externalContainer;
-    private final boolean awaitMainClass;
-    private final boolean allowNonAnnotatedServices;
+    @Builder.Default
+    private final boolean allowNonAnnotatedServices = true;
     private final String modularClassLoaderName;
     private final Set<String> prefixesLoadedBySystemClassLoader;
     private final ModularClassLoader modularClassLoader;
@@ -37,6 +44,13 @@ public final class ModuleLoadConfiguration {
         return mainClass;
     }
 
+    public String[] mainMethodArguments() {
+        return mainMethodArguments;
+    }
+
+    public Object entryPointArgument() {
+        return entryPointArgument;
+    }
     public List<String> packagesToScan() {
         return packagesToScan;
     }
@@ -45,8 +59,8 @@ public final class ModuleLoadConfiguration {
         return externalContainer;
     }
 
-    public boolean awaitMainClass() {
-        return awaitMainClass;
+    public boolean awaitModule() {
+        return awaitModule;
     }
 
     public boolean allowNonAnnotatedServices() {
