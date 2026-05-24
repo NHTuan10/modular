@@ -20,6 +20,7 @@ public final class ModuleLoadConfiguration {
 //    private final String mainMethodName = "main";
     @Builder.Default
     private final String[] mainMethodArguments = new String[]{};
+    private final String entryPointClass;
     @Builder.Default
     private final Object entryPointArgument = null;
     private final boolean awaitModule;
@@ -42,6 +43,10 @@ public final class ModuleLoadConfiguration {
 
     public String mainClass() {
         return mainClass;
+    }
+
+    public String entryPointClass() {
+        return entryPointClass;
     }
 
     public String[] mainMethodArguments() {

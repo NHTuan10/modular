@@ -46,6 +46,7 @@ public class Main {
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin2"))
 //                .modularClassLoaderName("commonCL")
                 .parentClassLoader(moduleDetail1.getClassLoader())
+                .entryPointClass("io.github.nhtuan10.sample.plugin2.TestModularEntryPoint")
                 .entryPointArgument(new SomeData("test entry point argument"))
                 .allowNonAnnotatedServices(true)
                 .build();

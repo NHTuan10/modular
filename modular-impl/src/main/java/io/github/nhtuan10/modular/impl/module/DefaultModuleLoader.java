@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -40,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -430,12 +432,28 @@ public class DefaultModuleLoader implements ModuleLoader {
                             if (moduleLoadConfiguration.mainClass() != null) {
                                 loadClass(moduleName, moduleLoadConfiguration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) moduleLoadConfiguration.mainMethodArguments());
                             }
-                            if (entryPoints != null && !entryPoints.isEmpty()) {
-//                                for (ModularEntryPoint modularEntryPoint : entryPoints) {
-                                if (entryPoints.size() == 1) {
-                                    moduleDetail.setEntryPointResult(entryPoints.get(0).run(moduleLoadConfiguration.entryPointArgument()));
-                                } else {
+                            if (moduleLoadConfiguration.entryPointClass() != null && entryPoints != null && !entryPoints.isEmpty()) {
+                                Predicate<ModularEntryPoint> filteredByClassName = (entryPoint) -> {
+                                    if (entryPoint.getClass().getName().equals(moduleLoadConfiguration.entryPointClass())) {
+                                        return true;
+                                    } else {
+                                        try {
+                                            if (getTargetFieldFromProxyClass(entryPoint).getClass().getName().equals(moduleLoadConfiguration.entryPointClass())) {
+                                                return true;
+                                            }
+                                        } catch (NoSuchFieldException | IllegalAccessException e) {
+                                            return false;
+                                        }
+                                        return false;
+                                    }
+                                };
+                                List<ModularEntryPoint> foundEntryPoints = entryPoints.stream().filter(filteredByClassName).collect(Collectors.toList());
+                                if (foundEntryPoints.size() == 1) {
+                                    moduleDetail.setEntryPointResult(foundEntryPoints.get(0).run(moduleLoadConfiguration.entryPointArgument()));
+                                } else if (foundEntryPoints.size() > 1) {
                                     throw new ModuleLoadRuntimeException("There are more than one entry point");
+                                } else {
+                                    throw new ModuleLoadRuntimeException("Entry point not found");
                                 }
                             }
                             finishLoading(moduleName, moduleDetailCompletableFuture, moduleDetail);
@@ -470,6 +488,11 @@ public class DefaultModuleLoader implements ModuleLoader {
         }
     }
 
+    private Object getTargetFieldFromProxyClass(Object proxy) throws NoSuchFieldException, IllegalAccessException {
+        Field field = proxy.getClass().getDeclaredField(PROXY_TARGET_FIELD_NAME);
+        field.setAccessible(true);
+        return field.get(proxy);
+    }
     private void finishLoading(String moduleName, CompletableFuture<ModuleDetail> moduleDetailCompletableFuture, ModuleDetail moduleDetail) {
         moduleDetailCompletableFuture.complete(moduleDetail);
         notifyModuleReady(moduleName);
