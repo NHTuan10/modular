@@ -51,8 +51,8 @@ public class ModularAnnotationProcessor {
 
 
     public Map<Class<?>, Collection<ModularServiceHolder>> annotationProcess(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
-        List<String> packages = Stream.concat(List.of(MODULAR_PARENT_PACKAGE).stream(), moduleLoadConfiguration.packagesToScan().stream()).collect(Collectors.toList());
-        if (packages != null && !packages.isEmpty()) {
+        List<String> packages = Stream.concat(Stream.of(MODULAR_PARENT_PACKAGE), moduleLoadConfiguration.packagesToScan().stream()).collect(Collectors.toList());
+        if (!packages.isEmpty()) {
             try (ScanResult scanResult =
                          new ClassGraph()
                                  .overrideClasspath((Object[]) this.modularClassLoader.getURLs())

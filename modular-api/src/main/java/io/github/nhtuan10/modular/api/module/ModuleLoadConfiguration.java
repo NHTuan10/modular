@@ -16,15 +16,14 @@ import java.util.Set;
 public final class ModuleLoadConfiguration {
     private final List<String> locationUris;
     private final String mainClass;
-    //    @Builder.Default
-//    private final String mainMethodName = "main";
     @Builder.Default
     private final String[] mainMethodArguments = new String[]{};
     private final String entryPointClass;
     @Builder.Default
     private final Object entryPointArgument = null;
     private final boolean awaitModule;
-    private final List<String> packagesToScan;
+    @Builder.Default
+    private final List<String> packagesToScan = List.of();
     private final ExternalContainer externalContainer;
     @Builder.Default
     private final boolean allowNonAnnotatedServices = true;
