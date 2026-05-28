@@ -8,11 +8,14 @@ import io.github.nhtuan10.sample.api.service.SampleService;
 import io.github.nhtuan10.sample.api.service.SomeData;
 import io.github.nhtuan10.sample.api.service.SomeInterface;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws URISyntaxException, UnsupportedEncodingException {
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSyncWithMainClass("modular-sample-plugin-1",
 //                List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), "io.github.nhtuan10.sample.service.ServiceImpl", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
@@ -20,7 +23,7 @@ public class Main {
 
         ModuleLoadConfiguration apiCconfig = ModuleLoadConfiguration.builder()
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-api/[0.0.2,1.0.0)"))
-                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-api/0.0.2"))
+                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-api:0.0.2", null)))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.api.service"))
 //                .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
@@ -30,7 +33,7 @@ public class Main {
         ModuleLoader.ModuleDetail moduleDetail1 = Modular.startModuleSync("modular-sample-api", apiCconfig);
 
         ModuleLoadConfiguration plugin1Config = ModuleLoadConfiguration.builder()
-                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.2"))
+                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-1:0.0.2", null)))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin1", "io.github.nhtuan10.sample.util"))
                 .mainClass("io.github.nhtuan10.sample.plugin1.ServiceImpl")
@@ -41,7 +44,8 @@ public class Main {
                 .build();
 
         ModuleLoadConfiguration plugin2Config = ModuleLoadConfiguration.builder()
-                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.2"))
+                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-2:[0.0.2,)", null)))
+//                .locationUris(List.of(new URI("mvn", "//io.github.nhtuan10/modular-sample-plugin-2/" + URLEncoder.encode("[0.0.2,)", StandardCharsets.UTF_8.toString()) , null)))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin2"))
 //                .modularClassLoaderName("commonCL")
@@ -111,7 +115,7 @@ public class Main {
                     System.out.println("Hash code: " + s.hashCode());
 
                     try {
-                s.test();
+                        s.test();
                     } catch (Exception e) {
                         e.getCause().printStackTrace();
                     }
@@ -129,7 +133,7 @@ public class Main {
                     System.out.println("Return from testObjectList: " + s.testObjectList(list));
                     System.out.println("In list: " + list);
 
-        });
+                });
 
     }
 }

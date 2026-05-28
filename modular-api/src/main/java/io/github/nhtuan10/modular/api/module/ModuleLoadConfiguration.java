@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
@@ -14,7 +15,7 @@ import java.util.Set;
 @EqualsAndHashCode
 @ToString
 public final class ModuleLoadConfiguration {
-    private final List<String> locationUris;
+    private final List<URI> locationUris;
     private final String mainClass;
     @Builder.Default
     private final String[] mainMethodArguments = new String[]{};
@@ -36,7 +37,7 @@ public final class ModuleLoadConfiguration {
     @Builder.Default
     private final String workingDir = System.getProperty("java.io.tmpdir") + "/modular";
 
-    public List<String> locationUris() {
+    public List<URI> locationUris() {
         return locationUris;
     }
 

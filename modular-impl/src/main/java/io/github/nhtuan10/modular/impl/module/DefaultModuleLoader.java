@@ -96,8 +96,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         // Load module
         List<URI> mavenUris = new ArrayList<>();
         List<URL> urls = new ArrayList<>();
-        for (String location : moduleLoadConfiguration.locationUris()) {
-            URI uri = URI.create(location);
+        for (URI uri : moduleLoadConfiguration.locationUris()) {
             log.info("Loading module {} from URI {}", name, uri);
             switch (ArtifactLocationType.valueOf(uri.getScheme().toUpperCase())) {
                 case MVN:
@@ -196,7 +195,7 @@ public class DefaultModuleLoader implements ModuleLoader {
 
     private List<URL> resolveMavenDeps(String moduleName, List<URI> uris) {
         // Load module from Maven
-        List<String> mvnArtifacts = uris.stream().map(uri -> uri.getHost() + uri.getPath().replace("/", ":")).collect(Collectors.toList());
+        List<String> mvnArtifacts = uris.stream().map(URI::getSchemeSpecificPart).collect(Collectors.toList());
         log.info("Loading module {} from Maven artifacts: {}", moduleName, mvnArtifacts);
         return new MavenArtifactsResolver<URL>().resolveDependencies(mvnArtifacts, URL.class);
     }
@@ -400,7 +399,7 @@ public class DefaultModuleLoader implements ModuleLoader {
 
     }
 
-    private CompletableFuture<ModuleDetail> startModule(String moduleName, List<String> locationUris, ExternalContainer externalContainer, String mainClass, List<String> packagesToScan, boolean awaitMainClass) {
+    private CompletableFuture<ModuleDetail> startModule(String moduleName, List<URI> locationUris, ExternalContainer externalContainer, String mainClass, List<String> packagesToScan, boolean awaitMainClass) {
         ModuleLoadConfiguration config = ModuleLoadConfiguration.builder()
                 .locationUris(locationUris)
                 .externalContainer(externalContainer)
@@ -500,37 +499,37 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     @Override
-    public ModuleDetail startModuleSync(String moduleName, List<String> locationUris, List<String> packagesToScan) {
+    public ModuleDetail startModuleSync(String moduleName, List<URI> locationUris, List<String> packagesToScan) {
         CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, null, null, packagesToScan, false);
         return awaitModuleReady(moduleName, cf);
     }
 
     @Override
-    public ModuleDetail startModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packagesToScan) {
+    public ModuleDetail startModuleSyncWithMainClass(String moduleName, List<URI> locationUris, String mainClass, List<String> packagesToScan) {
         CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, null, mainClass, packagesToScan, false);
         return awaitModuleReady(moduleName, cf);
     }
 
     @Override
-    public CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, List<String> locationUris, List<String> packagesToScan) {
+    public CompletableFuture<ModuleDetail> startModuleAsync(String moduleName, List<URI> locationUris, List<String> packagesToScan) {
         return startModule(moduleName, locationUris, null, null, packagesToScan, false);
     }
 
     @Override
-    public CompletableFuture<ModuleDetail> startModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
+    public CompletableFuture<ModuleDetail> startModuleAsyncWithMainClass(String moduleName, List<URI> locationUris, String mainClass, List<String> packageToScan) {
         return startModule(moduleName, locationUris, null, mainClass, packageToScan, false);
     }
 
     // Spring
 
     @Override
-    public ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
+    public ModuleDetail startSpringModuleSyncWithMainClassLoop(String moduleName, List<URI> locationUris, String mainClass, List<String> packageToScan) {
         CompletableFuture<ModuleDetail> cf = startModule(moduleName, locationUris, ExternalContainer.SPRING, mainClass, packageToScan, true);
         return awaitSpringApplicationContextReady(moduleName, cf);
     }
 
     @Override
-    public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
+    public ModuleDetail startSpringModuleSyncWithMainClass(String moduleName, List<URI> locationUris, String mainClass, List<String> packageToScan) {
         CompletableFuture<ModuleDetail> completableFuture = startModule(moduleName, locationUris, ExternalContainer.SPRING, mainClass, packageToScan, false);
         return awaitSpringApplicationContextReady(moduleName, completableFuture);
     }
@@ -547,12 +546,12 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     @Override
-    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
+    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClassLoop(String moduleName, List<URI> locationUris, String mainClass, List<String> packageToScan) {
         return startModule(moduleName, locationUris, ExternalContainer.SPRING, mainClass, packageToScan, true);
     }
 
     @Override
-    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<String> locationUris, String mainClass, List<String> packageToScan) {
+    public CompletableFuture<ModuleDetail> startSpringModuleAsyncWithMainClass(String moduleName, List<URI> locationUris, String mainClass, List<String> packageToScan) {
         return startModule(moduleName, locationUris, ExternalContainer.SPRING, mainClass, packageToScan, false);
     }
 
