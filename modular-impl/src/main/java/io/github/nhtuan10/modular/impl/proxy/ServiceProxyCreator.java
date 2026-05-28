@@ -8,12 +8,14 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 public class ServiceProxyCreator {
     private static Objenesis objenesis = new ObjenesisStd();
+
     public static <I> I createProxyObject(Class<I> apiClass, Object service, SerDeserializer serDeserializer, boolean copyTransClassLoaderObjects,
                                           ClassLoader sourceClassLoader, ClassLoader targetClassLoader) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchFieldException, NoSuchMethodException {
 //        ClassLoader sourceClassLoader = apiClass.getClassLoader();
@@ -24,14 +26,20 @@ public class ServiceProxyCreator {
                 .getConstructor(Object.class, SerDeserializer.class, boolean.class, ClassLoader.class, ClassLoader.class).newInstance(service, serDeserializer, copyTransClassLoaderObjects, sourceClassLoader, targetClassLoader);
         Object equalsMethodInterceptor = Class.forName(ServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName(), true, sourceClassLoader)
                 .getConstructor(Object.class).newInstance(service);
+
+        String sha256Hex = DigestUtils.sha256Hex(apiClass.getName() + "$" + service.getClass().getName() + "$Proxy");
         Class<? extends I> c = new ByteBuddy()
                 .subclass(apiClass)
-                //                .name(apiClass.get() + "$Proxy") // will uncomment it out when does the Graalvm POC
+                .name("modular." + apiClass.getName() + "$Proxy$" + sha256Hex.substring(0, 8)) // will uncomment it out when does the Graalvm POC; .replace(".", "_")
                 .method(ElementMatchers.isEquals())
                 .intercept(MethodDelegation.to(equalsMethodInterceptor))
                 .method(ElementMatchers.any().and(ElementMatchers.not(ElementMatchers.isEquals())))
                 .intercept(MethodDelegation.to(svcInvocationInterceptor))
                 .defineField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME, Object.class, Visibility.PRIVATE)
+//                .defineConstructor(Visibility.PUBLIC)
+//                .constructor(ElementMatchers.any())
+//                .intercept(MethodCall.invoke(Object.class.getConstructor()) // Call super()
+//                        .andThen(FieldAccessor.ofField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME).setsValue(service)))
                 .make()
                 .load(sourceClassLoader)
                 .getLoaded();

@@ -15,8 +15,8 @@ import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.matcher.ElementMatchers;
+import org.apache.commons.codec.digest.DigestUtils;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -48,6 +48,7 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> Queue<T> getQueue(String name, Class<T> type, Class<? extends Queue> queueClass) {
         QueueHolder queueHolder = queues.computeIfAbsent(name, k -> {
             try {
@@ -63,28 +64,31 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
         return (Queue<T>) queueHolder.getQueues().computeIfAbsent(type, c -> {
             try {
                 return createProxyQueue(queueHolder.getQueue(), type);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
+            } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
         });
     }
 
-    private <T> Queue<T> createProxyQueue(Queue<byte[]> queue, Class clazz) throws NoSuchFieldException, IllegalAccessException {
+    private <T> Queue<T> createProxyQueue(Queue<byte[]> queue, Class clazz) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException {
         QueueInvocationInterceptor queueInvocationInterceptor = new QueueInvocationInterceptor(queue, new KryoSerDeserializer(clazz.getClassLoader()), clazz);
+        String sha256Hex = DigestUtils.sha256Hex(queue.getClass().getName() + "$" + clazz.getName() + "$Proxy");
         Class<? extends Queue> c = new ByteBuddy()
                 .subclass(queue.getClass())
-                //                .name(apiClass.get() + "$Proxy") // will uncomment it out when does the Graalvm POC
+                .name("modular." + queue.getClass().getName() + "$Proxy$" + sha256Hex.substring(0, 8)) // will uncomment it out when does the Graalvm POC
                 .method(ElementMatchers.any())
 //                .method(ElementMatchers.isDeclaredBy(Queue.class))
                 .intercept(MethodDelegation.to(queueInvocationInterceptor))
-                .defineField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME, Object.class, Visibility.PRIVATE)
+                .defineField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME, Object.class, Visibility.PUBLIC)
+//                .constructor(ElementMatchers.any())
+//                .intercept(FieldAccessor.ofField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME).setsValue(queue))
                 .make()
                 .load(clazz.getClassLoader())
                 .getLoaded();
         Queue proxy = objenesis.getInstantiatorOf(c).newInstance();
-        Field targetField = c.getDeclaredField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME);
-        targetField.setAccessible(true);
-        targetField.set(proxy, queue);
+//        Field targetField = c.getDeclaredField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME);
+//        targetField.setAccessible(true);
+//        targetField.set(proxy, queue);
         return proxy;
     }
 
