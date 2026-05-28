@@ -6,7 +6,7 @@
 
     <groupId>io.github.nhtuan10</groupId>
     <artifactId>modular</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -22,7 +22,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <version>0.0.2</version>
+        <version>0.0.3</version>
     </properties>
 
     <build>

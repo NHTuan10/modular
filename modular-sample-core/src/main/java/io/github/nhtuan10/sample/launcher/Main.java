@@ -22,8 +22,8 @@ public class Main {
 //        ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"), List.of("io.github.nhtuan10.sample.service"));
 
         ModuleLoadConfiguration apiCconfig = ModuleLoadConfiguration.builder()
-//                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-api/[0.0.2,1.0.0)"))
-                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-api:0.0.2", null)))
+//                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-api/[0.0.3,1.0.0)"))
+                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-api:0.0.3", null)))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.api.service"))
 //                .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
@@ -33,7 +33,7 @@ public class Main {
         ModuleLoader.ModuleDetail moduleDetail1 = Modular.startModuleSync("modular-sample-api", apiCconfig);
 
         ModuleLoadConfiguration plugin1Config = ModuleLoadConfiguration.builder()
-                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-1:0.0.2", null)))
+                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-1:0.0.3", null)))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin1", "io.github.nhtuan10.sample.util"))
                 .mainClass("io.github.nhtuan10.sample.plugin1.ServiceImpl")
@@ -44,8 +44,8 @@ public class Main {
                 .build();
 
         ModuleLoadConfiguration plugin2Config = ModuleLoadConfiguration.builder()
-                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-2:[0.0.2,)", null)))
-//                .locationUris(List.of(new URI("mvn", "//io.github.nhtuan10/modular-sample-plugin-2/" + URLEncoder.encode("[0.0.2,)", StandardCharsets.UTF_8.toString()) , null)))
+                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-2:[0.0.3,)", null)))
+//                .locationUris(List.of(new URI("mvn", "//io.github.nhtuan10/modular-sample-plugin-2/" + URLEncoder.encode("[0.0.3,)", StandardCharsets.UTF_8.toString()) , null)))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin2"))
 //                .modularClassLoaderName("commonCL")
