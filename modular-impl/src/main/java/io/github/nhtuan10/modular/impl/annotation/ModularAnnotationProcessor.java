@@ -53,14 +53,15 @@ public class ModularAnnotationProcessor {
     public Map<Class<?>, Collection<ModularServiceHolder>> annotationProcess(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
         List<String> packages = Stream.concat(Stream.of(MODULAR_PARENT_PACKAGE), moduleLoadConfiguration.packagesToScan().stream()).collect(Collectors.toList());
         if (!packages.isEmpty()) {
-            try (ScanResult scanResult =
-                         new ClassGraph()
-                                 .overrideClasspath((Object[]) this.modularClassLoader.getURLs())
-                                 .overrideClassLoaders(this.modularClassLoader)
+            ClassGraph classGraph = new ClassGraph()
+                    .overrideClassLoaders(this.modularClassLoader)
 //                             .verbose()               // may need to use some config to enable verbose to log to stderr
-                                 .enableAllInfo()         // Scan classes, methods, fields, annotations
-                                 .acceptPackages(packages.toArray(new String[0]))     // Scan package and subpackages (omit to scan all packages)
-                                 .scan()) {               // Start the scan
+                    .enableAllInfo()         // Scan classes, methods, fields, annotations
+                    .acceptPackages(packages.toArray(new String[0]));    // Scan package and subpackages (omit to scan all packages)
+//            if (this.modularClassLoader.getURLs() != null && this.modularClassLoader.getURLs().length > 0) {
+//                classGraph.overrideClasspath((Object[]) this.modularClassLoader.getURLs());
+//            }
+            try (ScanResult scanResult = classGraph.scan()) {               // Start the scan
 
                 processServiceAnnotation(moduleName, AnnotationProcessorConfig.DEFAULT, scanResult);
                 if (moduleLoadConfiguration.externalContainer() == ExternalContainer.SPRING) {

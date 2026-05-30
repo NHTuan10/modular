@@ -426,7 +426,12 @@ public class DefaultModuleLoader implements ModuleLoader {
                 try {
                     loadModule(moduleName, moduleLoadConfiguration);
                     Thread.currentThread().setContextClassLoader(getClassLoader(moduleName));
-                    List<ModularEntryPoint> entryPoints = Modular.getModularServices(ModularEntryPoint.class);
+                    List<ModularEntryPoint> entryPoints = List.of();
+                    try {
+                        entryPoints = Modular.getModularServices(ModularEntryPoint.class);
+                    } catch (Exception e) {
+                        log.warn("Error when getModularServices for class ModularEntryPoint", e);
+                    }
                     if (moduleLoadConfiguration.mainClass() != null || (entryPoints != null && !entryPoints.isEmpty())) {
                         try {
                             if (moduleLoadConfiguration.mainClass() != null) {
@@ -493,6 +498,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         field.setAccessible(true);
         return field.get(proxy);
     }
+
     private void finishLoading(String moduleName, CompletableFuture<ModuleDetail> moduleDetailCompletableFuture, ModuleDetail moduleDetail) {
         moduleDetailCompletableFuture.complete(moduleDetail);
         notifyModuleReady(moduleName);
