@@ -20,7 +20,10 @@ import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import io.github.nhtuan10.modular.impl.util.Utils;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -38,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,11 +57,12 @@ public class DefaultModuleLoader implements ModuleLoader {
     //    final Map<Class<?>, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
 //    final Map<ProxyCacheKey, List<?>> loadedProxyObjects = new ConcurrentHashMap<>();
     final Map<ProxyCacheKey, Object> loadedProxyObjects = new ConcurrentHashMap<>();
-    final Map<String, ModuleDetail> moduleDetailMap = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<String, ModuleDetail> moduleDetailMap = new ConcurrentHashMap<>();
     final SerDeserializer serDeserializer;
     final ModuleLoaderConfiguration configuration;
     private volatile static ModuleLoader instance;
     private static final Object lock = new Object();
+    private static final Object moduleLoadingLock = new Object();
     final Map<String, ModularClassLoader> modulerClassLoaderMap = new ConcurrentHashMap<>();
     final ThreadLocal<String> currentModuleNameThreadLocal = new ThreadLocal<>();
 
@@ -410,26 +415,35 @@ public class DefaultModuleLoader implements ModuleLoader {
         return startModule(moduleName, config);
     }
 
-    @Locked.Read
     private CompletableFuture<ModuleDetail> startModule(String moduleName, ModuleLoadConfiguration moduleLoadConfiguration) {
         assert (StringUtils.isNotBlank(moduleName)) : "Module name cannot be null or empty";
-        final String FINISH_LOADING_MSG = "Finish loading module '{}'";
         CompletableFuture<ModuleDetail> moduleDetailCompletableFuture = new CompletableFuture<>();
-        if (moduleLoadConfiguration.isOverride()) {
-            try {
-                unloadModule(moduleName);
-            } catch (Exception e) {
-                moduleDetailCompletableFuture.completeExceptionally(e);
-                return moduleDetailCompletableFuture;
+        if (moduleDetailMap.containsKey(moduleName)) {
+            if (moduleLoadConfiguration.isOverride()) {
+                try {
+                    unloadModule(moduleName);
+                } catch (ModuleLoadRuntimeException e) {
+                    moduleDetailCompletableFuture.completeExceptionally(e);
+                    notifyModuleReady(moduleName);
+                    throw e;
+                }
+            } else {
+                throw duplicatedModuleException(moduleName, moduleDetailCompletableFuture);
             }
         }
-        if (!moduleDetailMap.containsKey(moduleName)) {
+        AtomicBoolean allowToLoad = new AtomicBoolean(false);
+        moduleDetailMap.computeIfAbsent(moduleName, m -> {
+            allowToLoad.set(true);
             CountDownLatch await = new CountDownLatch(1);
-            ModuleDetail moduleDetail = new ModuleDetail(moduleName, moduleLoadConfiguration, LoadStatus.LOADING, null, new CountDownLatch(1), await, null);
-            moduleDetailMap.put(moduleName, moduleDetail);
-
+            //            moduleDetailMap.put(moduleName, moduleDetail);
+            return new ModuleDetail(moduleName, moduleLoadConfiguration, LoadStatus.LOADING, null, new CountDownLatch(1), await, null);
+        });
+        if (allowToLoad.get()) {
+            ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
+            CountDownLatch await = moduleDetail.getAwaitMainClassLatch();
             Thread t = new Thread(() -> {
                 try {
+
                     loadModule(moduleName, moduleLoadConfiguration);
                     Thread.currentThread().setContextClassLoader(getClassLoader(moduleName));
                     List<ModularEntryPoint> entryPoints = List.of();
@@ -492,11 +506,15 @@ public class DefaultModuleLoader implements ModuleLoader {
             t.start();
             return moduleDetailCompletableFuture;
         } else {
-            DuplicatedModuleLoadRuntimeException exception = new DuplicatedModuleLoadRuntimeException(moduleName, "Module '" + moduleName + "' is already loaded");
-            moduleDetailCompletableFuture.completeExceptionally(exception);
-            notifyModuleReady(moduleName);
-            throw exception;
+            throw duplicatedModuleException(moduleName, moduleDetailCompletableFuture);
         }
+    }
+
+    private DuplicatedModuleLoadRuntimeException duplicatedModuleException(String moduleName, CompletableFuture<ModuleDetail> moduleDetailCompletableFuture) {
+        DuplicatedModuleLoadRuntimeException exception = new DuplicatedModuleLoadRuntimeException(moduleName, "Module '" + moduleName + "' is already loaded");
+        moduleDetailCompletableFuture.completeExceptionally(exception);
+        notifyModuleReady(moduleName);
+        return exception;
     }
 
     private Object getTargetFieldFromProxyClass(Object proxy) throws NoSuchFieldException, IllegalAccessException {
@@ -569,34 +587,35 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     @Override
-    @Locked.Write
     public boolean unloadModule(String moduleName) {
-        if (moduleDetailMap.containsKey(moduleName)) {
-            moduleDetailMap.remove(moduleName);
-            loadedModularServices2.forEach((k, v) -> {
-                Iterator<ModularServiceHolder> iterator = v.iterator();
-                while (iterator.hasNext()) {
-                    ModularServiceHolder serviceHolder = iterator.next();
-                    if (serviceHolder.getModuleName().equals(moduleName)) {
-                        iterator.remove();
-                        loadedProxyObjects.entrySet().removeIf(entry -> entry.getKey().service().equals(serviceHolder.getInstance()));
+        synchronized (moduleLoadingLock) {
+            if (moduleDetailMap.containsKey(moduleName)) {
+                loadedModularServices2.forEach((k, v) -> {
+                    Iterator<ModularServiceHolder> iterator = v.iterator();
+                    while (iterator.hasNext()) {
+                        ModularServiceHolder serviceHolder = iterator.next();
+                        if (serviceHolder.getModuleName().equals(moduleName)) {
+                            iterator.remove();
+                            loadedProxyObjects.entrySet().removeIf(entry -> entry.getKey().service().equals(serviceHolder.getInstance()));
+                        }
+                    }
+                });
+                ModularClassLoader classLoader = modulerClassLoaderMap.get(moduleName);
+                classLoader.getModuleNames().removeIf(name -> name.equals(moduleName));
+                if (classLoader.getModuleNames().isEmpty()) {
+                    try (ModularClassLoader c = modulerClassLoaderMap.remove(moduleName)) {
+                        log.info("Remove ModularClassLoader {} of module {}.", c.getName(), moduleName);
+                    } catch (IOException e) {
+                        throw new ModuleLoadRuntimeException("Failed to unload module {}", moduleName, e);
                     }
                 }
-            });
-            ModularClassLoader classLoader = modulerClassLoaderMap.get(moduleName);
-            classLoader.getModuleNames().removeIf(name -> name.equals(moduleName));
-            if (classLoader.getModuleNames().isEmpty()) {
-                try (ModularClassLoader c = modulerClassLoaderMap.remove(moduleName)) {
-                    log.info("Remove ModularClassLoader {} of module {}.", c.getName(), moduleName);
-                } catch (IOException e) {
-                    throw new ModuleLoadRuntimeException("Failed to unload module {}", moduleName, e);
-                }
+                log.info(SUCCESSFULLY_UNLOADED_MODULE_LOG, moduleName);
+                moduleDetailMap.remove(moduleName);
+                return true;
+            } else {
+                log.warn("Module '{}' is not loaded", moduleName);
+                return true;
             }
-            log.info(SUCCESSFULLY_UNLOADED_MODULE_LOG, moduleName);
-            return true;
-        } else {
-            log.warn("Module '{}' is not loaded", moduleName);
-            return true;
         }
     }
 
