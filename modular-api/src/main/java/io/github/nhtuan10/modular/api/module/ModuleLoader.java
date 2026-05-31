@@ -117,6 +117,9 @@ public interface ModuleLoader {
         @Getter
         @Setter
         private Object entryPointResult;
+        @Getter
+        @Setter
+        private String entryPointResultInJsonString;
     }
 
     @Builder

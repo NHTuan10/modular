@@ -1,5 +1,7 @@
 package io.github.nhtuan10.modular.impl.module;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
@@ -28,9 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -65,6 +65,7 @@ public class DefaultModuleLoader implements ModuleLoader {
     private static final Object moduleLoadingLock = new Object();
     final Map<String, ModularClassLoader> modulerClassLoaderMap = new ConcurrentHashMap<>();
     final ThreadLocal<String> currentModuleNameThreadLocal = new ThreadLocal<>();
+    private final ObjectMapper objectMapper;
 
     public static ModuleLoader getInstance() {
         return DefaultModuleLoader.getInstance(ModuleLoaderConfiguration.DEFAULT);
@@ -93,6 +94,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                 break;
         }
         this.configuration = configuration;
+        objectMapper = new ObjectMapper();
     }
 
     public void loadModule(String name, ModuleLoadConfiguration moduleLoadConfiguration) {
@@ -436,7 +438,7 @@ public class DefaultModuleLoader implements ModuleLoader {
             allowToLoad.set(true);
             CountDownLatch await = new CountDownLatch(1);
             //            moduleDetailMap.put(moduleName, moduleDetail);
-            return new ModuleDetail(moduleName, moduleLoadConfiguration, LoadStatus.LOADING, null, new CountDownLatch(1), await, null);
+            return new ModuleDetail(moduleName, moduleLoadConfiguration, LoadStatus.LOADING, null, new CountDownLatch(1), await, null, null);
         });
         if (allowToLoad.get()) {
             ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
@@ -452,18 +454,15 @@ public class DefaultModuleLoader implements ModuleLoader {
                     } catch (Exception e) {
                         log.warn("Error when getModularServices for class ModularEntryPoint", e);
                     }
-                    if (moduleLoadConfiguration.mainClass() != null || (entryPoints != null && !entryPoints.isEmpty())) {
+                    if ((moduleLoadConfiguration.mainClass() != null) || (entryPoints != null && !entryPoints.isEmpty())) {
                         try {
-                            if (moduleLoadConfiguration.mainClass() != null) {
-                                loadClass(moduleName, moduleLoadConfiguration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) moduleLoadConfiguration.mainMethodArguments());
-                            }
                             if (moduleLoadConfiguration.entryPointClass() != null && entryPoints != null && !entryPoints.isEmpty()) {
                                 Predicate<ModularEntryPoint> filteredByClassName = (entryPoint) -> {
                                     if (entryPoint.getClass().getName().equals(moduleLoadConfiguration.entryPointClass())) {
                                         return true;
                                     } else {
                                         try {
-                                            if (getTargetFieldFromProxyClass(entryPoint).getClass().getName().equals(moduleLoadConfiguration.entryPointClass())) {
+                                            if (getTargetFieldFromProxyObject(entryPoint).getClass().getName().equals(moduleLoadConfiguration.entryPointClass())) {
                                                 return true;
                                             }
                                         } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -474,12 +473,37 @@ public class DefaultModuleLoader implements ModuleLoader {
                                 };
                                 List<ModularEntryPoint> foundEntryPoints = entryPoints.stream().filter(filteredByClassName).collect(Collectors.toList());
                                 if (foundEntryPoints.size() == 1) {
-                                    moduleDetail.setEntryPointResult(foundEntryPoints.get(0).run(moduleLoadConfiguration.entryPointArgument()));
+                                    ModularEntryPoint modularEntryPoint = foundEntryPoints.get(0);
+                                    String paramStr = moduleLoadConfiguration.entryPointArgumentAsJsonString() != null ? moduleLoadConfiguration.entryPointArgumentAsJsonString() :
+                                            (moduleLoadConfiguration.entryPointArgument() != null ? objectMapper.writeValueAsString(moduleLoadConfiguration.entryPointArgument()) : null);
+                                    Object targetEntryPointObject = getTargetFieldFromProxyObject(modularEntryPoint);
+                                    Type[] interfaces = targetEntryPointObject.getClass().getGenericInterfaces();
+                                    Arrays.stream(interfaces).filter(i -> (i instanceof ParameterizedType && ((Class) ((ParameterizedType) i).getRawType()).getName().equals(ModularEntryPoint.class.getName())))
+                                            .forEach(i -> {
+                                                ParameterizedType parameterizedType = (ParameterizedType) i;
+                                                //  Extract the actual generic argument type parameters
+                                                Type[] typeArguments = parameterizedType.getActualTypeArguments();
+                                                try {
+                                                    Object param = paramStr != null ? objectMapper.readValue(paramStr, (Class<?>) typeArguments[0]) : null;
+                                                    Object entryPointResult = targetEntryPointObject.getClass().getMethod("run", Object.class).invoke(targetEntryPointObject, param);
+                                                    moduleDetail.setEntryPointResult(entryPointResult);
+                                                    if (entryPointResult != null) {
+                                                        moduleDetail.setEntryPointResultInJsonString(objectMapper.writeValueAsString(entryPointResult));
+                                                    }
+                                                } catch (JsonProcessingException | InvocationTargetException |
+                                                         IllegalAccessException | NoSuchMethodException e) {
+                                                    throw new RuntimeException(e);
+                                                }
+                                            });
+
                                 } else if (foundEntryPoints.size() > 1) {
-                                    throw new ModuleLoadRuntimeException("There are more than one entry point");
+                                    throw new ModuleLoadRuntimeException("There are more than one entry point for module: " + moduleName + " with class name: " + moduleLoadConfiguration.entryPointClass());
                                 } else {
-                                    throw new ModuleLoadRuntimeException("Entry point not found");
+                                    throw new ModuleLoadRuntimeException("Entry point" + moduleLoadConfiguration.entryPointClass() + "not found in module " + moduleName);
                                 }
+                            }
+                            if (moduleLoadConfiguration.mainClass() != null) {
+                                loadClass(moduleName, moduleLoadConfiguration.mainClass()).getDeclaredMethod("main", String[].class).invoke(null, (Object) moduleLoadConfiguration.mainMethodArguments());
                             }
                             finishLoading(moduleName, moduleDetailCompletableFuture, moduleDetail);
                             if (moduleLoadConfiguration.awaitModule()) {
@@ -517,7 +541,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         return exception;
     }
 
-    private Object getTargetFieldFromProxyClass(Object proxy) throws NoSuchFieldException, IllegalAccessException {
+    private Object getTargetFieldFromProxyObject(Object proxy) throws NoSuchFieldException, IllegalAccessException {
         Field field = proxy.getClass().getDeclaredField(PROXY_TARGET_FIELD_NAME);
         field.setAccessible(true);
         return field.get(proxy);

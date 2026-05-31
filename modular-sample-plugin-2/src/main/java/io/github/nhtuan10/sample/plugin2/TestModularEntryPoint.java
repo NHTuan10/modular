@@ -2,16 +2,32 @@ package io.github.nhtuan10.sample.plugin2;
 
 import io.github.nhtuan10.modular.api.annotation.ModularService;
 import io.github.nhtuan10.modular.entry.ModularEntryPoint;
-import io.github.nhtuan10.sample.api.service.SomeData;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @ModularService
 @Slf4j
-public class TestModularEntryPoint implements ModularEntryPoint<SomeData, SomeData> {
+public class TestModularEntryPoint implements ModularEntryPoint<InputData, OutputData> {
     @Override
-    public SomeData run(SomeData parameter) {
+    public OutputData run(InputData parameter) {
         log.info("processed " + (parameter != null ? parameter.getName() : "unknown"));
-        return new SomeData("processed " + (parameter != null ? parameter.getName() : "unknown"));
+        return new OutputData("processed " + (parameter != null ? parameter.getName() : "unknown"));
     }
 
+}
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+class InputData {
+    String name;
+}
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+class OutputData {
+    String output;
 }
