@@ -8,14 +8,13 @@ import io.github.nhtuan10.sample.api.service.SampleService;
 import io.github.nhtuan10.sample.api.service.SomeData;
 import io.github.nhtuan10.sample.api.service.SomeInterface;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
 
 public class Main {
-    public static void main(String[] args) throws URISyntaxException, UnsupportedEncodingException {
+    public static void main(String[] args) throws URISyntaxException {
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSyncWithMainClass("modular-sample-plugin-1",
 //                List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), "io.github.nhtuan10.sample.service.ServiceImpl", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
@@ -37,6 +36,8 @@ public class Main {
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin1", "io.github.nhtuan10.sample.util"))
                 .mainClass("io.github.nhtuan10.sample.plugin1.ServiceImpl")
+                .entryPointClass("io.github.nhtuan10.sample.plugin2.TestModularEntryPoint")
+                .entryPointArgument(new SomeData("Kelly"))
 //                .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
                 .parentClassLoader(moduleDetail1.getClassLoader())
@@ -134,6 +135,7 @@ public class Main {
                     System.out.println("In list: " + list);
 
                 });
+        Modular.unloadModule("modular-sample-plugin-2");
 
     }
 }

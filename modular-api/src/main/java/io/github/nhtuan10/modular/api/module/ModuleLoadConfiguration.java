@@ -1,10 +1,7 @@
 package io.github.nhtuan10.modular.api.module;
 
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 import java.net.URI;
 import java.util.List;
@@ -28,6 +25,9 @@ public final class ModuleLoadConfiguration {
     private final ExternalContainer externalContainer;
     @Builder.Default
     private final boolean allowNonAnnotatedServices = true;
+    @Builder.Default
+    @Getter
+    private final boolean isOverride = false;
     private final String modularClassLoaderName;
     private final Set<String> prefixesLoadedBySystemClassLoader;
     private final ModularClassLoader modularClassLoader;

@@ -3,6 +3,7 @@ package io.github.nhtuan10.sample.plugin1;
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.annotation.ModularService;
 import io.github.nhtuan10.modular.context.ModularContext;
+import io.github.nhtuan10.modular.entry.ModularEntryPoint;
 import io.github.nhtuan10.sample.api.service.*;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Slf4j
 @ToString
 @ModularService
-public class ServiceImpl extends BaseService implements SampleService {
+public class ServiceImpl extends BaseService implements SampleService, ModularEntryPoint<SomeData, SomeData> {
     @Override
     public void test() throws ServiceException {
         log.info("Service Impl: Invoke test");
@@ -75,5 +76,10 @@ public class ServiceImpl extends BaseService implements SampleService {
             log.info("Polling from testQueue: " + a);
 //            Thread.sleep(500);
         }
+    }
+
+    @Override
+    public SomeData run(SomeData parameter) {
+        return new SomeData("How are you " + parameter.getName());
     }
 }

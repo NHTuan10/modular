@@ -8,7 +8,6 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;
-import org.apache.commons.codec.digest.DigestUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -27,10 +26,22 @@ public class ServiceProxyCreator {
         Object equalsMethodInterceptor = Class.forName(ServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName(), true, sourceClassLoader)
                 .getConstructor(Object.class).newInstance(service);
 
-        String sha256Hex = DigestUtils.sha256Hex(apiClass.getName() + "$" + service.getClass().getName() + "$Proxy");
+//        String sha256Hex = DigestUtils.sha256Hex(apiClass.getName() + "$" + service.getClass().getName() + "$Proxy");
+//        String className = "modular." + apiClass.getName() + "$Proxy$" + sha256Hex.substring(0, 8);
+//        Class<? extends I> c;
+//
+//        try {
+//            Method method = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+//            method.setAccessible(true); // Bypass protected access modifier
+//            c = (Class<? extends I>) method.invoke(sourceClassLoader, className);
+//        } catch (Exception e) {
+//            c = null;
+//        }
+//
+//        if (c == null) {
         Class<? extends I> c = new ByteBuddy()
                 .subclass(apiClass)
-                .name("modular." + apiClass.getName() + "$Proxy$" + sha256Hex.substring(0, 8)) // will uncomment it out when does the Graalvm POC; .replace(".", "_")
+//                    .name(className)
                 .method(ElementMatchers.isEquals())
                 .intercept(MethodDelegation.to(equalsMethodInterceptor))
                 .method(ElementMatchers.any().and(ElementMatchers.not(ElementMatchers.isEquals())))
@@ -43,6 +54,7 @@ public class ServiceProxyCreator {
                 .make()
                 .load(sourceClassLoader)
                 .getLoaded();
+
         I proxy = objenesis.getInstantiatorOf(c).newInstance();
         Field targetField = c.getDeclaredField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME);
         targetField.setAccessible(true);
