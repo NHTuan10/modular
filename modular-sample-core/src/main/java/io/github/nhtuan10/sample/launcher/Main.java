@@ -22,7 +22,7 @@ public class Main {
 
         ModuleLoadConfiguration apiCconfig = ModuleLoadConfiguration.builder()
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-api/[0.0.3,1.0.0)"))
-                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-api:0.0.3", null)))
+                .locationUris(List.of(URI.create("mvn:io.github.nhtuan10:modular-sample-api:0.0.3")))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.api.service"))
 //                .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)

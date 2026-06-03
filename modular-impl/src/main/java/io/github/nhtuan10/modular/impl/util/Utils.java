@@ -24,13 +24,13 @@ public class Utils {
         return Arrays.stream(scanner.getIncludedFiles()).map(s -> root.resolve(s).toString()).collect(Collectors.toList());
     }
 
-    public static void extractWarFile(Path warFile, Path targetDir) throws IOException {
+    public static void extractCompressedFile(Path warFile, Path targetDir) throws IOException {
         try (InputStream is = Files.newInputStream(warFile)) {
-            extractWarFile(is, targetDir);
+            extractCompressedFile(is, targetDir);
         }
     }
 
-    public static void extractWarFile(InputStream warFile, Path targetDir) {
+    public static void extractCompressedFile(InputStream warFile, Path targetDir) {
         File targetDirectory = targetDir.toFile();
         if (!targetDirectory.exists()) {
             targetDirectory.mkdirs();

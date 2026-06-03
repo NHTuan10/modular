@@ -13,7 +13,8 @@ public class TestModularEntryPoint implements ModularEntryPoint<InputData, Outpu
     @Override
     public OutputData run(InputData parameter) {
         log.info("processed " + (parameter != null ? parameter.getName() : "unknown"));
-        return new OutputData("processed " + (parameter != null ? parameter.getName() : "unknown"));
+        throw new RuntimeException("some error");
+//        return new OutputData("processed " + (parameter != null ? parameter.getName() : "unknown"));
     }
 
 }

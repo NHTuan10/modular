@@ -51,6 +51,7 @@ public class DefaultModuleLoader implements ModuleLoader {
     public static final String APPLICATION_CONTEXT_PROVIDER = "io.github.nhtuan10.modular.spring.ApplicationContextProvider";
     public static final String PROXY_TARGET_FIELD_NAME = "target";
     public static final String WEB_INF = "WEB-INF";
+    public static final String BOOT_INF = "BOOT-INF";
     public static final String SUCCESSFULLY_UNLOADED_MODULE_LOG = "Successfully unloaded module {}";
 
     final Map<String, Collection<ModularServiceHolder>> loadedModularServices2 = new ConcurrentHashMap<>();
@@ -113,7 +114,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                             if (innerUri.getPath().endsWith(".war")) {
                                 Path warFile = Paths.get(innerUri.getPath());
                                 Path targetDir = Paths.get(moduleLoadConfiguration.workingDir()).resolve(warFile.getFileName().toString().replace(".war", ""));
-                                Utils.extractWarFile(warFile, targetDir);
+                                Utils.extractCompressedFile(warFile, targetDir);
                                 List<URI> dependencies = buildUris(name, targetDir.resolve(WEB_INF + "/lib/*").toUri(), moduleLoadConfiguration.packagesToScan(), null);
                                 dependencies.add(0, targetDir.resolve(WEB_INF + "/classes/").toUri());
                                 return dependencies.stream().map(u -> {
@@ -152,6 +153,28 @@ public class DefaultModuleLoader implements ModuleLoader {
                         }
                     } catch (URISyntaxException e) {
                         throw new RuntimeException(e);
+                    }
+                    break;
+                case SPRINGBOOT:
+                    if (uri.getPath().endsWith(".jar")) {
+                        Path warFile = Paths.get(uri.getPath());
+                        Path targetDir = Paths.get(moduleLoadConfiguration.workingDir()).resolve(warFile.getFileName().toString().replace(".jar", ""));
+                        try {
+                            Utils.extractCompressedFile(warFile, targetDir);
+                            List<URI> dependencies = buildUris(name, targetDir.resolve(BOOT_INF + "/lib/*").toUri(), moduleLoadConfiguration.packagesToScan(), null);
+                            dependencies.add(0, targetDir.resolve(BOOT_INF + "/classes/").toUri());
+                            urls.addAll(dependencies.stream().map(u -> {
+                                try {
+                                    return u.toURL();
+                                } catch (MalformedURLException e) {
+                                    throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, u, moduleLoadConfiguration.packagesToScan()), e);
+                                }
+                            }).collect(Collectors.toList()));
+                        } catch (IOException e) {
+                            throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from Spring Boot jar file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
+                        }
+                    } else {
+                        throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s, please provide a Spring Boot jar file, given: %s", name, uri));
                     }
                     break;
                 case HTTP:
@@ -454,9 +477,12 @@ public class DefaultModuleLoader implements ModuleLoader {
                     } catch (Exception e) {
                         log.warn("Error when getModularServices for class ModularEntryPoint", e);
                     }
-                    if ((moduleLoadConfiguration.mainClass() != null) || (entryPoints != null && !entryPoints.isEmpty())) {
+                    if ((moduleLoadConfiguration.mainClass() != null) || (moduleLoadConfiguration.entryPointClass() != null)) {
                         try {
-                            if (moduleLoadConfiguration.entryPointClass() != null && entryPoints != null && !entryPoints.isEmpty()) {
+                            if (moduleLoadConfiguration.entryPointClass() != null) {
+                                if (entryPoints == null || entryPoints.isEmpty()) {
+                                    throw new ModuleLoadRuntimeException("Entry point " + moduleLoadConfiguration.entryPointClass() + " not found in module " + moduleName);
+                                }
                                 Predicate<ModularEntryPoint> filteredByClassName = (entryPoint) -> {
                                     if (entryPoint.getClass().getName().equals(moduleLoadConfiguration.entryPointClass())) {
                                         return true;
@@ -492,14 +518,18 @@ public class DefaultModuleLoader implements ModuleLoader {
                                                     }
                                                 } catch (JsonProcessingException | InvocationTargetException |
                                                          IllegalAccessException | NoSuchMethodException e) {
-                                                    throw new RuntimeException(e);
+                                                    Throwable cause = e;
+                                                    if (e instanceof InvocationTargetException) {
+                                                        cause = ((InvocationTargetException) e).getTargetException();
+                                                    }
+                                                    throw new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName + "' with entry point class name: " + moduleLoadConfiguration.entryPointClass(), cause);
                                                 }
                                             });
 
                                 } else if (foundEntryPoints.size() > 1) {
                                     throw new ModuleLoadRuntimeException("There are more than one entry point for module: " + moduleName + " with class name: " + moduleLoadConfiguration.entryPointClass());
                                 } else {
-                                    throw new ModuleLoadRuntimeException("Entry point" + moduleLoadConfiguration.entryPointClass() + "not found in module " + moduleName);
+                                    throw new ModuleLoadRuntimeException("Entry point " + moduleLoadConfiguration.entryPointClass() + " not found in module " + moduleName);
                                 }
                             }
                             if (moduleLoadConfiguration.mainClass() != null) {
@@ -512,7 +542,11 @@ public class DefaultModuleLoader implements ModuleLoader {
                             }
                         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                                  ClassNotFoundException | InterruptedException e) {
-                            ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException(moduleName, String.format("Error starting module '%s'", moduleName), e);
+                            Throwable cause = e;
+                            if (e instanceof InvocationTargetException) {
+                                cause = ((InvocationTargetException) e).getTargetException();
+                            }
+                            ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException(moduleName, String.format("Error starting module '%s'", moduleName), cause);
                             moduleDetailCompletableFuture.completeExceptionally(exception);
                             notifyModuleReady(moduleName);
                             throw exception;
@@ -521,7 +555,12 @@ public class DefaultModuleLoader implements ModuleLoader {
                         finishLoading(moduleName, moduleDetailCompletableFuture, moduleDetail);
                     }
                 } catch (Exception e) {
-                    ModuleLoadRuntimeException exception = new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName, e);
+                    ModuleLoadRuntimeException exception;
+                    if (e instanceof ModuleLoadRuntimeException) {
+                        exception = (ModuleLoadRuntimeException) e;
+                    } else {
+                        exception = new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName, e);
+                    }
                     moduleDetailCompletableFuture.completeExceptionally(exception);
                     notifyModuleReady(moduleName);
                     throw exception;

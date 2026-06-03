@@ -15,8 +15,8 @@ import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.matcher.ElementMatchers;
-import org.apache.commons.codec.digest.DigestUtils;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -72,10 +72,10 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
 
     private <T> Queue<T> createProxyQueue(Queue<byte[]> queue, Class clazz) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException {
         QueueInvocationInterceptor queueInvocationInterceptor = new QueueInvocationInterceptor(queue, new KryoSerDeserializer(clazz.getClassLoader()), clazz);
-        String sha256Hex = DigestUtils.sha256Hex(queue.getClass().getName() + "$" + clazz.getName() + "$Proxy");
+//        String sha256Hex = DigestUtils.sha256Hex(queue.getClass().getName() + "$" + clazz.getName() + "$Proxy");
         Class<? extends Queue> c = new ByteBuddy()
                 .subclass(queue.getClass())
-                .name("modular." + queue.getClass().getName() + "$Proxy$" + sha256Hex.substring(0, 8)) // will uncomment it out when does the Graalvm POC
+//                .name("modular." + queue.getClass().getName() + "$Proxy$" + sha256Hex.substring(0, 8)) // will uncomment it out when does the Graalvm POC
                 .method(ElementMatchers.any())
 //                .method(ElementMatchers.isDeclaredBy(Queue.class))
                 .intercept(MethodDelegation.to(queueInvocationInterceptor))
@@ -86,9 +86,9 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
                 .load(clazz.getClassLoader())
                 .getLoaded();
         Queue proxy = objenesis.getInstantiatorOf(c).newInstance();
-//        Field targetField = c.getDeclaredField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME);
-//        targetField.setAccessible(true);
-//        targetField.set(proxy, queue);
+        Field targetField = c.getDeclaredField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME);
+        targetField.setAccessible(true);
+        targetField.set(proxy, queue);
         return proxy;
     }
 

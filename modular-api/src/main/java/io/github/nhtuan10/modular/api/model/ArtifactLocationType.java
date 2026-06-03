@@ -4,5 +4,6 @@ public enum ArtifactLocationType {
     MVN,
     FILE,
     HTTP,
-    JAR
+    JAR,
+    SPRINGBOOT
 }
