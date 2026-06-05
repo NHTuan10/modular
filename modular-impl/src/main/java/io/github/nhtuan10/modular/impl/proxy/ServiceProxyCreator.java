@@ -74,7 +74,17 @@ public class ServiceProxyCreator {
                 type == Character.class;
     }
 
-    public static boolean isConversionNeeded(Object obj, Class<?> type, ClassLoader sourceClassLoader, ClassLoader targetClassLoader) {
-        return obj == null || targetClassLoader == sourceClassLoader || type.isPrimitive() || isBoxedPrimitive(type) || type.equals(String.class);
+    public static boolean isConversionNotNeeded(Object obj, Class<?> type, ClassLoader sourceClassLoader, ClassLoader targetClassLoader) {
+        boolean noCast = ((targetClassLoader == null) || (sourceClassLoader == targetClassLoader) || (obj == null) || type.isPrimitive() || isBoxedPrimitive(type) || type.equals(String.class));
+//        if (!noCast) {
+//            ClassLoader classLoader = targetClassLoader;
+//            while (classLoader != null) {
+//                classLoader = classLoader.getParent();
+//                if (sourceClassLoader == classLoader) {
+//                    noCast = true;
+//                }
+//            }
+//        }
+        return noCast;
     }
 }

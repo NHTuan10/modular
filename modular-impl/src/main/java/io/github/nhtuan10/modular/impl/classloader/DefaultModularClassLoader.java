@@ -56,7 +56,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
         this.classPathUrls = new ArrayList<>();
         addClassPathUrls(classPathUrls);
         if (doesIncludeSystemClasspath) {
-            this.classPathUrls = getJavaClassPath();
+            addClassPathUrls(getJavaClassPath());
         }
     }
 

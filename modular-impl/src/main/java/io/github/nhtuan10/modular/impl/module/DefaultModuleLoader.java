@@ -466,6 +466,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         if (allowToLoad.get()) {
             ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
             CountDownLatch await = moduleDetail.getAwaitMainClassLatch();
+//            CompletableFuture.runAsync(() -> {
             Thread t = new Thread(() -> {
                 try {
 

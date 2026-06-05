@@ -45,7 +45,8 @@ public class Main {
                 .build();
 
         ModuleLoadConfiguration plugin2Config = ModuleLoadConfiguration.builder()
-                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-2:[0.0.3,)", null)))
+//                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-2:[0.0.3,)", null)))
+                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-2:0.0.3", null)))
 //                .locationUris(List.of(new URI("mvn", "//io.github.nhtuan10/modular-sample-plugin-2/" + URLEncoder.encode("[0.0.3,)", StandardCharsets.UTF_8.toString()) , null)))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin2"))

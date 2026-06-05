@@ -10,7 +10,7 @@ import java.util.*;
 public class ProxyCreator {
 
     public static Object createProxyObject(Object obj, Class<?> type, ClassLoader sourceClassLoader, ClassLoader targetClassLoader, SerDeserializer serDeserializer) throws Exception {
-        if (ServiceProxyCreator.isConversionNeeded(obj, type, sourceClassLoader, targetClassLoader)) {
+        if (ServiceProxyCreator.isConversionNotNeeded(obj, type, sourceClassLoader, targetClassLoader)) {
             return obj;
         }
         if (type.isEnum() || Modifier.isFinal(type.getModifiers())) {

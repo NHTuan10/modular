@@ -33,7 +33,7 @@ public class ServiceInvocationInterceptor {
 //                .map(Class::getName)
                 .map(clazz -> {
                     try {
-                        return sourceClassLoader == targetClassLoader ? clazz : serDeserializer.castWithSerialization(clazz, targetClassLoader);
+                        return (sourceClassLoader == targetClassLoader) ? clazz : serDeserializer.castWithSerialization(clazz, targetClassLoader);
 //                        return service.getClass().getClassLoader().loadClass(clazz);
                     }
 //                    catch (ClassNotFoundException e) {
@@ -73,9 +73,10 @@ public class ServiceInvocationInterceptor {
         }
     }
 
+
     @SuppressWarnings("unchecked")
     private Object cast(Object obj, Class<?> type, ClassLoader sourceClassLoader, ClassLoader targetClassLoader) throws Exception {
-        if (ServiceProxyCreator.isConversionNeeded(obj, type, sourceClassLoader, targetClassLoader)) {
+        if (ServiceProxyCreator.isConversionNotNeeded(obj, type, sourceClassLoader, targetClassLoader)) {
             return obj;
         }
         if (copyTransClassLoaderObjects) {
