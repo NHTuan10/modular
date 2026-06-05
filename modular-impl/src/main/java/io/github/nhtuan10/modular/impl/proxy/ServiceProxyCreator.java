@@ -75,7 +75,7 @@ public class ServiceProxyCreator {
     }
 
     public static boolean isConversionNotNeeded(Object obj, Class<?> type, ClassLoader sourceClassLoader, ClassLoader targetClassLoader) {
-        boolean noCast = ((targetClassLoader == null) || (sourceClassLoader == targetClassLoader) || (obj == null) || type.isPrimitive() || isBoxedPrimitive(type) || type.equals(String.class));
+        boolean noCast = ((sourceClassLoader == targetClassLoader) || (obj == null) || type.isPrimitive() || isBoxedPrimitive(type) || type.equals(String.class));
 //        if (!noCast) {
 //            ClassLoader classLoader = targetClassLoader;
 //            while (classLoader != null) {
