@@ -138,7 +138,7 @@ public class Main {
                     System.out.println("In list: " + list);
 
                 });
-        Modular.unloadModule("modular-sample-plugin-2");
+//        Modular.unloadModule("modular-sample-plugin-2");
 
     }
 }

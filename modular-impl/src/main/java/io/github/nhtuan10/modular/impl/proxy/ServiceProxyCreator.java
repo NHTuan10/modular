@@ -6,6 +6,7 @@ import io.github.nhtuan10.modular.impl.module.DefaultModuleLoader;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.modifier.Visibility;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;
 
@@ -52,7 +53,7 @@ public class ServiceProxyCreator {
 //                .intercept(MethodCall.invoke(Object.class.getConstructor()) // Call super()
 //                        .andThen(FieldAccessor.ofField(DefaultModuleLoader.PROXY_TARGET_FIELD_NAME).setsValue(service)))
                 .make()
-                .load(sourceClassLoader)
+                .load(sourceClassLoader, ClassLoadingStrategy.Default.INJECTION)
                 .getLoaded();
 
         I proxy = objenesis.getInstantiatorOf(c).newInstance();
