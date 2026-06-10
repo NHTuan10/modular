@@ -3,18 +3,18 @@ package io.github.nhtuan10.sample.launcher;
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.module.ModuleLoadConfiguration;
 import io.github.nhtuan10.modular.api.module.ModuleLoader;
+import io.github.nhtuan10.modular.entry.ModularEntryPoint;
 import io.github.nhtuan10.sample.api.service.ExcludedMe;
 import io.github.nhtuan10.sample.api.service.SampleService;
 import io.github.nhtuan10.sample.api.service.SomeData;
 import io.github.nhtuan10.sample.api.service.SomeInterface;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
 
 public class Main {
-    public static void main(String[] args) throws URISyntaxException {
+    public static void main(String[] args) throws Exception {
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSync("modular-sample-plugin-1", List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        ModuleLoader.ModuleDetail moduleDetail2 = Modular.startModuleSyncWithMainClass("modular-sample-plugin-1",
 //                List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1"), "io.github.nhtuan10.sample.service.ServiceImpl", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
@@ -54,7 +54,7 @@ public class Main {
                 .parentClassLoader(moduleDetail1.getClassLoader())
                 .entryPointClass("io.github.nhtuan10.sample.plugin2.TestModularEntryPoint")
 //                .entryPointArgument(new SomeData("test entry point argument"))
-                .entryPointArgumentAsJsonString("{\"name\":\"test entry point argument\"}")
+                .entryPointArgumentInJsonString("{\"name\":\"test entry point argument\"}")
                 .allowNonAnnotatedServices(true)
                 .build();
 
@@ -69,6 +69,8 @@ public class Main {
 //        m.startModuleSyncWithMainClass("my-kafka-tool", List.of(
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT.jar",
 //                "file:///Users/tuan/Library/CloudStorage/OneDrive-Personal/CS/Java/MyKafkaTool/my-kafka-tool-main/target/my-kafka-tool-main-0.1.1-SNAPSHOT/my-kafka-tool-main-0.1.1-SNAPSHOT.jar" ), "io.github.nhtuan10.mykafkatool.MyKafkaToolLauncher", "");
+        ModularEntryPoint<SomeData, SomeData> m = Modular.getModularServices(ModularEntryPoint.class, "modular-sample-plugin-1").get(0);
+        System.out.println(m.run(new SomeData("test entry point argument")));
         System.out.println("Load from 1 module only ---");
         Modular.getModularServices(SampleService.class, "modular-sample-plugin-2").forEach(sampleService -> {
             try {

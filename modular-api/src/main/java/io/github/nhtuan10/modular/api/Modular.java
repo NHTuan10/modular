@@ -57,11 +57,11 @@ public interface Modular {
         return ModuleLoader.getInstance().unloadModule(moduleName);
     }
 
-    static boolean isManaged(Object object){
+    static boolean isManaged(Object object) {
         return ModuleLoader.isManaged(object);
     }
 
-    static boolean isManaged(Class<?> clazz){
+    static boolean isManaged(Class<?> clazz) {
         return ModuleLoader.isManaged(clazz);
     }
 
@@ -123,5 +123,21 @@ public interface Modular {
 
     static <T> BlockingQueue<T> getBlockingQueue(String name, Class<T> clazz, Class<? extends BlockingQueue> queueClass) {
         return (BlockingQueue<T>) ModuleIntegration.getInstance().getQueue(name, clazz, queueClass);
+    }
+    //    @SuppressWarnings("unchecked")
+//    static <P,R> ModularEntryPoint<P,R> getModularEntryPoint(String moduleName) {
+//        return ModuleLoader.getInstance().getModularServices(ModularEntryPoint.class, moduleName).get(0);
+//    }
+// Not working for some cases
+//    static ModularEntryPoint getModularEntryPoint(String moduleName) {
+//        return getModularServices(ModularEntryPoint.class, moduleName).get(0);
+//    }
+
+    static Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument) throws Exception {
+        return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument);
+    }
+
+    static Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString) throws Exception {
+        return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, null);
     }
 }

@@ -20,7 +20,7 @@ public final class ModuleLoadConfiguration {
     @Builder.Default
     private final Object entryPointArgument = null;
     @Builder.Default
-    private final String entryPointArgumentAsJsonString = null;
+    private final String entryPointArgumentInJsonString = null;
     private final boolean awaitModule;
     @Builder.Default
     private final List<String> packagesToScan = List.of();
@@ -38,6 +38,7 @@ public final class ModuleLoadConfiguration {
     private final ClassLoader parentClassLoader = ClassLoader.getPlatformClassLoader();
     @Builder.Default
     private final String workingDir = System.getProperty("java.io.tmpdir") + "/modular";
+
     public List<URI> locationUris() {
         return locationUris;
     }
@@ -61,6 +62,7 @@ public final class ModuleLoadConfiguration {
     public List<String> packagesToScan() {
         return packagesToScan;
     }
+
     public ExternalContainer externalContainer() {
         return externalContainer;
     }
@@ -97,7 +99,7 @@ public final class ModuleLoadConfiguration {
         return workingDir;
     }
 
-    public String entryPointArgumentAsJsonString() {
-        return entryPointArgumentAsJsonString;
+    public String entryPointArgumentInJsonString() {
+        return entryPointArgumentInJsonString;
     }
 }

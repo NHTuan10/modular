@@ -69,6 +69,8 @@ public interface ModuleLoader {
 
     boolean unloadModule(String moduleName);
 
+    Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument) throws Exception;
+
     //    <I> List<I> getModularServices(String name, Class<I> clazz,ExternalContainer externalContainer, boolean copyTransClassLoaderObjects);
 
     //    <I> List<I> getModularServices(Class<I> clazz, String moduleName, boolean copyTransClassLoaderObjects);
