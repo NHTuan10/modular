@@ -733,6 +733,11 @@ public class DefaultModuleLoader implements ModuleLoader {
 
     @Override
     public ModuleDetail getCurrentModuleDetail() {
-        return this.moduleDetailMap.get(this.getCurrentModuleName());
+        return getModuleDetail(this.getCurrentModuleName());
+    }
+
+    @Override
+    public ModuleDetail getModuleDetail(String moduleName) {
+        return this.moduleDetailMap.get(moduleName);
     }
 }
