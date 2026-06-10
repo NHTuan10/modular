@@ -140,4 +140,8 @@ public interface Modular {
     static Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString) throws Exception {
         return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, null);
     }
+
+    static ModuleLoader.ModuleDetail getModuleDetail(String moduleName) {
+        return ModuleLoader.getInstance().getModuleDetail(moduleName);
+    }
 }

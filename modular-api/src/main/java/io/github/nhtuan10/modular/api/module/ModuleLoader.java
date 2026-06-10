@@ -93,6 +93,8 @@ public interface ModuleLoader {
 
     ModuleDetail getCurrentModuleDetail();
 
+    ModuleDetail getModuleDetail(String moduleName);
+
     enum LoadStatus {
         NEW,
         LOADING,
