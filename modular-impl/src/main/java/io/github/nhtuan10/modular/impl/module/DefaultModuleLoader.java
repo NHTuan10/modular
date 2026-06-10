@@ -1,7 +1,6 @@
 package io.github.nhtuan10.modular.impl.module;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
@@ -563,16 +562,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                         //  Extract the actual generic argument type parameters
                         Type[] typeArguments = parameterizedType.getActualTypeArguments();
                         try {
-                            Object param = null;
-                            if (paramStr != null) {
-                                if (typeArguments[0] instanceof Class) {
-                                    param = objectMapper.readValue(paramStr, (Class<?>) typeArguments[0]);
-                                } else if (typeArguments[0] instanceof ParameterizedType) {
-                                    JavaType ref = objectMapper.getTypeFactory().constructParametricType((Class<?>) ((ParameterizedType) typeArguments[0]).getRawType(), (Class<?>) ((ParameterizedType) typeArguments[0]).getActualTypeArguments()[0]);
-                                    param = objectMapper.readValue(paramStr, ref);
-                                }
-
-                            }
+                            Object param = (paramStr != null) ? objectMapper.readValue(paramStr, objectMapper.constructType(typeArguments[0])) : null;
                             Object entryPointResult = targetEntryPointObject.getClass().getMethod("run", Object.class).invoke(targetEntryPointObject, param);
                             result.set(entryPointResult);
                         } catch (JsonProcessingException | InvocationTargetException |
