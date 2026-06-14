@@ -2,6 +2,7 @@ package io.github.nhtuan10.modular.impl.module;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
@@ -98,6 +99,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         }
         this.configuration = configuration;
         objectMapper = new ObjectMapper();
+//        objectMapper.registerModule(new AfterburnerModule());
     }
 
     public void loadModule(String name, ModuleLoadConfiguration moduleLoadConfiguration) {
@@ -531,33 +533,13 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     public EntryPointResultWrapper handleModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, boolean doesExecute) throws Exception {
-        List<ModularEntryPoint> foundEntryPoints = getModularEntryPoints(moduleName, entryPointClass);
+        List<ModularEntryPoint> foundEntryPoints = (moduleDetailMap.get(moduleName) != null && moduleDetailMap.get(moduleName).getModularEntryPoint() != null) ? List.of(moduleDetailMap.get(moduleName).getModularEntryPoint()) : getModularEntryPoints(moduleName, entryPointClass);
         if (foundEntryPoints.size() == 1) {
             AtomicReference<EntryPointResultWrapper> result = new AtomicReference<>();
             ModularEntryPoint<?, ?> modularEntryPoint = foundEntryPoints.get(0);
             if (doesExecute) {
                 Object targetEntryPointObject = getTargetFieldFromProxyObject(modularEntryPoint);
-                String paramStr = entryPointArgumentInJsonString != null ? entryPointArgumentInJsonString :
-                        (entryPointArgument != null ? objectMapper.writeValueAsString(entryPointArgument) : null);
-                Type[] interfaces = targetEntryPointObject.getClass().getGenericInterfaces();
-                Arrays.stream(interfaces).filter(i -> (i instanceof ParameterizedType && ((Class) ((ParameterizedType) i).getRawType()).getName().equals(ModularEntryPoint.class.getName())))
-                        .forEach(i -> {
-                            ParameterizedType parameterizedType = (ParameterizedType) i;
-                            //  Extract the actual generic argument type parameters
-                            Type[] typeArguments = parameterizedType.getActualTypeArguments();
-                            try {
-                                Object param = (paramStr != null) ? objectMapper.readValue(paramStr, objectMapper.constructType(typeArguments[0])) : null;
-                                Object entryPointResult = targetEntryPointObject.getClass().getMethod("run", Object.class).invoke(targetEntryPointObject, param);
-                                result.set(new EntryPointResultWrapper(modularEntryPoint, entryPointResult));
-                            } catch (JsonProcessingException | InvocationTargetException |
-                                     IllegalAccessException | NoSuchMethodException e) {
-                                Throwable cause = e;
-                                if (e instanceof InvocationTargetException) {
-                                    cause = ((InvocationTargetException) e).getTargetException();
-                                }
-                                throw new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName + "' with entry point class name: " + entryPointClass, cause);
-                            }
-                        });
+                result.set(new EntryPointResultWrapper(modularEntryPoint, invokeModuleEntryPointTarget(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument, targetEntryPointObject, modularEntryPoint)));
             } else {
                 result.set(new EntryPointResultWrapper(modularEntryPoint, null));
             }
@@ -567,6 +549,32 @@ public class DefaultModuleLoader implements ModuleLoader {
         } else {
             throw new ModuleLoadRuntimeException("Entry point " + entryPointClass + " not found in module " + moduleName);
         }
+    }
+
+    private Object invokeModuleEntryPointTarget(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, Object targetEntryPointObject, ModularEntryPoint<?, ?> modularEntryPoint) throws JsonProcessingException {
+        String paramStr = entryPointArgumentInJsonString != null ? entryPointArgumentInJsonString :
+                (entryPointArgument != null ? objectMapper.writeValueAsString(entryPointArgument) : null);
+        Type[] interfaces = targetEntryPointObject.getClass().getGenericInterfaces();
+        AtomicReference<Object> result = new AtomicReference<>();
+        Arrays.stream(interfaces).filter(i -> (i instanceof ParameterizedType && ((Class) ((ParameterizedType) i).getRawType()).getName().equals(ModularEntryPoint.class.getName())))
+                .forEach(i -> {
+                    ParameterizedType parameterizedType = (ParameterizedType) i;
+                    //  Extract the actual generic argument type parameters
+                    Type[] typeArguments = parameterizedType.getActualTypeArguments();
+                    try {
+                        Object param = (paramStr != null) ? objectMapper.readValue(paramStr, objectMapper.constructType(typeArguments[0])) : null;
+                        Object entryPointResult = targetEntryPointObject.getClass().getMethod("run", Object.class).invoke(targetEntryPointObject, param);
+                        result.set(entryPointResult);
+                    } catch (JsonProcessingException | InvocationTargetException |
+                             IllegalAccessException | NoSuchMethodException e) {
+                        Throwable cause = e;
+                        if (e instanceof InvocationTargetException) {
+                            cause = ((InvocationTargetException) e).getTargetException();
+                        }
+                        throw new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName + "' with entry point class name: " + entryPointClass, cause);
+                    }
+                });
+        return result.get();
     }
 
     private List<ModularEntryPoint> getModularEntryPoints(String moduleName, String entryPointClass) {

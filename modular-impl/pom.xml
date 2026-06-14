@@ -89,6 +89,11 @@
             <version>2.21.4</version>
             <scope>compile</scope>
         </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>com.fasterxml.jackson.module</groupId>-->
+        <!--            <artifactId>jackson-module-afterburner</artifactId>-->
+        <!--            <version>2.21.4</version>-->
+        <!--        </dependency>-->
     </dependencies>
 
     <build>
