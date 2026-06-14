@@ -1,6 +1,5 @@
 package io.github.nhtuan10.modular.impl.module;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
@@ -532,7 +531,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         }
     }
 
-    private Object invokeModuleEntryPointTarget(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, Object targetEntryPointObject, ModularEntryPoint<?, ?> modularEntryPoint) throws JsonProcessingException {
+    private Object invokeModuleEntryPointTarget(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, Object targetEntryPointObject, ModularEntryPoint<?, ?> modularEntryPoint) {
         String paramStr = entryPointArgumentInJsonString != null ? entryPointArgumentInJsonString :
                 (entryPointArgument != null ? objectMapper.writeValueAsString(entryPointArgument) : null);
         Type[] interfaces = targetEntryPointObject.getClass().getGenericInterfaces();
@@ -546,33 +545,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                         Object param = (paramStr != null) ? objectMapper.readValue(paramStr, objectMapper.constructType(typeArguments[0])) : null;
                         Object entryPointResult = targetEntryPointObject.getClass().getMethod("run", Object.class).invoke(targetEntryPointObject, param);
                         result.set(entryPointResult);
-                    } catch (JsonProcessingException | InvocationTargetException |
-                             IllegalAccessException | NoSuchMethodException e) {
-                        Throwable cause = e;
-                        if (e instanceof InvocationTargetException) {
-                            cause = ((InvocationTargetException) e).getTargetException();
-                        }
-                        throw new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName + "' with entry point class name: " + entryPointClass, cause);
-                    }
-                });
-        return result.get();
-    }
-
-    private Object invokeModuleEntryPointTarget(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, Object targetEntryPointObject, ModularEntryPoint<?, ?> modularEntryPoint) throws JsonProcessingException {
-        String paramStr = entryPointArgumentInJsonString != null ? entryPointArgumentInJsonString :
-                (entryPointArgument != null ? objectMapper.writeValueAsString(entryPointArgument) : null);
-        Type[] interfaces = targetEntryPointObject.getClass().getGenericInterfaces();
-        AtomicReference<Object> result = new AtomicReference<>();
-        Arrays.stream(interfaces).filter(i -> (i instanceof ParameterizedType && ((Class) ((ParameterizedType) i).getRawType()).getName().equals(ModularEntryPoint.class.getName())))
-                .forEach(i -> {
-                    ParameterizedType parameterizedType = (ParameterizedType) i;
-                    //  Extract the actual generic argument type parameters
-                    Type[] typeArguments = parameterizedType.getActualTypeArguments();
-                    try {
-                        Object param = (paramStr != null) ? objectMapper.readValue(paramStr, objectMapper.constructType(typeArguments[0])) : null;
-                        Object entryPointResult = targetEntryPointObject.getClass().getMethod("run", Object.class).invoke(targetEntryPointObject, param);
-                        result.set(entryPointResult);
-                    } catch (JsonProcessingException | InvocationTargetException |
+                    } catch (InvocationTargetException |
                              IllegalAccessException | NoSuchMethodException e) {
                         Throwable cause = e;
                         if (e instanceof InvocationTargetException) {
