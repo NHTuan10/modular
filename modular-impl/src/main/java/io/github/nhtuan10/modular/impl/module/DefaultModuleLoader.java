@@ -1,7 +1,5 @@
 package io.github.nhtuan10.modular.impl.module;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
@@ -26,6 +24,7 @@ import io.github.nhtuan10.modular.impl.util.Utils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.lang.reflect.*;
@@ -532,7 +531,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                                 Object param = (paramStr != null) ? objectMapper.readValue(paramStr, objectMapper.constructType(typeArguments[0])) : null;
                                 Object entryPointResult = targetEntryPointObject.getClass().getMethod("run", Object.class).invoke(targetEntryPointObject, param);
                                 result.set(new EntryPointResultWrapper(modularEntryPoint, entryPointResult));
-                            } catch (JsonProcessingException | InvocationTargetException |
+                            } catch (InvocationTargetException |
                                      IllegalAccessException | NoSuchMethodException e) {
                                 Throwable cause = e;
                                 if (e instanceof InvocationTargetException) {
