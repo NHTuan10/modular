@@ -21,6 +21,8 @@ public final class ModuleLoadConfiguration {
     private final Object entryPointArgument = null;
     @Builder.Default
     private final String entryPointArgumentInJsonString = null;
+    @Builder.Default
+    private final boolean executeEntryPointWhenLoaded = true;
     private final boolean awaitModule;
     @Builder.Default
     private final List<String> packagesToScan = List.of();
@@ -101,5 +103,9 @@ public final class ModuleLoadConfiguration {
 
     public String entryPointArgumentInJsonString() {
         return entryPointArgumentInJsonString;
+    }
+
+    public boolean executeEntryPointWhenLoaded() {
+        return executeEntryPointWhenLoaded;
     }
 }

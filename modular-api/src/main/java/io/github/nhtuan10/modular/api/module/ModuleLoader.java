@@ -2,6 +2,7 @@ package io.github.nhtuan10.modular.api.module;
 
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.ModularRuntimeException;
+import io.github.nhtuan10.modular.entry.ModularEntryPoint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -124,6 +125,9 @@ public interface ModuleLoader {
         @Getter
         @Setter
         private String entryPointResultInJsonString;
+        @Getter
+        @Setter
+        private ModularEntryPoint<?, ?> modularEntryPoint;
     }
 
     @Builder

@@ -137,8 +137,8 @@ public interface Modular {
         return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument);
     }
 
-    static Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString) throws Exception {
-        return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, null);
+    static Object invokeModuleEntryPoint(String moduleName, String entryPointClass, Object entryPointArgument) throws Exception {
+        return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointClass, null, entryPointArgument);
     }
 
     static ModuleLoader.ModuleDetail getModuleDetail(String moduleName) {
