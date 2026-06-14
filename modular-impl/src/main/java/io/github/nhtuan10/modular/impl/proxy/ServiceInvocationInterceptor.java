@@ -74,7 +74,6 @@ public class ServiceInvocationInterceptor {
     }
 
 
-    @SuppressWarnings("unchecked")
     private Object cast(Object obj, Class<?> type, ClassLoader sourceClassLoader, ClassLoader targetClassLoader) throws Exception {
         if (ServiceProxyCreator.isConversionNotNeeded(obj, type, sourceClassLoader, targetClassLoader)) {
             return obj;

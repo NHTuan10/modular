@@ -1,8 +1,6 @@
 package io.github.nhtuan10.modular.impl.module;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-//import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.github.nhtuan10.modular.api.Modular;
 import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import io.github.nhtuan10.modular.api.exception.AnnotationProcessingRuntimeException;
@@ -24,12 +22,10 @@ import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import io.github.nhtuan10.modular.impl.util.Utils;
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.lang.reflect.*;
@@ -99,7 +95,6 @@ public class DefaultModuleLoader implements ModuleLoader {
         }
         this.configuration = configuration;
         objectMapper = new ObjectMapper();
-//        objectMapper.registerModule(new AfterburnerModule());
     }
 
     public void loadModule(String name, ModuleLoadConfiguration moduleLoadConfiguration) {
@@ -136,7 +131,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                         } catch (IOException e) {
                             throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from WAR file %s with package %s", name, innerUri, moduleLoadConfiguration.packagesToScan()), e);
                         }
-                    }).collect(Collectors.toList()));
+                    }).toList());
                     break;
                 case JAR:
                     try {
@@ -152,7 +147,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                                         } catch (MalformedURLException | URISyntaxException e) {
                                             throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
                                         }
-                                    }).collect(Collectors.toList());
+                                    }).toList();
                             urls.addAll(scannedUrls);
                         }
                     } catch (URISyntaxException e) {
@@ -173,7 +168,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                                 } catch (MalformedURLException e) {
                                     throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, u, moduleLoadConfiguration.packagesToScan()), e);
                                 }
-                            }).collect(Collectors.toList()));
+                            }).toList());
                         } catch (IOException e) {
                             throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from Spring Boot jar file %s with package %s", name, uri, moduleLoadConfiguration.packagesToScan()), e);
                         }
@@ -202,7 +197,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         Path path = Paths.get(parentUri);
         if (path.toFile().exists()) {
             try {
-                uris.add(new URI(parentUri.toString() + (suffix != null ? suffix : "")));
+                uris.add(new URI(parentUri + (suffix != null ? suffix : "")));
             } catch (URISyntaxException e) {
                 throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, parentUri, packages), e);
             }
@@ -218,7 +213,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                     } catch (URISyntaxException e) {
                         throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, u, packages), e);
                     }
-                }).collect(Collectors.toList());
+                }).toList();
                 uris.addAll(scannedUriList);
             }
         }
@@ -281,7 +276,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                 } catch (Exception e) {
                     log.error("Error when add-opens {}/{}={}", module.getName(), eachPackage, unnamedModule.toString(), e);
                 }
-                log.info("--add-open " + module.getName() + "/" + eachPackage + "=" + unnamedModule.toString());
+                log.info("--add-open {}/{}={}", module.getName(), eachPackage, unnamedModule.toString());
             }
         });
     }
@@ -414,21 +409,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         }
     }
 
-    @RequiredArgsConstructor
-    @EqualsAndHashCode
-    @ToString
-    public static final class ProxyCacheKey {
-        private final Class<?> apiClass;
-        private final Object service;
-
-        public Class<?> apiClass() {
-            return apiClass;
-        }
-
-        public Object service() {
-            return service;
-        }
-
+    public record ProxyCacheKey(Class<?> apiClass, Object service) {
     }
 
     private CompletableFuture<ModuleDetail> startModule(String moduleName, List<URI> locationUris, ExternalContainer externalContainer, String mainClass, List<String> packagesToScan, boolean awaitMainClass) {
@@ -481,10 +462,10 @@ public class DefaultModuleLoader implements ModuleLoader {
                         try {
                             if (moduleLoadConfiguration.entryPointClass() != null) {
                                 EntryPointResultWrapper entryPointResultWrapper = handleModuleEntryPoint(moduleName, moduleLoadConfiguration.entryPointClass(), moduleLoadConfiguration.entryPointArgumentInJsonString(), moduleLoadConfiguration.entryPointArgument(), moduleLoadConfiguration.executeEntryPointWhenLoaded());
-                                moduleDetail.setModularEntryPoint(entryPointResultWrapper.getModularEntryPoint());
-                                moduleDetail.setEntryPointResult(entryPointResultWrapper.getEntryPointResult());
-                                if (entryPointResultWrapper != null && entryPointResultWrapper.getEntryPointResult() != null) {
-                                    moduleDetail.setEntryPointResultInJsonString(objectMapper.writeValueAsString(entryPointResultWrapper.getEntryPointResult()));
+                                moduleDetail.setModularEntryPoint(entryPointResultWrapper.modularEntryPoint());
+                                moduleDetail.setEntryPointResult(entryPointResultWrapper.entryPointResult());
+                                if (entryPointResultWrapper != null && entryPointResultWrapper.entryPointResult() != null) {
+                                    moduleDetail.setEntryPointResultInJsonString(objectMapper.writeValueAsString(entryPointResultWrapper.entryPointResult()));
                                 }
                             }
                             if (moduleLoadConfiguration.mainClass() != null) {
@@ -529,7 +510,7 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     public Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument) throws Exception {
-        return handleModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument, true).getEntryPointResult();
+        return handleModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument, true).entryPointResult();
     }
 
     public EntryPointResultWrapper handleModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, boolean doesExecute) throws Exception {
@@ -549,6 +530,32 @@ public class DefaultModuleLoader implements ModuleLoader {
         } else {
             throw new ModuleLoadRuntimeException("Entry point " + entryPointClass + " not found in module " + moduleName);
         }
+    }
+
+    private Object invokeModuleEntryPointTarget(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, Object targetEntryPointObject, ModularEntryPoint<?, ?> modularEntryPoint) throws JsonProcessingException {
+        String paramStr = entryPointArgumentInJsonString != null ? entryPointArgumentInJsonString :
+                (entryPointArgument != null ? objectMapper.writeValueAsString(entryPointArgument) : null);
+        Type[] interfaces = targetEntryPointObject.getClass().getGenericInterfaces();
+        AtomicReference<Object> result = new AtomicReference<>();
+        Arrays.stream(interfaces).filter(i -> (i instanceof ParameterizedType && ((Class) ((ParameterizedType) i).getRawType()).getName().equals(ModularEntryPoint.class.getName())))
+                .forEach(i -> {
+                    ParameterizedType parameterizedType = (ParameterizedType) i;
+                    //  Extract the actual generic argument type parameters
+                    Type[] typeArguments = parameterizedType.getActualTypeArguments();
+                    try {
+                        Object param = (paramStr != null) ? objectMapper.readValue(paramStr, objectMapper.constructType(typeArguments[0])) : null;
+                        Object entryPointResult = targetEntryPointObject.getClass().getMethod("run", Object.class).invoke(targetEntryPointObject, param);
+                        result.set(entryPointResult);
+                    } catch (JsonProcessingException | InvocationTargetException |
+                             IllegalAccessException | NoSuchMethodException e) {
+                        Throwable cause = e;
+                        if (e instanceof InvocationTargetException) {
+                            cause = ((InvocationTargetException) e).getTargetException();
+                        }
+                        throw new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName + "' with entry point class name: " + entryPointClass, cause);
+                    }
+                });
+        return result.get();
     }
 
     private Object invokeModuleEntryPointTarget(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, Object targetEntryPointObject, ModularEntryPoint<?, ?> modularEntryPoint) throws JsonProcessingException {
@@ -601,8 +608,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                 return false;
             }
         };
-        List<ModularEntryPoint> foundEntryPoints = entryPoints.stream().filter(filteredByClassName).collect(Collectors.toList());
-        return foundEntryPoints;
+        return entryPoints.stream().filter(filteredByClassName).collect(Collectors.toList());
     }
 
     private DuplicatedModuleLoadRuntimeException duplicatedModuleException(String moduleName, CompletableFuture<ModuleDetail> moduleDetailCompletableFuture) {
@@ -710,11 +716,10 @@ public class DefaultModuleLoader implements ModuleLoader {
                 }
                 log.info(SUCCESSFULLY_UNLOADED_MODULE_LOG, moduleName);
                 moduleDetailMap.remove(moduleName);
-                return true;
             } else {
                 log.warn("Module '{}' is not loaded", moduleName);
-                return true;
             }
+            return true;
         }
     }
 
