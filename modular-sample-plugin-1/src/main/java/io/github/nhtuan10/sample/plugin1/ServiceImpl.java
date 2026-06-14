@@ -46,7 +46,7 @@ public class ServiceImpl extends BaseService implements SampleService, ModularEn
         for (SomeData d : in) {
             d.setName("set by sample-plugin-1 ServiceImpl#testObjectList");
         }
-        ArrayList<SomeData> r = new ArrayList<SomeData>();
+        ArrayList<SomeData> r = new ArrayList<>();
         for (SomeData d : in) {
             r.add(new SomeData(d.getName() + " result from ServiceImpl#testObjectList"));
         }
@@ -73,7 +73,7 @@ public class ServiceImpl extends BaseService implements SampleService, ModularEn
         while (true) {
 //            SomeData a = q.poll();
             SomeData a = q.take();
-            log.info("Polling from testQueue: " + a);
+            log.info("Polling from testQueue: {}", a);
 //            Thread.sleep(500);
         }
     }

@@ -14,6 +14,7 @@ public class JavaSerDeserializer implements SerDeserializer {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T deserialization(byte[] bytes, Class<T> type) throws Exception {
         if (bytes == null)

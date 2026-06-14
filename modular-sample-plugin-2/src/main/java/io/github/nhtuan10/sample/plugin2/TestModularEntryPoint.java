@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TestModularEntryPoint implements ModularEntryPoint<InputData, OutputData> {
     @Override
     public OutputData run(InputData parameter) {
-        log.info("processed " + (parameter != null ? parameter.getName() : "unknown"));
+        log.info("processed {}", parameter != null ? parameter.getName() : "unknown");
 //        throw new RuntimeException("some error");
         return new OutputData("processed " + (parameter != null ? parameter.getName() : "unknown"));
     }

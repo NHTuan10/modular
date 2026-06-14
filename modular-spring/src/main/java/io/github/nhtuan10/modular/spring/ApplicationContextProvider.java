@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.lang.NonNull;
 
 @Slf4j
 public class ApplicationContextProvider implements ApplicationContextAware {
@@ -25,7 +26,7 @@ public class ApplicationContextProvider implements ApplicationContextAware {
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext ac)
+    public void setApplicationContext(@NonNull ApplicationContext ac)
             throws BeansException {
         context = ac;
     }

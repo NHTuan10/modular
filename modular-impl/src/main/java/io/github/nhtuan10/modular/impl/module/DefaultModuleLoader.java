@@ -23,10 +23,7 @@ import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import io.github.nhtuan10.modular.impl.util.Utils;
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -200,7 +197,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         Path path = Paths.get(parentUri);
         if (path.toFile().exists()) {
             try {
-                uris.add(new URI(parentUri.toString() + (suffix != null ? suffix : "")));
+                uris.add(new URI(parentUri + (suffix != null ? suffix : "")));
             } catch (URISyntaxException e) {
                 throw new ModuleLoadRuntimeException(name, String.format("Error loading module %s from file %s with package %s", name, parentUri, packages), e);
             }
@@ -279,7 +276,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                 } catch (Exception e) {
                     log.error("Error when add-opens {}/{}={}", module.getName(), eachPackage, unnamedModule.toString(), e);
                 }
-                log.info("--add-open " + module.getName() + "/" + eachPackage + "=" + unnamedModule.toString());
+                log.info("--add-open {}/{}={}", module.getName(), eachPackage, unnamedModule.toString());
             }
         });
     }
@@ -579,8 +576,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                 return false;
             }
         };
-        List<ModularEntryPoint> foundEntryPoints = entryPoints.stream().filter(filteredByClassName).collect(Collectors.toList());
-        return foundEntryPoints;
+        return entryPoints.stream().filter(filteredByClassName).collect(Collectors.toList());
     }
 
     private DuplicatedModuleLoadRuntimeException duplicatedModuleException(String moduleName, CompletableFuture<ModuleDetail> moduleDetailCompletableFuture) {
@@ -688,11 +684,10 @@ public class DefaultModuleLoader implements ModuleLoader {
                 }
                 log.info(SUCCESSFULLY_UNLOADED_MODULE_LOG, moduleName);
                 moduleDetailMap.remove(moduleName);
-                return true;
             } else {
                 log.warn("Module '{}' is not loaded", moduleName);
-                return true;
             }
+            return true;
         }
     }
 
