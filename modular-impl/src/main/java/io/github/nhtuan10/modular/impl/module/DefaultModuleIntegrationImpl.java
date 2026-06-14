@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class DefaultModuleIntegrationImpl implements ModuleIntegration {
-    private static Objenesis objenesis = new ObjenesisStd();
+    private static final Objenesis objenesis = new ObjenesisStd();
     private static final ModuleIntegration INSTANCE = new DefaultModuleIntegrationImpl();
     private final Map<String, QueueHolder> queues = new ConcurrentHashMap<>();
 
@@ -64,13 +64,14 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
         return (Queue<T>) queueHolder.getQueues().computeIfAbsent(type, c -> {
             try {
                 return createProxyQueue(queueHolder.getQueue(), type);
-            } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException e) {
+            } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         });
     }
 
-    private <T> Queue<T> createProxyQueue(Queue<byte[]> queue, Class clazz) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException {
+    @SuppressWarnings("unchecked")
+    private <T> Queue<T> createProxyQueue(Queue<byte[]> queue, Class<?> clazz) throws NoSuchFieldException, IllegalAccessException {
         QueueInvocationInterceptor queueInvocationInterceptor = new QueueInvocationInterceptor(queue, new KryoSerDeserializer(clazz.getClassLoader()), clazz);
 //        String sha256Hex = DigestUtils.sha256Hex(queue.getClass().getName() + "$" + clazz.getName() + "$Proxy");
         Class<? extends Queue> c = new ByteBuddy()

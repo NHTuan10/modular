@@ -14,7 +14,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 public class ServiceProxyCreator {
-    private static Objenesis objenesis = new ObjenesisStd();
+    private static final Objenesis objenesis = new ObjenesisStd();
 
     public static <I> I createProxyObject(Class<I> apiClass, Object service, SerDeserializer serDeserializer, boolean copyTransClassLoaderObjects,
                                           ClassLoader sourceClassLoader, ClassLoader targetClassLoader) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchFieldException, NoSuchMethodException {
@@ -76,8 +76,7 @@ public class ServiceProxyCreator {
     }
 
     public static boolean isConversionNotNeeded(Object obj, Class<?> type, ClassLoader sourceClassLoader, ClassLoader targetClassLoader) {
-        boolean noCast = ((sourceClassLoader == targetClassLoader) || (obj == null) || type.isPrimitive() || isBoxedPrimitive(type) || type.equals(String.class));
-//        if (!noCast) {
+        //        if (!noCast) {
 //            ClassLoader classLoader = targetClassLoader;
 //            while (classLoader != null) {
 //                classLoader = classLoader.getParent();
@@ -86,6 +85,6 @@ public class ServiceProxyCreator {
 //                }
 //            }
 //        }
-        return noCast;
+        return ((sourceClassLoader == targetClassLoader) || (obj == null) || type.isPrimitive() || isBoxedPrimitive(type) || type.equals(String.class));
     }
 }
