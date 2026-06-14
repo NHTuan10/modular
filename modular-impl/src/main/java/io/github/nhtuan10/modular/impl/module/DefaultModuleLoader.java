@@ -25,7 +25,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import tools.jackson.databind.ObjectMapper;
-
+import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.net.MalformedURLException;
@@ -93,7 +93,10 @@ public class DefaultModuleLoader implements ModuleLoader {
                 break;
         }
         this.configuration = configuration;
-        objectMapper = new ObjectMapper();
+        objectMapper = JsonMapper.builder()
+//                .addModule(new BlackbirdModule())
+                .findAndAddModules()
+                .build();
     }
 
     public void loadModule(String name, ModuleLoadConfiguration moduleLoadConfiguration) {
