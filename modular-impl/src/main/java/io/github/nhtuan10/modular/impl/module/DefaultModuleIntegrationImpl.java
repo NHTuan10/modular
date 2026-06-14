@@ -107,8 +107,7 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
             }
             try {
                 Object result = method.invoke(queue, convertedArgs);
-                if (result instanceof byte[] && List.of("poll", "remove", "take", "element", "peek").contains(method.getName())) {
-                    byte[] bytes = (byte[]) result;
+                if (result instanceof byte[] bytes && List.of("poll", "remove", "take", "element", "peek").contains(method.getName())) {
                     return serDeserializer.deserialization(bytes, clazz);
                 } else {
                     return result;
