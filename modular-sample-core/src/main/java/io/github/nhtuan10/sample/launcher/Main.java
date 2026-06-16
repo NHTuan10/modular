@@ -40,7 +40,7 @@ public class Main {
                 .entryPointArgument(new SomeData("Kelly"))
 //                .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
-                .parentClassLoader(moduleDetail1.getClassLoader())
+                .parentClassLoader(moduleDetail1.classLoader())
                 .prefixesLoadedBySystemClassLoader(Set.of(ExcludedMe.class.getName()))
                 .build();
 
@@ -51,7 +51,7 @@ public class Main {
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
                 .packagesToScan(List.of("io.github.nhtuan10.sample.plugin2"))
 //                .modularClassLoaderName("commonCL")
-                .parentClassLoader(moduleDetail1.getClassLoader())
+                .parentClassLoader(moduleDetail1.classLoader())
                 .entryPointClass("io.github.nhtuan10.sample.plugin2.TestModularEntryPoint")
 //                .entryPointArgument(new SomeData("test entry point argument"))
                 .entryPointArgumentInJsonString("{\"name\":\"test entry point argument\"}")
@@ -62,8 +62,8 @@ public class Main {
         ModuleLoader.ModuleDetail moduleDetail3 = Modular.startModuleSync("modular-sample-plugin-1", plugin1Config);
         ModuleLoader.ModuleDetail moduleDetail4 = Modular.startModuleSync("modular-sample-plugin-2", plugin2Config);
         //        moduleDetail3.join();
-        System.out.println("Sample plugin 1 response: " + moduleDetail3.getEntryPointResult());
-        System.out.println("Sample plugin 2 response: " + moduleDetail4.getEntryPointResultInJsonString());
+        System.out.println("Sample plugin 1 response: " + moduleDetail3.entryPointResult());
+        System.out.println("Sample plugin 2 response: " + moduleDetail4.entryPointResultInJsonString());
         System.out.println("Finished with modular-sample-plugin");
 //        Modular.startModuleSyncWithMainClass("modular-sample-plugin2", List.of("mvn://io.github.nhtuan10/modular-sample-plugin/0.0.1"), "MainClass", List.of("io.github.nhtuan10.sample.service", "io.github.nhtuan10.sample.util"));
 //        m.startModuleSyncWithMainClass("my-kafka-tool", List.of(

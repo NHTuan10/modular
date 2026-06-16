@@ -23,7 +23,10 @@ import io.github.nhtuan10.modular.impl.serdeserializer.JavaSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.KryoSerDeserializer;
 import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import io.github.nhtuan10.modular.impl.util.Utils;
+import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -243,7 +246,7 @@ public class DefaultModuleLoader implements ModuleLoader {
             modulerClassLoaderMap.put(moduleName, moduleClassLoader);
         }
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
-        moduleDetail.setClassLoader(moduleClassLoader);
+        moduleDetail.classLoader(moduleClassLoader);
 //        addAllOpens(ModuleLoaderImpl.class.getClassLoader());
 //        addAllOpens(moduleClassLoader);
         ModularAnnotationProcessor m = new ModularAnnotationProcessor(moduleClassLoader);
@@ -282,11 +285,11 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     public Class<?> loadClass(String module, String name) throws ClassNotFoundException {
-        return moduleDetailMap.get(module).getClassLoader().loadClass(name);
+        return moduleDetailMap.get(module).classLoader().loadClass(name);
     }
 
     public ClassLoader getClassLoader(String module) {
-        return moduleDetailMap.get(module).getClassLoader();
+        return moduleDetailMap.get(module).classLoader();
     }
 
     @Override
@@ -464,7 +467,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         });
         if (allowToLoad.get()) {
             ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
-            CountDownLatch await = moduleDetail.getAwaitMainClassLatch();
+            CountDownLatch await = moduleDetail.awaitMainClassLatch();
 //            CompletableFuture.runAsync(() -> {
             Thread t = new Thread(() -> {
                 try {
@@ -476,10 +479,10 @@ public class DefaultModuleLoader implements ModuleLoader {
                         try {
                             if (moduleLoadConfiguration.entryPointClass() != null) {
                                 EntryPointResultWrapper entryPointResultWrapper = handleModuleEntryPoint(moduleName, moduleLoadConfiguration.entryPointClass(), moduleLoadConfiguration.entryPointArgumentInJsonString(), moduleLoadConfiguration.entryPointArgument(), moduleLoadConfiguration.executeEntryPointWhenLoaded());
-                                moduleDetail.setModularEntryPoint(entryPointResultWrapper.getModularEntryPoint());
-                                moduleDetail.setEntryPointResult(entryPointResultWrapper.getEntryPointResult());
+                                moduleDetail.modularEntryPoint(entryPointResultWrapper.getModularEntryPoint());
+                                moduleDetail.entryPointResult(entryPointResultWrapper.getEntryPointResult());
                                 if (entryPointResultWrapper != null && entryPointResultWrapper.getEntryPointResult() != null) {
-                                    moduleDetail.setEntryPointResultInJsonString(objectMapper.writeValueAsString(entryPointResultWrapper.getEntryPointResult()));
+                                    moduleDetail.entryPointResultInJsonString(objectMapper.writeValueAsString(entryPointResultWrapper.getEntryPointResult()));
                                 }
                             }
                             if (moduleLoadConfiguration.mainClass() != null) {
@@ -674,8 +677,8 @@ public class DefaultModuleLoader implements ModuleLoader {
         synchronized (moduleLoadingLock) {
             if (moduleDetailMap.containsKey(moduleName)) {
                 ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
-                if (moduleDetail.getModularEntryPoint() != null) {
-                    moduleDetail.getModularEntryPoint().onUnloadModule();
+                if (moduleDetail.modularEntryPoint() != null) {
+                    moduleDetail.modularEntryPoint().onUnloadModule();
                 }
                 loadedModularServices2.forEach((k, v) -> {
                     Iterator<ModularServiceHolder> iterator = v.iterator();
@@ -713,15 +716,15 @@ public class DefaultModuleLoader implements ModuleLoader {
     private ModuleDetail awaitModuleReady(String moduleName, CompletableFuture<ModuleDetail> cf) {
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
         try {
-            moduleDetail.getReadyLatch().await();
+            moduleDetail.readyLatch().await();
         } catch (InterruptedException e) {
             throw new ModuleLoadRuntimeException(String.format("Interrupted while waiting for module %s ready", moduleName), e);
         }
         if (cf.isCompletedExceptionally()) {
-            moduleDetail.setLoadStatus(LoadStatus.FAILED);
+            moduleDetail.loadStatus(LoadStatus.FAILED);
             cf.join();
         } else {
-            moduleDetail.setLoadStatus(LoadStatus.LOADED);
+            moduleDetail.loadStatus(LoadStatus.LOADED);
         }
 
         return moduleDetail;
@@ -735,11 +738,11 @@ public class DefaultModuleLoader implements ModuleLoader {
     public void notifyModuleReady(String moduleName) {
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
         if (moduleDetail != null) {
-            CountDownLatch readyLatch = moduleDetail.getReadyLatch();
+            CountDownLatch readyLatch = moduleDetail.readyLatch();
             if (readyLatch != null && readyLatch.getCount() > 0) {
                 readyLatch.countDown();
             }
-            moduleDetail.setLoadStatus(LoadStatus.LOADED);
+            moduleDetail.loadStatus(LoadStatus.LOADED);
         } else {
             throw new ModuleLoadRuntimeException("Module " + moduleName + " not found");
         }

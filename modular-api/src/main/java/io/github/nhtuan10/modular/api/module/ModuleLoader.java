@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -104,28 +105,21 @@ public interface ModuleLoader {
     }
 
     @AllArgsConstructor
+    @Accessors(fluent = true)
+    @Getter
     class ModuleDetail {
-        @Getter
         private final String moduleName;
-        @Getter
         private final ModuleLoadConfiguration moduleLoadConfiguration;
-        @Getter
         @Setter
         private ModuleLoader.LoadStatus loadStatus;
-        @Getter
         @Setter
         private ClassLoader classLoader;
-        @Getter
         private CountDownLatch readyLatch;
-        @Getter
         private CountDownLatch awaitMainClassLatch;
-        @Getter
         @Setter
         private Object entryPointResult;
-        @Getter
         @Setter
         private String entryPointResultInJsonString;
-        @Getter
         @Setter
         private ModularEntryPoint<?, ?> modularEntryPoint;
     }
