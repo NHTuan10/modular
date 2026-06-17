@@ -27,6 +27,7 @@ import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.ToString;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -415,6 +416,7 @@ public class DefaultModuleLoader implements ModuleLoader {
     @RequiredArgsConstructor
     @EqualsAndHashCode
     @ToString
+    @Accessors(fluent = true)
     public static final class ProxyCacheKey {
         private final Class<?> apiClass;
         private final Object service;
@@ -479,10 +481,10 @@ public class DefaultModuleLoader implements ModuleLoader {
                         try {
                             if (moduleLoadConfiguration.entryPointClass() != null) {
                                 EntryPointResultWrapper entryPointResultWrapper = handleModuleEntryPoint(moduleName, moduleLoadConfiguration.entryPointClass(), moduleLoadConfiguration.entryPointArgumentInJsonString(), moduleLoadConfiguration.entryPointArgument(), moduleLoadConfiguration.executeEntryPointWhenLoaded());
-                                moduleDetail.modularEntryPoint(entryPointResultWrapper.getModularEntryPoint());
-                                moduleDetail.entryPointResult(entryPointResultWrapper.getEntryPointResult());
-                                if (entryPointResultWrapper != null && entryPointResultWrapper.getEntryPointResult() != null) {
-                                    moduleDetail.entryPointResultInJsonString(objectMapper.writeValueAsString(entryPointResultWrapper.getEntryPointResult()));
+                                moduleDetail.modularEntryPoint(entryPointResultWrapper.modularEntryPoint());
+                                moduleDetail.entryPointResult(entryPointResultWrapper.entryPointResult());
+                                if (entryPointResultWrapper != null && entryPointResultWrapper.entryPointResult() != null) {
+                                    moduleDetail.entryPointResultInJsonString(objectMapper.writeValueAsString(entryPointResultWrapper.entryPointResult()));
                                 }
                             }
                             if (moduleLoadConfiguration.mainClass() != null) {
@@ -527,7 +529,7 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     public Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument) throws Exception {
-        return handleModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument, true).getEntryPointResult();
+        return handleModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument, true).entryPointResult();
     }
 
     public EntryPointResultWrapper handleModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, boolean doesExecute) throws Exception {
