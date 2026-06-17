@@ -7,22 +7,26 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 public class DefaultModularClassLoader extends ModularClassLoader {
 
     public static final String MODULAR_PARENT_PACKAGE = "io.github.nhtuan10.modular";
 
-    public static final Set<String> MODULAR_PACKAGES = Set.of(MODULAR_PARENT_PACKAGE + ".api"
+    public static final Set<String> MODULAR_PACKAGES = Stream.of(MODULAR_PARENT_PACKAGE + ".api"
             , MODULAR_PARENT_PACKAGE + ".impl.annotation"
             , MODULAR_PARENT_PACKAGE + ".impl.classloader"
             , MODULAR_PARENT_PACKAGE + ".impl.model"
             , MODULAR_PARENT_PACKAGE + ".impl.module"
             , MODULAR_PARENT_PACKAGE + ".impl.proxy"
             , MODULAR_PARENT_PACKAGE + ".impl.serdeserializer"
-    );
+    ).collect(Collectors.toSet());
 
     @Getter
     private final boolean doesIncludeSystemClasspath;
@@ -70,7 +74,7 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 //        return ModuleLayer.boot().modules().stream()
 //                .map(Module::getName)
 //                .collect(Collectors.toSet());
-        Set<String> platformClassLoaderPackages = new HashSet<>(Set.of("java", "jdk"));
+        Set<String> platformClassLoaderPackages = Stream.of("java", "jdk").collect(Collectors.toSet());
         platformClassLoaderPackages.addAll(MODULAR_PACKAGES);
         return platformClassLoaderPackages;
     }

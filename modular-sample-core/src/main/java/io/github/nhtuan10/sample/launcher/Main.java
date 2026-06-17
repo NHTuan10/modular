@@ -10,8 +10,11 @@ import io.github.nhtuan10.sample.api.service.SomeData;
 import io.github.nhtuan10.sample.api.service.SomeInterface;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -22,34 +25,34 @@ public class Main {
 
         ModuleLoadConfiguration apiCconfig = ModuleLoadConfiguration.builder()
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-api/[0.0.3,1.0.0)"))
-                .locationUris(List.of(URI.create("mvn:io.github.nhtuan10:modular-sample-api:0.0.3")))
-                .packagesToScan(List.of("io.github.nhtuan10.sample.api.service"))
+                .locationUris(Collections.singletonList(URI.create("mvn:io.github.nhtuan10:modular-sample-api:0.0.3-jdk8")))
+                .packagesToScan(Collections.singletonList("io.github.nhtuan10.sample.api.service"))
 //                .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
-                .prefixesLoadedBySystemClassLoader(Set.of(ExcludedMe.class.getName()))
+                .prefixesLoadedBySystemClassLoader(Stream.of(ExcludedMe.class.getName()).collect(Collectors.toSet()))
                 .build();
 
         ModuleLoader.ModuleDetail moduleDetail1 = Modular.startModuleSync("modular-sample-api", apiCconfig);
 
         ModuleLoadConfiguration plugin1Config = ModuleLoadConfiguration.builder()
-                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-1:0.0.3", null)))
+                .locationUris(Collections.singletonList(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-1:0.0.3-jdk8", null)))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
-                .packagesToScan(List.of("io.github.nhtuan10.sample.plugin1", "io.github.nhtuan10.sample.util"))
+                .packagesToScan(Arrays.asList("io.github.nhtuan10.sample.plugin1", "io.github.nhtuan10.sample.util"))
                 .mainClass("io.github.nhtuan10.sample.plugin1.ServiceImpl")
                 .entryPointClass("io.github.nhtuan10.sample.plugin1.ServiceImpl")
                 .entryPointArgument(new SomeData("Kelly"))
 //                .modularClassLoaderName("commonCL")
                 .allowNonAnnotatedServices(true)
                 .parentClassLoader(moduleDetail1.classLoader())
-                .prefixesLoadedBySystemClassLoader(Set.of(ExcludedMe.class.getName()))
+                .prefixesLoadedBySystemClassLoader(Stream.of(ExcludedMe.class.getName()).collect(Collectors.toSet()))
                 .build();
 
         ModuleLoadConfiguration plugin2Config = ModuleLoadConfiguration.builder()
 //                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-2:[0.0.3,)", null)))
-                .locationUris(List.of(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-2:0.0.3", null)))
-//                .locationUris(List.of(new URI("mvn", "//io.github.nhtuan10/modular-sample-plugin-2/" + URLEncoder.encode("[0.0.3,)", StandardCharsets.UTF_8.toString()) , null)))
+                .locationUris(Arrays.asList(new URI("mvn", "io.github.nhtuan10:modular-sample-plugin-2:0.0.3-jdk8", null)))
+//                .locationUris(Arrays.asList(new URI("mvn", "//io.github.nhtuan10/modular-sample-plugin-2/" + URLEncoder.encode("[0.0.3,)", StandardCharsets.UTF_8.toString()) , null)))
 //                .locationUris(List.of("mvn://io.github.nhtuan10/modular-sample-plugin-1/0.0.1", "mvn://io.github.nhtuan10/modular-sample-plugin-2/0.0.1"))
-                .packagesToScan(List.of("io.github.nhtuan10.sample.plugin2"))
+                .packagesToScan(Arrays.asList("io.github.nhtuan10.sample.plugin2"))
 //                .modularClassLoaderName("commonCL")
                 .parentClassLoader(moduleDetail1.classLoader())
                 .entryPointClass("io.github.nhtuan10.sample.plugin2.TestModularEntryPoint")
@@ -110,7 +113,7 @@ public class Main {
 
                         @Override
                         public List<SomeData> testObjectList(List<SomeData> in) {
-                            return List.of();
+                            return Arrays.asList();
                         }
 
                         @Override
@@ -135,12 +138,13 @@ public class Main {
 //            var list = new ArrayList<SomeData>();
 //            list.add(new SomeData("input testObjectList-1"));
 //            list.add(new SomeData("input testObjectList-2"));
-                    List<SomeData> list = List.of(new SomeData("input testObjectList-1"), new SomeData("input testObjectList-2"));
+                    List<SomeData> list = Arrays.asList(new SomeData("input testObjectList-1"), new SomeData("input testObjectList-2"));
                     System.out.println("Return from testObjectList: " + s.testObjectList(list));
                     System.out.println("In list: " + list);
 
                 });
-//        Modular.unloadModule("modular-sample-plugin-2");
+        Thread.sleep(5000);
+        Modular.unloadModule("modular-sample-plugin-2");
 
     }
 }

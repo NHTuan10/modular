@@ -26,7 +26,7 @@ public class KryoSerDeserializer implements SerDeserializer {
         if (classLoader != null) {
             kryo.setClassLoader(classLoader);
         } else {
-            kryo.setClassLoader(ClassLoader.getPlatformClassLoader());
+            kryo.setClassLoader(ClassLoader.getSystemClassLoader().getParent());
         }
         kryoThreadLocal = ThreadLocal.withInitial(() -> kryo);
     }
@@ -48,7 +48,7 @@ public class KryoSerDeserializer implements SerDeserializer {
         if (classLoader != null) {
             kryo.setClassLoader(classLoader);
         } else {
-            kryo.setClassLoader(ClassLoader.getPlatformClassLoader());
+            kryo.setClassLoader(ClassLoader.getSystemClassLoader().getParent());
         }
         Input input = new Input(bos.toByteArray());
         Object result = kryo.readObject(input, resultClass);

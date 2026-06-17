@@ -9,6 +9,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -37,7 +38,7 @@ public class ServiceImpl extends BaseService implements SampleService, ModularEn
     @Override
     public String testObjectArray(SomeData[] in) {
         in[0].setName("set by sample-plugin-1 ServiceImpl#testReturn");
-        return "ServiceImpl ->" + List.of(in);
+        return "ServiceImpl ->" + Arrays.asList(in);
     }
 
     @Override

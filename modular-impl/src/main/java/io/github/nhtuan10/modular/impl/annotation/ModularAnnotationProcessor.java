@@ -98,7 +98,7 @@ public class ModularAnnotationProcessor {
                 for (ClassInfo implClassInfo : implClassesInfo) {
                     if (implClassInfo.hasAnnotation(serviceImplAnnotationName)) {
                         Class<?> implClass = classLoader.loadClass(implClassInfo.getName());
-                        Set<Class<?>> interfaceClasses = new HashSet<>(Set.of(interfaceClass));
+                        Set<Class<?>> interfaceClasses = Stream.of(interfaceClass).collect(Collectors.toSet());
                         // check if any service instance of the implementation class exists
                         boolean doesServiceExist = false;
                         for (ClassInfo i : implClassInfo.getInterfaces().filter(c -> !c.equals(classInfo) && c.hasAnnotation(serviceInterfaceAnnotationName))) {

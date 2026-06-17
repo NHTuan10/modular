@@ -4,6 +4,8 @@ import io.github.nhtuan10.modular.api.classloader.ModularClassLoader;
 import lombok.*;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -25,7 +27,7 @@ public final class ModuleLoadConfiguration {
     private final boolean executeEntryPointWhenLoaded = true;
     private final boolean awaitModule;
     @Builder.Default
-    private final List<String> packagesToScan = List.of();
+    private final List<String> packagesToScan = Collections.unmodifiableList(new ArrayList<>());
     private final ExternalContainer externalContainer;
     @Builder.Default
     private final boolean allowNonAnnotatedServices = true;
@@ -37,7 +39,7 @@ public final class ModuleLoadConfiguration {
     private final ModularClassLoader modularClassLoader;
     private final boolean doesIncludeSystemClasspath;
     @Builder.Default
-    private final ClassLoader parentClassLoader = ClassLoader.getPlatformClassLoader();
+    private final ClassLoader parentClassLoader = ClassLoader.getSystemClassLoader().getParent();
     @Builder.Default
     private final String workingDir = System.getProperty("java.io.tmpdir") + "/modular";
 

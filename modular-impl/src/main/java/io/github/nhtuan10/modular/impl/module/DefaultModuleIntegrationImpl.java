@@ -20,7 +20,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
@@ -103,12 +102,12 @@ public class DefaultModuleIntegrationImpl implements ModuleIntegration {
         public Object intercept(@AllArguments Object[] allArguments,
                                 @Origin Method method) {
             Object[] convertedArgs = new Object[0];
-            if (allArguments.length == 1 && List.of("add", "offer", "put").contains(method.getName())) {
+            if (allArguments.length == 1 && Arrays.asList("add", "offer", "put").contains(method.getName())) {
                 convertedArgs = Arrays.stream(allArguments).map(serDeserializer::serialization).toArray();
             }
             try {
                 Object result = method.invoke(queue, convertedArgs);
-                if (result instanceof byte[] && List.of("poll", "remove", "take", "element", "peek").contains(method.getName())) {
+                if (result instanceof byte[] && Arrays.asList("poll", "remove", "take", "element", "peek").contains(method.getName())) {
                     byte[] bytes = (byte[]) result;
                     return serDeserializer.deserialization(bytes, clazz);
                 } else {

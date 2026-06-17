@@ -20,7 +20,7 @@ public class ServiceProxyCreator {
                                           ClassLoader sourceClassLoader, ClassLoader targetClassLoader) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchFieldException, NoSuchMethodException {
 //        ClassLoader sourceClassLoader = apiClass.getClassLoader();
         if (sourceClassLoader == null)
-            sourceClassLoader = ClassLoader.getPlatformClassLoader();
+            sourceClassLoader = ClassLoader.getSystemClassLoader().getParent();
 
         Object svcInvocationInterceptor = Class.forName(ServiceInvocationInterceptor.class.getName(), true, sourceClassLoader)
                 .getConstructor(Object.class, SerDeserializer.class, boolean.class, ClassLoader.class, ClassLoader.class).newInstance(service, serDeserializer, copyTransClassLoaderObjects, sourceClassLoader, targetClassLoader);

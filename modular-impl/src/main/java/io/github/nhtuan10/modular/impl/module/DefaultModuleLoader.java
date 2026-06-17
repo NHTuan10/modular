@@ -25,14 +25,16 @@ import io.github.nhtuan10.modular.impl.serdeserializer.SerDeserializer;
 import io.github.nhtuan10.modular.impl.util.Utils;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -237,13 +239,13 @@ public class DefaultModuleLoader implements ModuleLoader {
         String classLoaderNameFromConfig = moduleLoadConfiguration.modularClassLoaderName();
         if (StringUtils.isNotBlank(classLoaderNameFromConfig)) {
             moduleClassLoader = modulerClassLoaderMap.computeIfAbsent(classLoaderNameFromConfig, classLoaderName ->
-                    new DefaultModularClassLoader(classLoaderNameFromConfig, List.of(moduleName), moduleLoadConfiguration.parentClassLoader(), moduleLoadConfiguration.prefixesLoadedBySystemClassLoader(), moduleLoadConfiguration.doesIncludeSystemClasspath()));
+                    new DefaultModularClassLoader(classLoaderNameFromConfig, Collections.singletonList(moduleName), moduleLoadConfiguration.parentClassLoader(), moduleLoadConfiguration.prefixesLoadedBySystemClassLoader(), moduleLoadConfiguration.doesIncludeSystemClasspath()));
             moduleClassLoader.addClassPathUrls(depUrls);
             moduleClassLoader.addModule(moduleName);
         } else if (moduleLoadConfiguration.modularClassLoader() != null) {
             moduleClassLoader = moduleLoadConfiguration.modularClassLoader();
         } else {
-            moduleClassLoader = new DefaultModularClassLoader(List.of(moduleName), depUrls, moduleLoadConfiguration.parentClassLoader(), moduleLoadConfiguration.prefixesLoadedBySystemClassLoader(), moduleLoadConfiguration.doesIncludeSystemClasspath());
+            moduleClassLoader = new DefaultModularClassLoader(Collections.singletonList(moduleName), depUrls, moduleLoadConfiguration.parentClassLoader(), moduleLoadConfiguration.prefixesLoadedBySystemClassLoader(), moduleLoadConfiguration.doesIncludeSystemClasspath());
             modulerClassLoaderMap.put(moduleName, moduleClassLoader);
         }
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
@@ -266,24 +268,24 @@ public class DefaultModuleLoader implements ModuleLoader {
         });
     }
 
-    @SneakyThrows
-    private void addAllOpens(ClassLoader classLoader) {
-        final Module unnamedModule = classLoader.getUnnamedModule();
-        final Method method = Module.class.getDeclaredMethod("implAddExportsOrOpens", String.class, Module.class, boolean.class, boolean.class);
-        method.setAccessible(true);
-
-        ModuleLayer.boot().modules().forEach(module -> {
-            final Set<String> packages = module.getPackages();
-            for (String eachPackage : packages) {
-                try {
-                    method.invoke(module, eachPackage, unnamedModule, true, true);
-                } catch (Exception e) {
-                    log.error("Error when add-opens {}/{}={}", module.getName(), eachPackage, unnamedModule.toString(), e);
-                }
-                log.info("--add-open {}/{}={}", module.getName(), eachPackage, unnamedModule.toString());
-            }
-        });
-    }
+//    @SneakyThrows
+//    private void addAllOpens(ClassLoader classLoader) {
+//        final Module unnamedModule = classLoader.getUnnamedModule();
+//        final Method method = Module.class.getDeclaredMethod("implAddExportsOrOpens", String.class, Module.class, boolean.class, boolean.class);
+//        method.setAccessible(true);
+//
+//        ModuleLayer.boot().modules().forEach(module -> {
+//            final Set<String> packages = module.getPackages();
+//            for (String eachPackage : packages) {
+//                try {
+//                    method.invoke(module, eachPackage, unnamedModule, true, true);
+//                } catch (Exception e) {
+//                    log.error("Error when add-opens {}/{}={}", module.getName(), eachPackage, unnamedModule.toString(), e);
+//                }
+//                log.info("--add-open {}/{}={}", module.getName(), eachPackage, unnamedModule.toString());
+//            }
+//        });
+//    }
 
     public Class<?> loadClass(String module, String name) throws ClassNotFoundException {
         return moduleDetailMap.get(module).classLoader().loadClass(name);
@@ -572,7 +574,7 @@ public class DefaultModuleLoader implements ModuleLoader {
     }
 
     private List<ModularEntryPoint> getModularEntryPoints(String moduleName, String entryPointClass) {
-        List<ModularEntryPoint> entryPoints = List.of();
+        List<ModularEntryPoint> entryPoints = Arrays.asList();
         try {
             entryPoints = Modular.getModularServices(ModularEntryPoint.class, moduleName);
         } catch (Exception e) {

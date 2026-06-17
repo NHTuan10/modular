@@ -33,7 +33,12 @@ public class ProxyCreator {
 //                }
 //            }
         else if (Collection.class.isAssignableFrom(type)) {
-            Map<Class<? extends Collection>, Class<? extends Collection>> map = Map.of(Set.class, HashSet.class, Queue.class, LinkedList.class, List.class, ArrayList.class, Collection.class, ArrayList.class);
+            Map<Class<? extends Collection>, Class<? extends Collection>> map = new HashMap<>();
+            map.put(Set.class, HashSet.class);
+            map.put(Queue.class, LinkedList.class);
+            map.put(List.class, ArrayList.class);
+            map.put(Collection.class, ArrayList.class);
+
             Collection<?> collection = (Collection<?>) obj;
             if (!collection.isEmpty()) {
                 Class<? extends Collection> clazz = map.entrySet().stream()
