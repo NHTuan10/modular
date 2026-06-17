@@ -18,20 +18,24 @@ public abstract class ModularClassLoader extends URLClassLoader {
     @Getter
     protected final List<String> moduleNames;
     @Getter
+    protected final String name;
+    @Getter
     protected List<URL> classPathUrls;
     @Getter
     protected Set<String> prefixesLoadedBySystemClassLoader;
 
-    public ModularClassLoader(URL[] urls, List<String> moduleNames) {
+    public ModularClassLoader(URL[] urls, List<String> moduleNames, String name) {
         super(urls, null);
         this.moduleNames = moduleNames;
+        this.name = name;
     }
 
-    public ModularClassLoader(URL[] urls, ClassLoader parent, List<String> moduleNames) {
+    public ModularClassLoader(URL[] urls, ClassLoader parent, List<String> moduleNames, String name) {
         super(urls, parent);
         this.moduleNames = Collections.synchronizedList(new ArrayList<>(moduleNames));
         this.classPathUrls = new ArrayList<>();
         this.prefixesLoadedBySystemClassLoader = ConcurrentHashMap.newKeySet();
+        this.name = name;
     }
 
     public void addModule(String moduleName) {
