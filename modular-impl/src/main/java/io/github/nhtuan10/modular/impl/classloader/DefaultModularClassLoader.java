@@ -25,15 +25,11 @@ public class DefaultModularClassLoader extends ModularClassLoader {
     );
 
     @Getter
-    private final String name;
-
-    @Getter
     private final boolean doesIncludeSystemClasspath;
 
     private DefaultModularClassLoader(String name, List<String> moduleNames, List<URL> classPathUrls, ClassLoader parentClassLoader, Set<String> prefixesLoadedBySystemClassLoader, boolean doesIncludeSystemClasspath) {
 //        super(Collections.unmodifiableList(getJavaClassPath()).toArray(new URL[0]));
-        super(new URL[0], parentClassLoader, moduleNames);
-        this.name = name;
+        super(new URL[0], parentClassLoader, moduleNames, name);
         this.doesIncludeSystemClasspath = doesIncludeSystemClasspath;
         addPrefixesLoadedBySystemClassLoader(getDefaultExcludedPackages());
         if (prefixesLoadedBySystemClassLoader != null) {
@@ -60,11 +56,6 @@ public class DefaultModularClassLoader extends ModularClassLoader {
 
     public DefaultModularClassLoader(String name, List<String> moduleNames, ClassLoader parentClassLoader, Set<String> prefixesLoadedBySystemClassLoader, boolean doesIncludeSystemClasspath) {
         this(name, moduleNames, Collections.emptyList(), parentClassLoader, prefixesLoadedBySystemClassLoader, doesIncludeSystemClasspath);
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
     }
 
     @Override
