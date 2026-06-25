@@ -18,6 +18,7 @@
         <module>modular-sample-plugin-1</module>
         <module>modular-sample-plugin-2</module>
         <module>modular-sample-api</module>
+        <module>modular-rpc</module>
     </modules>
 
     <properties>
