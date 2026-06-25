@@ -128,7 +128,7 @@ public class Main {
                     SomeData d = new SomeData("input testReturn");
                     Object result = s.testReturn(d);
                     System.out.println("testReturn: " + result);
-                    System.out.println("d.getName(): " + d.getName());
+                    System.out.println("d.getName(): " + d.name());
                     SomeData[] inArr = new SomeData[]{new SomeData("input testObjectArray")};
                     System.out.println("Return from testObjectArray: " + s.testObjectArray(inArr));
                     System.out.println("In array: " + inArr[0]);

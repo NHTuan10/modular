@@ -30,13 +30,13 @@ public class ServiceImpl extends BaseService implements SampleService, ModularEn
 
     @Override
     public SomeData testReturn(SomeData in) {
-        in.setName("set by sample-plugin-1 ServiceImpl#testReturn");
-        return new SomeData(in.getName() + " from ServiceImpl");
+        in.name("set by sample-plugin-1 ServiceImpl#testReturn");
+        return new SomeData(in.name() + " from ServiceImpl");
     }
 
     @Override
     public String testObjectArray(SomeData[] in) {
-        in[0].setName("set by sample-plugin-1 ServiceImpl#testReturn");
+        in[0].name("set by sample-plugin-1 ServiceImpl#testReturn");
         return "ServiceImpl ->" + List.of(in);
     }
 
@@ -44,11 +44,11 @@ public class ServiceImpl extends BaseService implements SampleService, ModularEn
     public List<SomeData> testObjectList(List<SomeData> in) {
 //        in.forEach(d -> d.setName("set by sample-plugin-1 ServiceImpl#testObjectList"));
         for (SomeData d : in) {
-            d.setName("set by sample-plugin-1 ServiceImpl#testObjectList");
+            d.name("set by sample-plugin-1 ServiceImpl#testObjectList");
         }
         ArrayList<SomeData> r = new ArrayList<>();
         for (SomeData d : in) {
-            r.add(new SomeData(d.getName() + " result from ServiceImpl#testObjectList"));
+            r.add(new SomeData(d.name() + " result from ServiceImpl#testObjectList"));
         }
         return r;
 //        return in.stream().map(d -> new SomeData( "Result from ServiceImpl#testObjectList")).toList();
@@ -80,6 +80,6 @@ public class ServiceImpl extends BaseService implements SampleService, ModularEn
 
     @Override
     public SomeData run(SomeData parameter) {
-        return new SomeData("How are you " + parameter.getName());
+        return new SomeData("How are you " + parameter.name());
     }
 }
