@@ -133,13 +133,21 @@ public interface Modular {
 //        return getModularServices(ModularEntryPoint.class, moduleName).get(0);
 //    }
 
-    static Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument) throws Exception {
-        return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument);
+    static Object invokeModuleEntryPoint(String moduleName, String entryPointArgumentInJsonString, Object entryPointArgument) throws Exception {
+        return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointArgumentInJsonString, entryPointArgument);
     }
 
-    static Object invokeModuleEntryPoint(String moduleName, String entryPointClass, Object entryPointArgument) throws Exception {
-        return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointClass, null, entryPointArgument);
+    static Object invokeModuleEntryPoint(String moduleName, Object entryPointArgument) throws Exception {
+        return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, null, entryPointArgument);
     }
+
+//    static Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument) throws Exception {
+//        return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument);
+//    }
+//
+//    static Object invokeModuleEntryPoint(String moduleName, String entryPointClass, Object entryPointArgument) throws Exception {
+//        return ModuleLoader.getInstance().invokeModuleEntryPoint(moduleName, entryPointClass, null, entryPointArgument);
+//    }
 
     static ModuleLoader.ModuleDetail getModuleDetail(String moduleName) {
         return ModuleLoader.getInstance().getModuleDetail(moduleName);

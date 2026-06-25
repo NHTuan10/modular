@@ -511,22 +511,25 @@ public class DefaultModuleLoader implements ModuleLoader {
         }
     }
 
-    public Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument) throws Exception {
-        return handleModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument, true).entryPointResult();
+    @Override
+    public Object invokeModuleEntryPoint(String moduleName, String entryPointArgumentInJsonString, Object entryPointArgument) throws Exception {
+        if (moduleDetailMap.get(moduleName) != null && moduleDetailMap.get(moduleName).getModularEntryPoint() != null) {
+            ModularEntryPoint<?, ?> modularEntryPoint = moduleDetailMap.get(moduleName).getModularEntryPoint();
+            return handleModuleEntryPoint(moduleName, entryPointArgumentInJsonString, entryPointArgument, true, modularEntryPoint).entryPointResult();
+        } else {
+            throw new ModuleLoadRuntimeException("Entry point not found in module " + moduleName);
+        }
     }
+
+//    public Object invokeModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument) throws Exception {
+//        return handleModuleEntryPoint(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument, true).entryPointResult();
+//    }
 
     public EntryPointResultWrapper handleModuleEntryPoint(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, boolean doesExecute) throws Exception {
         List<ModularEntryPoint> foundEntryPoints = (moduleDetailMap.get(moduleName) != null && moduleDetailMap.get(moduleName).getModularEntryPoint() != null) ? List.of(moduleDetailMap.get(moduleName).getModularEntryPoint()) : getModularEntryPoints(moduleName, entryPointClass);
         if (foundEntryPoints.size() == 1) {
-            AtomicReference<EntryPointResultWrapper> result = new AtomicReference<>();
             ModularEntryPoint<?, ?> modularEntryPoint = foundEntryPoints.get(0);
-            if (doesExecute) {
-                Object targetEntryPointObject = getTargetFieldFromProxyObject(modularEntryPoint);
-                result.set(new EntryPointResultWrapper(modularEntryPoint, invokeModuleEntryPointTarget(moduleName, entryPointClass, entryPointArgumentInJsonString, entryPointArgument, targetEntryPointObject, modularEntryPoint)));
-            } else {
-                result.set(new EntryPointResultWrapper(modularEntryPoint, null));
-            }
-            return result.get();
+            return handleModuleEntryPoint(moduleName, entryPointArgumentInJsonString, entryPointArgument, doesExecute, modularEntryPoint);
         } else if (foundEntryPoints.size() > 1) {
             throw new ModuleLoadRuntimeException("There are more than one entry point for module: " + moduleName + " with class name: " + entryPointClass);
         } else {
@@ -534,7 +537,18 @@ public class DefaultModuleLoader implements ModuleLoader {
         }
     }
 
-    private Object invokeModuleEntryPointTarget(String moduleName, String entryPointClass, String entryPointArgumentInJsonString, Object entryPointArgument, Object targetEntryPointObject, ModularEntryPoint<?, ?> modularEntryPoint) {
+    private EntryPointResultWrapper handleModuleEntryPoint(String moduleName, String entryPointArgumentInJsonString, Object entryPointArgument, boolean doesExecute, ModularEntryPoint<?, ?> modularEntryPoint) throws NoSuchFieldException, IllegalAccessException {
+        AtomicReference<EntryPointResultWrapper> result = new AtomicReference<>();
+        if (doesExecute) {
+            Object targetEntryPointObject = getTargetFieldFromProxyObject(modularEntryPoint);
+            result.set(new EntryPointResultWrapper(modularEntryPoint, invokeModuleEntryPointTarget(moduleName, entryPointArgumentInJsonString, entryPointArgument, targetEntryPointObject)));
+        } else {
+            result.set(new EntryPointResultWrapper(modularEntryPoint, null));
+        }
+        return result.get();
+    }
+
+    private Object invokeModuleEntryPointTarget(String moduleName, String entryPointArgumentInJsonString, Object entryPointArgument, Object targetEntryPointObject) {
         String paramStr = entryPointArgumentInJsonString != null ? entryPointArgumentInJsonString :
                 (entryPointArgument != null ? objectMapper.writeValueAsString(entryPointArgument) : null);
         Type[] interfaces = targetEntryPointObject.getClass().getGenericInterfaces();
@@ -554,7 +568,7 @@ public class DefaultModuleLoader implements ModuleLoader {
                         if (e instanceof InvocationTargetException) {
                             cause = ((InvocationTargetException) e).getTargetException();
                         }
-                        throw new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName + "' with entry point class name: " + entryPointClass, cause);
+                        throw new ModuleLoadRuntimeException(moduleName, "Failed to load module '" + moduleName + "' with entry point class name: " + targetEntryPointObject.getClass().getName(), cause);
                     }
                 });
         return result.get();
@@ -726,6 +740,7 @@ public class DefaultModuleLoader implements ModuleLoader {
         return awaitModuleReady(moduleName, completableFuture);
     }
 
+    @Override
     public void notifyModuleReady(String moduleName) {
         ModuleDetail moduleDetail = moduleDetailMap.get(moduleName);
         if (moduleDetail != null) {
