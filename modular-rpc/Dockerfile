@@ -1,0 +1,5 @@
+FROM eclipse-temurin:21-jdk-jammy
+WORKDIR /app
+COPY target/modular-rpc-0.0.3.jar modular-rpc-0.0.3.jar
+EXPOSE 50051
+ENTRYPOINT ["java", "-cp", "modular-rpc-0.0.3.jar", "io.github.nhtuan10.modular.rpc.HelloWorldServer"]

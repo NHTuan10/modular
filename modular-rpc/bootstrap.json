@@ -1,0 +1,20 @@
+{
+  "xds_servers": [
+    {
+      "server_uri": "localhost:5678",
+      "channel_creds": [
+        {
+          "type": "insecure"
+        }
+      ],
+      "server_features": [
+        "xds_v3"
+      ]
+    }
+  ],
+  "node": {
+    "id": "grpc-java-client-node-01",
+    "cluster": "xds_cluster"
+  },
+  "server_listener_resource_name_template": "grpc/server?xds.resource.listening_address=5678"
+}

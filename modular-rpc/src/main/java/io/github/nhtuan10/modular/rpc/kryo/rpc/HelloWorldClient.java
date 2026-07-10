@@ -1,9 +1,6 @@
-package io.github.nhtuan10.modular.rpc;
+package io.github.nhtuan10.modular.rpc.kryo.rpc;
 
-import io.grpc.Channel;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.StatusRuntimeException;
+import io.grpc.*;
 import io.grpc.examples.helloworld.GreeterGrpc;
 import io.grpc.examples.helloworld.HelloReply;
 import io.grpc.examples.helloworld.HelloRequest;
@@ -84,12 +81,8 @@ public class HelloWorldClient {
         //
         // For the example we use plaintext insecure credentials to avoid needing TLS certificates. To
         // use TLS, use TlsChannelCredentials instead.=
-//        ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
-//                .build();
-        ManagedChannel channel = ManagedChannelBuilder
-                .forTarget("dns:///grpc-server-service.default.svc.cluster.local:50051")
-                .defaultLoadBalancingPolicy("round_robin")
-                .usePlaintext().build();
+        ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
+                .build();
         try {
             HelloWorldClient client = new HelloWorldClient(channel);
             client.greet(user);

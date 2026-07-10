@@ -1,33 +1,33 @@
-package io.github.nhtuan10.modular.rpc;
+package io.github.nhtuan10.modular.rpc.kryo.rpc.gson;
 
-import io.grpc.Channel;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.StatusRuntimeException;
+import io.github.nhtuan10.modular.rpc.kryo.rpc.HelloWorldServer;
+import io.grpc.*;
 import io.grpc.examples.helloworld.GreeterGrpc;
 import io.grpc.examples.helloworld.HelloReply;
 import io.grpc.examples.helloworld.HelloRequest;
+import io.grpc.stub.ClientCalls;
 
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * A simple client that requests a greeting from the {@link HelloWorldServer}.
  */
-public class HelloWorldClient {
-    private static final Logger logger = Logger.getLogger(HelloWorldClient.class.getName());
+public class HelloWorldClientGson {
+    private static final Logger logger = Logger.getLogger(HelloWorldClientGson.class.getName());
 
     private final GreeterGrpc.GreeterBlockingStub blockingStub;
+    private final Channel channel;
 
     /**
      * Construct client for accessing HelloWorld server using the existing channel.
      */
-    public HelloWorldClient(Channel channel) {
+    public HelloWorldClientGson(Channel channel) {
         // 'channel' here is a Channel, not a ManagedChannel, so it is not this code's responsibility to
         // shut it down.
 
         // Passing Channels to code makes code easier to test and makes it easier to reuse Channels.
+        this.channel = channel;
         blockingStub = GreeterGrpc.newBlockingStub(channel);
     }
 
@@ -38,21 +38,25 @@ public class HelloWorldClient {
         logger.info("Will try to greet " + name + " ...");
         HelloRequest request = HelloRequest.newBuilder().setName(name).build();
         HelloReply response;
-        try {
-            response = blockingStub.sayHello(request);
-        } catch (StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-            return;
-        }
-        logger.info("Greeting: " + response.getMessage());
+        ClientCall<HelloWorldGson.HelloRequest2, HelloWorldGson.HelloReply2> call =
+                channel.newCall(HelloWorldGson.SAY_HELLO_METHOD_DESCRIPTOR, CallOptions.DEFAULT);
+        HelloWorldGson.HelloRequest2 req = new HelloWorldGson.HelloRequest2("Dan");
+        HelloWorldGson.HelloReply2 res = ClientCalls.blockingUnaryCall(call, req);
+        logger.info("Greeting: " + res.message());
 
-        try {
-            response = blockingStub.sayHelloAgain(request);
-        } catch (StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-            return;
-        }
-        logger.info("Greeting: " + response.getMessage());
+//        ListenableFuture<HelloWorldGson.HelloReply2> res = ClientCalls.futureUnaryCall(call, req);
+//        Futures.addCallback(res, new FutureCallback<>() {
+//            @Override
+//            public void onSuccess(HelloWorldGson.HelloReply2 result) {
+//                logger.info("Greeting: " + result.message());
+//            }
+//
+//            @Override
+//            public void onFailure(Throwable t) {
+//                Status status = Status.fromThrowable(t);
+//                logger.log(Level.WARNING, "RPC failed: {0}", status);
+//            }
+//        }, Executors.newSingleThreadExecutor());
     }
 
     /**
@@ -84,14 +88,10 @@ public class HelloWorldClient {
         //
         // For the example we use plaintext insecure credentials to avoid needing TLS certificates. To
         // use TLS, use TlsChannelCredentials instead.=
-//        ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
-//                .build();
-        ManagedChannel channel = ManagedChannelBuilder
-                .forTarget("dns:///grpc-server-service.default.svc.cluster.local:50051")
-                .defaultLoadBalancingPolicy("round_robin")
-                .usePlaintext().build();
+        ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
+                .build();
         try {
-            HelloWorldClient client = new HelloWorldClient(channel);
+            HelloWorldClientGson client = new HelloWorldClientGson(channel);
             client.greet(user);
         } finally {
             // ManagedChannels use resources like threads and TCP connections. To prevent leaking these

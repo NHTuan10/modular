@@ -1,12 +1,13 @@
-package io.github.nhtuan10.modular.rpc;
+package io.github.nhtuan10.modular.rpc.kryo.rpc;
 
-import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.examples.helloworld.GreeterGrpc;
 import io.grpc.examples.helloworld.HelloReply;
 import io.grpc.examples.helloworld.HelloRequest;
 import io.grpc.stub.StreamObserver;
+import io.grpc.xds.XdsServerBuilder;
+import io.grpc.xds.XdsServerCredentials;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -34,21 +35,21 @@ public class HelloWorldServer {
          * Async application code generally does not need more threads than CPU cores.
          */
         ExecutorService executor = Executors.newFixedThreadPool(2);
-        // XDS not working because of bootstrap.json configuration not working with Envoy XDS
-//        Server server = XdsServerBuilder.forPort(
-//                        port,
-//                        XdsServerCredentials.create(InsecureServerCredentials.create())
-//                )
-//                .executor(executor)
-//                .addService(new GreeterImpl())
-//                .build()
-//                .start();
-
-        server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
+        Server server = XdsServerBuilder.forPort(
+                        port,
+                        XdsServerCredentials.create(InsecureServerCredentials.create())
+                )
                 .executor(executor)
                 .addService(new GreeterImpl())
                 .build()
                 .start();
+
+//        ExecutorService executor = Executors.newFixedThreadPool(2);
+//        server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
+//                .executor(executor)
+//                .addService(new GreeterImpl())
+//                .build()
+//                .start();
         logger.info("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may have been reset by its JVM shutdown hook.
