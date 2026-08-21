@@ -22,9 +22,9 @@ public class ServiceProxyCreator {
         if (sourceClassLoader == null)
             sourceClassLoader = ClassLoader.getPlatformClassLoader();
 
-        Object svcInvocationInterceptor = Class.forName(ServiceInvocationInterceptor.class.getName(), true, sourceClassLoader)
+        Object svcInvocationInterceptor = Class.forName(DefaultServiceInvocationInterceptor.class.getName(), true, sourceClassLoader)
                 .getConstructor(Object.class, SerDeserializer.class, boolean.class, ClassLoader.class, ClassLoader.class).newInstance(service, serDeserializer, copyTransClassLoaderObjects, sourceClassLoader, targetClassLoader);
-        Object equalsMethodInterceptor = Class.forName(ServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName(), true, sourceClassLoader)
+        Object equalsMethodInterceptor = Class.forName(DefaultServiceInvocationInterceptor.EqualsMethodInterceptor.class.getName(), true, sourceClassLoader)
                 .getConstructor(Object.class).newInstance(service);
 
 //        String sha256Hex = DigestUtils.sha256Hex(apiClass.getName() + "$" + service.getClass().getName() + "$Proxy");

@@ -5,6 +5,7 @@ metadata:
   namespace: default
 spec:
   clusterIP: None  # <-- This makes it headless
+  type: ClusterIP
   selector:
     app: modular-grpc
   ports:
